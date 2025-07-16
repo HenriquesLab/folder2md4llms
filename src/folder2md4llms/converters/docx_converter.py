@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 try:
     from docx import Document
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class DOCXConverter(BaseConverter):
     """Converts DOCX files to text."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         super().__init__(config)
         self.extract_images = self.config.get("docx_extract_images", False)
 
@@ -77,7 +77,7 @@ class DOCXConverter(BaseConverter):
         """Get the file extensions this converter supports."""
         return {".docx", ".doc"}
 
-    def get_document_info(self, file_path: Path) -> Dict[str, Any]:
+    def get_document_info(self, file_path: Path) -> dict[str, Any]:
         """Get DOCX-specific information."""
         info = self.get_file_info(file_path)
 

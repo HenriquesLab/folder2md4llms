@@ -1,0 +1,53 @@
+name: Release to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for hatch-vcs
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install UV
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Install dependencies
+      run: |
+        uv sync --dev
+        uv pip install hatch
+    
+    - name: Run tests
+      run: uv run pytest
+    
+    - name: Build package
+      run: uv run hatch build
+    
+    - name: Check version matches tag
+      run: |
+        VERSION=$(uv run hatch version)
+        TAG_VERSION=${GITHUB_REF#refs/tags/v}
+        echo "Package version: $VERSION"
+        echo "Tag version: $TAG_VERSION"
+        if [ "$VERSION" != "$TAG_VERSION" ]; then
+          echo "Version mismatch: package=$VERSION, tag=$TAG_VERSION"
+          exit 1
+        fi
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        verbose: true

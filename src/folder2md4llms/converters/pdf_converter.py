@@ -2,14 +2,19 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 try:
-    import PyPDF2
+    import pypdf
 
     PDF_AVAILABLE = True
 except ImportError:
-    PDF_AVAILABLE = False
+    try:
+        import PyPDF2 as pypdf
+
+        PDF_AVAILABLE = True
+    except ImportError:
+        PDF_AVAILABLE = False
 
 from .base import BaseConverter, ConversionError
 
@@ -19,7 +24,7 @@ logger = logging.getLogger(__name__)
 class PDFConverter(BaseConverter):
     """Converts PDF files to text."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         super().__init__(config)
         self.max_pages = self.config.get("pdf_max_pages", 50)
 
@@ -32,11 +37,11 @@ class PDFConverter(BaseConverter):
     def convert(self, file_path: Path) -> Optional[str]:
         """Convert PDF to text."""
         if not PDF_AVAILABLE:
-            return "PDF conversion not available. Install PyPDF2: pip install PyPDF2"
+            return "PDF conversion not available. Install pypdf: pip install pypdf"
 
         try:
             with open(file_path, "rb") as file:
-                reader = PyPDF2.PdfReader(file)
+                reader = pypdf.PdfReader(file)
 
                 # Get document info
                 num_pages = len(reader.pages)
@@ -56,7 +61,21 @@ class PDFConverter(BaseConverter):
                 for page_num in range(pages_to_process):
                     try:
                         page = reader.pages[page_num]
-                        page_text = page.extract_text()
+
+                        # Try improved text extraction with pypdf
+                        try:
+                            # Use improved text extraction if available
+                            if hasattr(page, "extract_text"):
+                                page_text = page.extract_text()
+                            else:
+                                # Fallback for older PyPDF2
+                                page_text = page.extractText()
+                        except:
+                            # Final fallback
+                            page_text = str(page)
+
+                        # Clean up the text
+                        page_text = self._clean_pdf_text(page_text)
 
                         if page_text.strip():
                             text_parts.append(f"--- Page {page_num + 1} ---")
@@ -78,7 +97,7 @@ class PDFConverter(BaseConverter):
         """Get the file extensions this converter supports."""
         return {".pdf"}
 
-    def get_document_info(self, file_path: Path) -> Dict[str, Any]:
+    def get_document_info(self, file_path: Path) -> dict[str, Any]:
         """Get PDF-specific information."""
         info = self.get_file_info(file_path)
 
@@ -88,7 +107,7 @@ class PDFConverter(BaseConverter):
 
         try:
             with open(file_path, "rb") as file:
-                reader = PyPDF2.PdfReader(file)
+                reader = pypdf.PdfReader(file)
 
                 info.update(
                     {
@@ -116,3 +135,34 @@ class PDFConverter(BaseConverter):
             info["error"] = str(e)
 
         return info
+
+    def _clean_pdf_text(self, text: str) -> str:
+        """Clean up extracted PDF text."""
+        if not text:
+            return ""
+
+        # Remove excessive whitespace
+        lines = text.split("\n")
+        cleaned_lines = []
+
+        for line in lines:
+            # Remove leading/trailing whitespace
+            line = line.strip()
+
+            # Skip empty lines
+            if not line:
+                continue
+
+            # Remove excessive spaces
+            line = " ".join(line.split())
+
+            cleaned_lines.append(line)
+
+        # Join lines back together
+        result = "\n".join(cleaned_lines)
+
+        # Remove excessive newlines
+        while "\n\n\n" in result:
+            result = result.replace("\n\n\n", "\n\n")
+
+        return result

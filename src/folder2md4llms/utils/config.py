@@ -24,6 +24,13 @@ class Config:
         self.pdf_max_pages = 50
         self.docx_extract_images = False
         self.xlsx_max_sheets = 10
+        self.rtf_max_size = 10 * 1024 * 1024  # 10MB
+        self.notebook_max_cells = 200
+        self.notebook_include_outputs = True
+        self.notebook_include_metadata = False
+        self.pptx_max_slides = 100
+        self.pptx_include_notes = True
+        self.pptx_include_slide_numbers = True
 
         # Binary file analysis settings
         self.image_extract_metadata = True
@@ -39,6 +46,14 @@ class Config:
         # Performance settings
         self.max_workers = 4
         self.progress_bar = True
+
+        # Streaming and token management
+        self.max_tokens_per_chunk = 8000
+        self.token_estimation_method = "average"  # conservative, average, optimistic
+        self.max_memory_mb = 1024  # Memory limit in MB
+        self.token_limit = None  # Optional token limit for LLM workflows
+        self.char_limit = None  # Optional character limit for LLM workflows
+        self.use_gitignore = True  # Use .gitignore files for filtering
 
     @classmethod
     def load(
@@ -98,6 +113,13 @@ class Config:
             "pdf_max_pages": self.pdf_max_pages,
             "docx_extract_images": self.docx_extract_images,
             "xlsx_max_sheets": self.xlsx_max_sheets,
+            "rtf_max_size": self.rtf_max_size,
+            "notebook_max_cells": self.notebook_max_cells,
+            "notebook_include_outputs": self.notebook_include_outputs,
+            "notebook_include_metadata": self.notebook_include_metadata,
+            "pptx_max_slides": self.pptx_max_slides,
+            "pptx_include_notes": self.pptx_include_notes,
+            "pptx_include_slide_numbers": self.pptx_include_slide_numbers,
             "image_extract_metadata": self.image_extract_metadata,
             "archive_list_contents": self.archive_list_contents,
             "executable_basic_info": self.executable_basic_info,
@@ -107,6 +129,12 @@ class Config:
             "chunk_large_files": self.chunk_large_files,
             "max_workers": self.max_workers,
             "progress_bar": self.progress_bar,
+            "max_tokens_per_chunk": self.max_tokens_per_chunk,
+            "token_estimation_method": self.token_estimation_method,
+            "max_memory_mb": self.max_memory_mb,
+            "token_limit": self.token_limit,
+            "char_limit": self.char_limit,
+            "use_gitignore": self.use_gitignore,
         }
 
         try:
@@ -142,6 +170,13 @@ max_file_size: 1048576  # 1MB
 pdf_max_pages: 50
 docx_extract_images: false
 xlsx_max_sheets: 10
+rtf_max_size: 10485760  # 10MB
+notebook_max_cells: 200
+notebook_include_outputs: true
+notebook_include_metadata: false
+pptx_max_slides: 100
+pptx_include_notes: true
+pptx_include_slide_numbers: true
 
 # Binary file analysis settings
 image_extract_metadata: true
@@ -157,6 +192,14 @@ chunk_large_files: true
 # Performance settings
 max_workers: 4
 progress_bar: true
+
+# Streaming and token management
+max_tokens_per_chunk: 8000
+token_estimation_method: average  # conservative, average, optimistic
+max_memory_mb: 1024
+token_limit: null  # Optional token limit for LLM workflows
+char_limit: null   # Optional character limit for LLM workflows
+use_gitignore: true  # Use .gitignore files for filtering
 """
 
         try:

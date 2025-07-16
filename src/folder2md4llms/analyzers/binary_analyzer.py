@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 try:
     from PIL import Image
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 class BinaryAnalyzer:
     """Analyzes and describes binary files."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         self.config = config or {}
         self.extract_image_metadata = self.config.get("image_extract_metadata", True)
         self.list_archive_contents = self.config.get("archive_list_contents", True)

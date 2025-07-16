@@ -1,28 +1,34 @@
 """Factory for creating document converters."""
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from .base import BaseConverter
 from .docx_converter import DOCXConverter
+from .notebook_converter import NotebookConverter
 from .pdf_converter import PDFConverter
+from .pptx_converter import PPTXConverter
+from .rtf_converter import RTFConverter
 from .xlsx_converter import XLSXConverter
 
 
 class ConverterFactory:
     """Factory for creating appropriate document converters."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         self.config = config or {}
         self._converters = None
 
-    def _get_converters(self) -> List[BaseConverter]:
+    def _get_converters(self) -> list[BaseConverter]:
         """Get all available converters."""
         if self._converters is None:
             self._converters = [
                 PDFConverter(self.config),
                 DOCXConverter(self.config),
                 XLSXConverter(self.config),
+                RTFConverter(self.config),
+                NotebookConverter(self.config),
+                PPTXConverter(self.config),
             ]
         return self._converters
 
@@ -51,7 +57,7 @@ class ConverterFactory:
             extensions.update(converter.get_supported_extensions())
         return extensions
 
-    def get_file_info(self, file_path: Path) -> Dict[str, Any]:
+    def get_file_info(self, file_path: Path) -> dict[str, Any]:
         """Get file information using the appropriate converter."""
         converter = self.get_converter(file_path)
         if converter:

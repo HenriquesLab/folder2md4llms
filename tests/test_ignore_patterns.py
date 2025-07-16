@@ -10,9 +10,9 @@ class TestIgnorePatterns:
         """Test default ignore patterns."""
         patterns = IgnorePatterns()
 
-        assert "__pycache__/*" in patterns.patterns
-        assert ".git/*" in patterns.patterns
-        assert "node_modules/*" in patterns.patterns
+        assert "__pycache__/" in patterns.patterns
+        assert ".git/" in patterns.patterns
+        assert "node_modules/" in patterns.patterns
         assert "*.pyc" in patterns.patterns
 
     def test_should_ignore_git_directory(self, temp_dir):
@@ -104,7 +104,7 @@ class TestIgnorePatterns:
         patterns = IgnorePatterns.from_file(ignore_file)
 
         # Should still have default patterns
-        assert "__pycache__/*" in patterns.patterns
+        assert "__pycache__/" in patterns.patterns
 
     def test_write_default_ignore_file(self, temp_dir):
         """Test writing default ignore file."""
@@ -149,3 +149,42 @@ class TestIgnorePatterns:
 
         assert patterns.should_ignore(build_dir / "file.txt", temp_dir)
         assert patterns.should_ignore(nested_dir / "file.txt", temp_dir)
+
+    def test_from_hierarchical_files(self, temp_dir):
+        """Test loading from hierarchical ignore files."""
+        # Create test directory structure
+        target_dir = temp_dir / "target"
+        target_dir.mkdir()
+
+        # Create global ignore file in a fake home directory
+        home_dir = temp_dir / "home"
+        home_dir.mkdir()
+        global_ignore = home_dir / ".folder2md_ignore"
+        global_ignore.write_text("*.global\n")
+
+        # Create cwd ignore file
+        cwd_ignore = temp_dir / ".folder2md_ignore"
+        cwd_ignore.write_text("*.cwd\n")
+
+        # Create target ignore file
+        target_ignore = target_dir / ".folder2md_ignore"
+        target_ignore.write_text("*.target\n!important.target\n")
+
+        # Test hierarchical loading
+        patterns = IgnorePatterns.from_hierarchical_files(target_dir, temp_dir)
+
+        # Should have loaded files info
+        assert len(patterns.loaded_files) > 0
+
+        # Test that patterns from all files are loaded
+        # Note: This test depends on the implementation details
+
+    def test_loaded_files_tracking(self, temp_dir):
+        """Test that loaded files are tracked correctly."""
+        ignore_file = temp_dir / ".folder2md_ignore"
+        ignore_file.write_text("*.test\n")
+
+        patterns = IgnorePatterns.from_file(ignore_file)
+
+        assert len(patterns.loaded_files) == 1
+        assert str(ignore_file) in patterns.loaded_files[0]

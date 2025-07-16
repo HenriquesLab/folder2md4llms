@@ -1,7 +1,7 @@
 """File utility functions."""
 
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 # Language mapping for syntax highlighting
 LANGUAGE_EXTENSIONS = {
@@ -106,7 +106,7 @@ def is_text_file(file_path: Path) -> bool:
     return not is_binary_file(file_path)
 
 
-def get_file_stats(file_path: Path) -> Dict:
+def get_file_stats(file_path: Path) -> dict:
     """Get statistics for a file."""
     try:
         stat = file_path.stat()
@@ -145,6 +145,7 @@ def should_convert_file(file_path: Path) -> bool:
         ".rtf",
         ".csv",
         ".tsv",
+        ".ipynb",  # Jupyter notebooks
     }
     return file_path.suffix.lower() in convertible_extensions
 

@@ -1,7 +1,6 @@
 """Tree structure generator for folder visualization."""
 
 from pathlib import Path
-from typing import List
 
 from .ignore_patterns import IgnorePatterns
 
@@ -32,7 +31,7 @@ class TreeGenerator:
         return "\n".join(lines)
 
     def _generate_tree_recursive(
-        self, path: Path, lines: List[str], prefix: str, depth: int, max_depth: int
+        self, path: Path, lines: list[str], prefix: str, depth: int, max_depth: int
     ) -> None:
         """Recursively generate tree structure."""
         if depth >= max_depth:

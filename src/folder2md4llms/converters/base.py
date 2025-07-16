@@ -2,13 +2,13 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 class BaseConverter(ABC):
     """Base class for document converters."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         self.config = config or {}
 
     @abstractmethod
@@ -26,7 +26,7 @@ class BaseConverter(ABC):
         """Get the file extensions this converter supports."""
         pass
 
-    def get_file_info(self, file_path: Path) -> Dict[str, Any]:
+    def get_file_info(self, file_path: Path) -> dict[str, Any]:
         """Get basic information about the file."""
         try:
             stat = file_path.stat()

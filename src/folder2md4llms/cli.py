@@ -66,6 +66,35 @@ wheels/
 *.egg
 MANIFEST
 
+# Python development tools
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.black/
+.isort.cfg
+htmlcov/
+.benchmarks/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+virtualenv/
+
+# UV package manager
+uv.lock
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.nyc_output/
+htmlcov/
+cov_html/
+coverage_html/
+.benchmarks/
+
 # Node.js
 node_modules/
 npm-debug.log*
@@ -115,6 +144,34 @@ obj/
 # ============================================================================
 .vscode/
 .idea/
+.claude/
+.cursor/
+
+# ============================================================================
+# AI ASSISTANT FILES
+# ============================================================================
+.claude/
+Claude.md
+CLAUDE.md
+claude.md
+
+# ============================================================================
+# BUILD & OUTPUT DIRECTORIES
+# ============================================================================
+build/
+output/
+outputs/
+out/
+results/
+reports/
+
+# ============================================================================
+# CACHE DIRECTORIES
+# ============================================================================
+.cache/
+cache/
+.tmp/
+tmp/
 *.swp
 *.swo
 *~
@@ -309,6 +366,11 @@ secrets/
     help="Include file statistics",
 )
 @click.option(
+    "--include-preamble/--no-preamble",
+    default=True,
+    help="Include explanatory preamble in output",
+)
+@click.option(
     "--convert-docs/--no-convert-docs",
     default=True,
     help="Convert documents (PDF, DOCX, etc.)",
@@ -323,6 +385,39 @@ secrets/
     type=int,
     default=1024 * 1024,  # 1MB
     help="Maximum file size to process (bytes)",
+)
+@click.option(
+    "--token-limit",
+    type=int,
+    help="Maximum tokens to include in output (for LLM workflows)",
+)
+@click.option(
+    "--char-limit",
+    type=int,
+    help="Maximum characters to include in output (for LLM workflows)",
+)
+@click.option(
+    "--max-tokens-per-chunk",
+    type=int,
+    default=8000,
+    help="Maximum tokens per chunk for large files",
+)
+@click.option(
+    "--token-estimation-method",
+    type=click.Choice(["conservative", "average", "optimistic"]),
+    default="average",
+    help="Method for estimating token counts",
+)
+@click.option(
+    "--max-workers",
+    type=int,
+    default=4,
+    help="Maximum number of parallel workers",
+)
+@click.option(
+    "--use-gitignore/--no-gitignore",
+    default=True,
+    help="Use .gitignore files for filtering",
 )
 @click.option(
     "--clipboard",
@@ -349,9 +444,16 @@ def main(
     format: str,
     include_tree: bool,
     include_stats: bool,
+    include_preamble: bool,
     convert_docs: bool,
     describe_binaries: bool,
     max_file_size: int,
+    token_limit: Optional[int],
+    char_limit: Optional[int],
+    max_tokens_per_chunk: int,
+    token_estimation_method: str,
+    max_workers: int,
+    use_gitignore: bool,
     clipboard: bool,
     verbose: bool,
     init_ignore: bool,
@@ -374,14 +476,28 @@ def main(
         config_obj.output_format = format
         config_obj.include_tree = include_tree
         config_obj.include_stats = include_stats
+        config_obj.include_preamble = include_preamble
         config_obj.convert_docs = convert_docs
         config_obj.describe_binaries = describe_binaries
         config_obj.max_file_size = max_file_size
         config_obj.verbose = verbose
 
+        # Set streaming and token management options
+        if token_limit:
+            config_obj.token_limit = token_limit
+        if char_limit:
+            config_obj.char_limit = char_limit
+        config_obj.max_tokens_per_chunk = max_tokens_per_chunk
+        config_obj.token_estimation_method = token_estimation_method
+        config_obj.max_workers = max_workers
+        config_obj.use_gitignore = use_gitignore
+
         # Set output file
         if not output:
             output = Path("output.md")
+
+        # Store output file in config for suggestions
+        config_obj.output_file = output
 
         # Initialize processor
         processor = RepositoryProcessor(config_obj)
