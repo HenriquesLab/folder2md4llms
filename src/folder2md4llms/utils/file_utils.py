@@ -1,7 +1,6 @@
 """File utility functions."""
 
 from pathlib import Path
-from typing import Optional
 
 # Language mapping for syntax highlighting
 LANGUAGE_EXTENSIONS = {
@@ -83,7 +82,7 @@ LANGUAGE_EXTENSIONS = {
 }
 
 
-def get_language_from_extension(extension: str) -> Optional[str]:
+def get_language_from_extension(extension: str) -> str | None:
     """Get the language identifier for syntax highlighting from file extension."""
     return LANGUAGE_EXTENSIONS.get(extension.lower())
 
@@ -232,7 +231,7 @@ def get_file_category(file_path: Path) -> str:
         return "binary"
 
 
-def read_file_safely(file_path: Path, max_size: int = 1024 * 1024) -> Optional[str]:
+def read_file_safely(file_path: Path, max_size: int = 1024 * 1024) -> str | None:
     """Read a file safely with size limit and encoding handling."""
     try:
         if file_path.stat().st_size > max_size:

@@ -2,7 +2,6 @@
 
 import datetime
 from pathlib import Path
-from typing import Optional
 
 from pygments.lexers import guess_lexer_for_filename
 from pygments.util import ClassNotFound
@@ -26,7 +25,7 @@ class MarkdownFormatter:
         # We don't need pygments formatter for markdown output - we'll format manually
 
     def _generate_preamble(
-        self, folder_path: Path, processing_stats: Optional[dict] = None
+        self, folder_path: Path, processing_stats: dict | None = None
     ) -> str:
         """Generate preamble explaining what the output file contains."""
         folder_name = folder_path.name
@@ -71,13 +70,13 @@ This document was automatically generated to provide a comprehensive overview of
     def format_repository(
         self,
         repo_path: Path,
-        tree_structure: Optional[str] = None,
-        file_contents: Optional[dict[str, str]] = None,
-        file_stats: Optional[dict] = None,
-        binary_descriptions: Optional[dict[str, str]] = None,
-        converted_docs: Optional[dict[str, str]] = None,
-        chunked_files: Optional[dict[str, list]] = None,
-        processing_stats: Optional[dict] = None,
+        tree_structure: str | None = None,
+        file_contents: dict[str, str] | None = None,
+        file_stats: dict | None = None,
+        binary_descriptions: dict[str, str] | None = None,
+        converted_docs: dict[str, str] | None = None,
+        chunked_files: dict[str, list] | None = None,
+        processing_stats: dict | None = None,
     ) -> str:
         """Format the complete folder as markdown."""
         sections = []
@@ -283,7 +282,7 @@ This document was automatically generated to provide a comprehensive overview of
 
         return "\n".join(lines)
 
-    def _detect_language(self, file_path: str, content: str) -> Optional[str]:
+    def _detect_language(self, file_path: str, content: str) -> str | None:
         """Detect the programming language for syntax highlighting."""
         try:
             # Try to guess from filename

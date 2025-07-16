@@ -1,7 +1,6 @@
 """Configuration management for folder2md4llms."""
 
 from pathlib import Path
-from typing import Optional
 
 import yaml
 
@@ -18,7 +17,7 @@ class Config:
         self.describe_binaries = True
         self.max_file_size = 1024 * 1024  # 1MB
         self.verbose = False
-        self.ignore_file: Optional[Path] = None
+        self.ignore_file: Path | None = None
 
         # Document conversion settings
         self.pdf_max_pages = 50
@@ -49,7 +48,7 @@ class Config:
 
         # Streaming and token management
         self.max_tokens_per_chunk = 8000
-        self.token_estimation_method = "average"  # conservative, average, optimistic
+        self.token_estimation_method = "average"  # noqa: S105  # conservative, average, optimistic
         self.max_memory_mb = 1024  # Memory limit in MB
         self.token_limit = None  # Optional token limit for LLM workflows
         self.char_limit = None  # Optional character limit for LLM workflows
@@ -57,7 +56,7 @@ class Config:
 
     @classmethod
     def load(
-        cls, config_path: Optional[Path] = None, repo_path: Optional[Path] = None
+        cls, config_path: Path | None = None, repo_path: Path | None = None
     ) -> "Config":
         """Load configuration from file or create default."""
         config = cls()

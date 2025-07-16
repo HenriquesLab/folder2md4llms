@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 try:
     import pypdf
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class PDFConverter(BaseConverter):
     """Converts PDF files to text."""
 
-    def __init__(self, config: Optional[dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config)
         self.max_pages = self.config.get("pdf_max_pages", 50)
 
@@ -34,7 +34,7 @@ class PDFConverter(BaseConverter):
             PDF_AVAILABLE and file_path.suffix.lower() == ".pdf" and file_path.exists()
         )
 
-    def convert(self, file_path: Path) -> Optional[str]:
+    def convert(self, file_path: Path) -> str | None:
         """Convert PDF to text."""
         if not PDF_AVAILABLE:
             return "PDF conversion not available. Install pypdf: pip install pypdf"
@@ -70,7 +70,7 @@ class PDFConverter(BaseConverter):
                             else:
                                 # Fallback for older PyPDF2
                                 page_text = page.extractText()
-                        except:
+                        except Exception:
                             # Final fallback
                             page_text = str(page)
 

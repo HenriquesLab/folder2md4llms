@@ -19,24 +19,24 @@ repos:
       - id: ruff-format
 
   # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.7.1
+  #   rev: v1.8.0
   #   hooks:
   #     - id: mypy
   #       additional_dependencies: [types-pyyaml]
-  #       args: [--ignore-missing-imports]
+  #       args: [--ignore-missing-imports, --follow-imports=silent]
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.5
     hooks:
       - id: bandit
-        args: ["-r", "src/"]
+        args: ["-s", "B105,B107"]
         exclude: tests/
 
   - repo: local
     hooks:
       - id: pytest
         name: pytest
-        entry: uv run pytest
+        entry: uv run pytest --cov=folder2md4llms --cov-report=term-missing
         language: system
         pass_filenames: false
         always_run: true

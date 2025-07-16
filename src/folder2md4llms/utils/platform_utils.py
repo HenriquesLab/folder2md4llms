@@ -3,7 +3,6 @@
 import platform
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Cache platform info for performance
 _platform_system = platform.system().lower()
@@ -129,7 +128,7 @@ def get_library_search_paths() -> list:
         ]
 
 
-def get_magic_library_name() -> Optional[str]:
+def get_magic_library_name() -> str | None:
     """Get the appropriate magic library name for the platform."""
     if is_windows():
         # Windows typically uses python-magic-bin

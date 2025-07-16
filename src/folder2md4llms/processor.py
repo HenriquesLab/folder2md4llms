@@ -3,7 +3,7 @@
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from rich.progress import Progress, TaskID
 
@@ -85,7 +85,7 @@ class RepositoryProcessor:
 
         return ignore_patterns
 
-    def process(self, repo_path: Path, progress: Optional[Progress] = None) -> str:
+    def process(self, repo_path: Path, progress: Progress | None = None) -> str:
         """Process a repository and return markdown output."""
         if not repo_path.exists() or not repo_path.is_dir():
             raise ValueError(f"Invalid repository path: {repo_path}")
@@ -166,7 +166,7 @@ class RepositoryProcessor:
                 progress.remove_task(process_task)
 
     def _scan_repository(
-        self, repo_path: Path, progress: Optional[Progress], task: Optional[TaskID]
+        self, repo_path: Path, progress: Progress | None, task: TaskID | None
     ) -> list[Path]:
         """Scan repository and return list of files to process."""
         files = []
@@ -201,8 +201,8 @@ class RepositoryProcessor:
         self,
         file_list: list[Path],
         repo_path: Path,
-        progress: Optional[Progress],
-        task: Optional[TaskID],
+        progress: Progress | None,
+        task: TaskID | None,
     ) -> dict[str, Any]:
         """Process all files and categorize them using streaming and parallel processing."""
         results = {

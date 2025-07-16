@@ -1,7 +1,7 @@
 """Factory for creating document converters."""
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .base import BaseConverter
 from .docx_converter import DOCXConverter
@@ -15,7 +15,7 @@ from .xlsx_converter import XLSXConverter
 class ConverterFactory:
     """Factory for creating appropriate document converters."""
 
-    def __init__(self, config: Optional[dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
         self._converters = None
 
@@ -32,7 +32,7 @@ class ConverterFactory:
             ]
         return self._converters
 
-    def get_converter(self, file_path: Path) -> Optional[BaseConverter]:
+    def get_converter(self, file_path: Path) -> BaseConverter | None:
         """Get the appropriate converter for a file."""
         for converter in self._get_converters():
             if converter.can_convert(file_path):
@@ -43,7 +43,7 @@ class ConverterFactory:
         """Check if any converter can handle the file."""
         return self.get_converter(file_path) is not None
 
-    def convert_file(self, file_path: Path) -> Optional[str]:
+    def convert_file(self, file_path: Path) -> str | None:
         """Convert a file using the appropriate converter."""
         converter = self.get_converter(file_path)
         if converter:

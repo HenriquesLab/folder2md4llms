@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 try:
     from openpyxl import load_workbook
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class XLSXConverter(BaseConverter):
     """Converts XLSX files to text."""
 
-    def __init__(self, config: Optional[dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config)
         self.max_sheets = self.config.get("xlsx_max_sheets", 10)
         self.max_rows = self.config.get("xlsx_max_rows", 100)
@@ -33,7 +33,7 @@ class XLSXConverter(BaseConverter):
             and file_path.exists()
         )
 
-    def convert(self, file_path: Path) -> Optional[str]:
+    def convert(self, file_path: Path) -> str | None:
         """Convert XLSX to text."""
         if not XLSX_AVAILABLE:
             return (

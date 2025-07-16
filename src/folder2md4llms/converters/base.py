@@ -2,13 +2,13 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 class BaseConverter(ABC):
     """Base class for document converters."""
 
-    def __init__(self, config: Optional[dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
 
     @abstractmethod
@@ -17,7 +17,7 @@ class BaseConverter(ABC):
         pass
 
     @abstractmethod
-    def convert(self, file_path: Path) -> Optional[str]:
+    def convert(self, file_path: Path) -> str | None:
         """Convert the file to text/markdown format."""
         pass
 

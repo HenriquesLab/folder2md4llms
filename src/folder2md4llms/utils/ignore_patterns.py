@@ -3,7 +3,6 @@
 import fnmatch
 import re
 from pathlib import Path
-from typing import Optional
 
 
 class IgnorePatterns:
@@ -100,8 +99,8 @@ class IgnorePatterns:
 
     def __init__(
         self,
-        patterns: Optional[list[str]] = None,
-        loaded_files: Optional[list[str]] = None,
+        patterns: list[str] | None = None,
+        loaded_files: list[str] | None = None,
     ):
         """Initialize with custom patterns or defaults."""
         self.patterns = patterns or self.DEFAULT_PATTERNS.copy()
@@ -292,7 +291,7 @@ class IgnorePatterns:
 
     @classmethod
     def from_hierarchical_files(
-        cls, target_dir: Path, cwd: Optional[Path] = None
+        cls, target_dir: Path, cwd: Path | None = None
     ) -> "IgnorePatterns":
         """Load ignore patterns from hierarchical .folder2md_ignore files.
 

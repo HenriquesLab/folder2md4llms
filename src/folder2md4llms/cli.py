@@ -2,7 +2,6 @@
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 from rich.console import Console
@@ -438,9 +437,9 @@ secrets/
 @click.version_option(version=__version__)
 def main(
     path: Path,
-    output: Optional[Path],
-    config: Optional[Path],
-    ignore_file: Optional[Path],
+    output: Path | None,
+    config: Path | None,
+    ignore_file: Path | None,
     format: str,
     include_tree: bool,
     include_stats: bool,
@@ -448,8 +447,8 @@ def main(
     convert_docs: bool,
     describe_binaries: bool,
     max_file_size: int,
-    token_limit: Optional[int],
-    char_limit: Optional[int],
+    token_limit: int | None,
+    char_limit: int | None,
     max_tokens_per_chunk: int,
     token_estimation_method: str,
     max_workers: int,
