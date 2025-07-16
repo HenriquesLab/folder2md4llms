@@ -114,7 +114,7 @@ class TestIgnorePatterns:
         patterns.write_default_ignore_file(ignore_file)
 
         assert ignore_file.exists()
-        content = ignore_file.read_text()
+        content = ignore_file.read_text(encoding="utf-8")
         assert "# folder2md4llms ignore file" in content
         assert ".git/" in content
         assert "__pycache__/" in content

@@ -93,7 +93,7 @@ class TestConfig:
         config.create_default_config(config_file)
 
         assert config_file.exists()
-        content = config_file.read_text()
+        content = config_file.read_text(encoding="utf-8")
         assert "output_format: markdown" in content
         assert "include_tree: true" in content
         assert "# folder2md4llms configuration file" in content
