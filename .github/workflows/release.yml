@@ -41,6 +41,14 @@ jobs:
         TAG_VERSION=${GITHUB_REF#refs/tags/v}
         echo "Package version: $VERSION"
         echo "Tag version: $TAG_VERSION"
+        echo "Git describe: $(git describe --tags --always)"
+        echo "Git status: $(git status --porcelain)"
+        echo "Git log --oneline -3: $(git log --oneline -3)"
+        # Remove the __about__.py file to force a clean state
+        rm -f src/folder2md4llms/__about__.py
+        git checkout HEAD -- src/folder2md4llms/__about__.py 2>/dev/null || true
+        echo "After cleanup - Package version: $(uv run hatch version)"
+        VERSION=$(uv run hatch version)
         if [ "$VERSION" != "$TAG_VERSION" ]; then
           echo "Version mismatch: package=$VERSION, tag=$TAG_VERSION"
           exit 1
