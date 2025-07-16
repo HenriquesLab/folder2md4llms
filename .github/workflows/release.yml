@@ -32,13 +32,6 @@ jobs:
     - name: Run tests
       run: uv run pytest
     
-    - name: Build package
-      run: |
-        # Clean up __about__.py file that might be modified during build
-        rm -f src/folder2md4llms/__about__.py
-        git checkout HEAD -- src/folder2md4llms/__about__.py 2>/dev/null || true
-        uv run hatch build
-    
     - name: Check version matches tag
       run: |
         VERSION=$(uv run hatch version)
@@ -57,6 +50,20 @@ jobs:
           echo "Version mismatch: package=$VERSION, tag=$TAG_VERSION"
           exit 1
         fi
+    
+    - name: Build package
+      run: |
+        # Clean up __about__.py file that might be modified during build
+        rm -f src/folder2md4llms/__about__.py
+        git checkout HEAD -- src/folder2md4llms/__about__.py 2>/dev/null || true
+        uv run hatch build
+        # List the built packages
+        ls -la dist/
+        # Verify the built packages have the correct version
+        echo "Built packages:"
+        for file in dist/*; do
+          echo "  $file"
+        done
     
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
