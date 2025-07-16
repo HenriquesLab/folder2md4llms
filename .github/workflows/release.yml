@@ -56,7 +56,13 @@ jobs:
         # Clean up __about__.py file that might be modified during build
         rm -f src/folder2md4llms/__about__.py
         git checkout HEAD -- src/folder2md4llms/__about__.py 2>/dev/null || true
-        uv run hatch build
+        echo "Building sdist..."
+        uv run hatch build --target sdist
+        # Clean up again before wheel build
+        rm -f src/folder2md4llms/__about__.py
+        git checkout HEAD -- src/folder2md4llms/__about__.py 2>/dev/null || true
+        echo "Building wheel..."
+        uv run hatch build --target wheel
         # List the built packages
         ls -la dist/
         # Verify the built packages have the correct version
