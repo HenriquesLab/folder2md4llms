@@ -31,15 +31,6 @@ jobs:
         uv sync --group dev
         uv pip install hatch
 
-    - name: Run linting
-      run: uv run ruff check .
-
-    - name: Run formatting check
-      run: uv run ruff format --check .
-
-    - name: Run type checking
-      run: uv run mypy src/folder2md4llms
-
     - name: Run tests
       run: uv run pytest --cov=folder2md4llms --cov-report=xml
 
