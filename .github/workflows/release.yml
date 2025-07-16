@@ -33,7 +33,11 @@ jobs:
       run: uv run pytest
     
     - name: Build package
-      run: uv run hatch build
+      run: |
+        # Clean up __about__.py file that might be modified during build
+        rm -f src/folder2md4llms/__about__.py
+        git checkout HEAD -- src/folder2md4llms/__about__.py 2>/dev/null || true
+        uv run hatch build
     
     - name: Check version matches tag
       run: |
