@@ -1,0 +1,169 @@
+[build-system]
+requires = ["hatchling>=1.4.1"]
+build-backend = "hatchling.build"
+
+[project]
+name = "folder2md4llms"
+dynamic = ["version"]
+description = "Enhanced tool to concatenate folder contents into markdown format for LLM consumption"
+authors = [
+    {name = "Ricardo Henriques", email = "ricardo@henriqueslab.org"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "click>=8.0.0",
+    "rich>=13.0.0",
+    "pathlib",
+    "python-magic; sys_platform != 'win32'",
+    "python-magic-bin; sys_platform == 'win32'",
+    "PyPDF2>=3.0.0",
+    "python-docx>=0.8.11",
+    "openpyxl>=3.1.0",
+    "Pillow>=9.0.0",
+    "markdown>=3.4.0",
+    "pygments>=2.10.0",
+    "tqdm>=4.64.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/henriqueslab/folder2md4llms"
+Repository = "https://github.com/henriqueslab/folder2md4llms"
+Issues = "https://github.com/henriqueslab/folder2md4llms/issues"
+
+[project.scripts]
+folder2md = "folder2md4llms.cli:main"
+
+[tool.hatch.version]
+path = "src/folder2md4llms/__about__.py"
+
+# Hatch environments configuration
+[tool.hatch.envs.default]
+installer = "uv"
+dependencies = [
+    "pytest>=8.3.5",
+    "pytest-cov>=5.0.0",
+]
+
+[tool.hatch.envs.default.scripts]
+test = "pytest {args:tests}"
+test-cov = "pytest --cov=folder2md4llms --cov-report=term-missing {args:tests}"
+cov-html = "pytest --cov=folder2md4llms --cov-report=html {args:tests}"
+
+# Static analysis environment
+[tool.hatch.envs.hatch-static-analysis]
+installer = "uv"
+dependencies = [
+    "ruff>=0.1.0",
+]
+
+[tool.hatch.envs.hatch-static-analysis.scripts]
+format-check = "ruff format --check {args:.}"
+format-fix = "ruff format {args:.}"
+lint-check = "ruff check {args:.}"
+lint-fix = "ruff check --fix {args:.}"
+
+# Development environment
+[tool.hatch.envs.dev]
+installer = "uv"
+dependencies = [
+    "pytest>=8.3.5",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "types-PyYAML",
+    "pre-commit>=3.5.0",
+    "lazydocs>=0.4.8",
+]
+
+[tool.hatch.envs.dev.scripts]
+test = "pytest {args:tests}"
+test-cov = "pytest --cov=folder2md4llms --cov-report=term-missing {args:tests}"
+format = "ruff format {args:.}"
+format-check = "ruff format --check {args:.}"
+lint = "ruff check {args:.}"
+lint-fix = "ruff check --fix {args:.}"
+type-check = "mypy src/folder2md4llms"
+check = ["lint", "format-check", "type-check", "test"]
+pre-commit-run = "pre-commit run --all-files"
+install-hooks = "pre-commit install"
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+
+[tool.ruff.lint]
+# Use extend- prefixed options for Hatch integration
+extend-select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+extend-ignore = [
+    "E501",  # line too long, handled by formatter
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "T201",  # print statements allowed in this project
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/**/*.py" = ["S101", "D103", "PLR2004"]  # Allow asserts, missing docstrings, magic values in tests
+"src/folder2md4llms/cli.py" = ["T201"]  # Allow print statements in CLI
+
+[tool.ruff.lint.isort]
+known-first-party = ["folder2md4llms"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --cov=folder2md4llms --cov-report=term-missing"
+testpaths = [
+    "tests",
+]
+
+[dependency-groups]
+dev = [
+    "hatch>=1.14.1",
+    "lazydocs>=0.4.8",
+    "pre-commit>=3.5.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=5.0.0",
+]

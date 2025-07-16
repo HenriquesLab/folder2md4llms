@@ -1,0 +1,37 @@
+# folder2md4llms ignore file
+# This file specifies patterns for files and directories to ignore
+# when processing a repository.
+
+# Version control
+.git/
+.svn/
+.hg/
+
+# Build artifacts
+__pycache__/
+*.pyc
+build/
+dist/
+*.egg-info/
+node_modules/
+target/
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+*~
+
+# Project specific
+.folder2md_ignore
+*.md
+.tox/
+.pytest_cache/
