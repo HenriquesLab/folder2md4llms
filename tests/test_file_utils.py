@@ -93,7 +93,7 @@ class TestFileUtils:
         assert get_file_category(py_file) == "text"
         assert get_file_category(pdf_file) == "document"
         assert get_file_category(img_file) == "image"
-        assert get_file_category(bin_file) == "binary"
+        assert get_file_category(bin_file) == "data"
 
     def test_read_file_safely(self, temp_dir):
         """Test safe file reading."""

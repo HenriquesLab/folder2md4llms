@@ -4,10 +4,12 @@ from pathlib import Path
 from typing import Any
 
 from .base import BaseConverter
+from .code_converter import CodeConverter
 from .docx_converter import DOCXConverter
 from .notebook_converter import NotebookConverter
 from .pdf_converter import PDFConverter
 from .pptx_converter import PPTXConverter
+from .python_converter import PythonConverter
 from .rtf_converter import RTFConverter
 from .xlsx_converter import XLSXConverter
 
@@ -23,6 +25,10 @@ class ConverterFactory:
         """Get all available converters."""
         if self._converters is None:
             self._converters = [
+                CodeConverter(
+                    self.config
+                ),  # Check multi-language code condensing first
+                PythonConverter(self.config),  # Check Python condensing
                 PDFConverter(self.config),
                 DOCXConverter(self.config),
                 XLSXConverter(self.config),

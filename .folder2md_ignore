@@ -143,6 +143,7 @@ reports/
 cache/
 .tmp/
 tmp/
+.pelican_cache/
 *.swp
 *.swo
 *~
@@ -266,6 +267,8 @@ secrets/
 *.sl3
 *.mdb
 *.accdb
+*.pickle
+*.pkl
 
 # ============================================================================
 # CUSTOM PATTERNS

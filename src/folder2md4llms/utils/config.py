@@ -15,6 +15,11 @@ class Config:
         self.include_stats = True
         self.convert_docs = True
         self.describe_binaries = True
+        self.condense_python = False
+        self.python_condense_mode = "signatures_with_docstrings"
+        self.condense_code = False
+        self.code_condense_mode = "signatures_with_docstrings"
+        self.condense_languages = ["js", "ts", "java", "json", "yaml"]
         self.max_file_size = 1024 * 1024  # 1MB
         self.verbose = False
         self.ignore_file: Path | None = None
@@ -53,6 +58,20 @@ class Config:
         self.token_limit = None  # Optional token limit for LLM workflows
         self.char_limit = None  # Optional character limit for LLM workflows
         self.use_gitignore = True  # Use .gitignore files for filtering
+
+        # Smart condensing settings
+        self.smart_condensing = False  # Enable smart anti-truncation engine
+        self.token_budget_strategy = "balanced"  # conservative, balanced, aggressive
+        self.priority_analysis = True  # Enable content priority analysis
+        self.progressive_condensing = True  # Enable progressive condensing
+        self.smart_chunking = True  # Enable context-aware chunking
+        self.critical_files = []  # Patterns for files that should never be condensed
+
+        # Update checking settings
+        self.update_check_enabled = True  # Enable automatic update checking
+        self.update_check_interval = (
+            24 * 60 * 60
+        )  # Check interval in seconds (24 hours)
 
     @classmethod
     def load(
@@ -107,6 +126,11 @@ class Config:
             "include_stats": self.include_stats,
             "convert_docs": self.convert_docs,
             "describe_binaries": self.describe_binaries,
+            "condense_python": self.condense_python,
+            "python_condense_mode": self.python_condense_mode,
+            "condense_code": self.condense_code,
+            "code_condense_mode": self.code_condense_mode,
+            "condense_languages": self.condense_languages,
             "max_file_size": self.max_file_size,
             "verbose": self.verbose,
             "pdf_max_pages": self.pdf_max_pages,
@@ -134,6 +158,14 @@ class Config:
             "token_limit": self.token_limit,
             "char_limit": self.char_limit,
             "use_gitignore": self.use_gitignore,
+            "smart_condensing": self.smart_condensing,
+            "token_budget_strategy": self.token_budget_strategy,
+            "priority_analysis": self.priority_analysis,
+            "progressive_condensing": self.progressive_condensing,
+            "smart_chunking": self.smart_chunking,
+            "critical_files": self.critical_files,
+            "update_check_enabled": self.update_check_enabled,
+            "update_check_interval": self.update_check_interval,
         }
 
         try:
@@ -161,6 +193,21 @@ convert_docs: true
 
 # Describe binary files
 describe_binaries: true
+
+# Condense Python files to signatures and docstrings
+condense_python: false
+
+# Python condensing mode (signatures, signatures_with_docstrings, structure)
+python_condense_mode: signatures_with_docstrings
+
+# Condense code files (JS, TS, Java, etc.) to signatures
+condense_code: false
+
+# Code condensing mode (signatures, signatures_with_docstrings, structure)
+code_condense_mode: signatures_with_docstrings
+
+# Languages to condense (js, ts, java, json, yaml, or "all")
+condense_languages: [js, ts, java, json, yaml]
 
 # Maximum file size to process (bytes)
 max_file_size: 1048576  # 1MB
@@ -199,6 +246,18 @@ max_memory_mb: 1024
 token_limit: null  # Optional token limit for LLM workflows
 char_limit: null   # Optional character limit for LLM workflows
 use_gitignore: true  # Use .gitignore files for filtering
+
+# Smart anti-truncation engine settings
+smart_condensing: false  # Enable intelligent content processing
+token_budget_strategy: balanced  # conservative, balanced, aggressive
+priority_analysis: true  # Analyze content priority automatically
+progressive_condensing: true  # Apply condensing based on available budget
+smart_chunking: true  # Enable context-aware code-preserving chunking
+critical_files: []  # Patterns for files that should never be condensed
+
+# Update checking settings
+update_check_enabled: true  # Enable automatic update checking
+update_check_interval: 86400  # Check interval in seconds (24 hours)
 """
 
         try:

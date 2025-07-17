@@ -10,6 +10,7 @@ from rich.progress import Progress
 from .__about__ import __version__
 from .processor import RepositoryProcessor
 from .utils.config import Config
+from .utils.update_checker import check_for_updates
 
 console = Console()
 
@@ -380,6 +381,33 @@ secrets/
     help="Describe binary files",
 )
 @click.option(
+    "--condense-python/--no-condense-python",
+    default=False,
+    help="Condense Python files to signatures and docstrings",
+)
+@click.option(
+    "--python-condense-mode",
+    type=click.Choice(["signatures", "signatures_with_docstrings", "structure"]),
+    default="signatures_with_docstrings",
+    help="Python condensing mode",
+)
+@click.option(
+    "--condense-code/--no-condense-code",
+    default=False,
+    help="Condense code files (JS, TS, Java, etc.) to signatures",
+)
+@click.option(
+    "--code-condense-mode",
+    type=click.Choice(["signatures", "signatures_with_docstrings", "structure"]),
+    default="signatures_with_docstrings",
+    help="Code condensing mode for supported languages",
+)
+@click.option(
+    "--condense-languages",
+    default="js,ts,java,json,yaml",
+    help="Comma-separated list of languages to condense (or 'all')",
+)
+@click.option(
     "--max-file-size",
     type=int,
     default=1024 * 1024,  # 1MB
@@ -434,6 +462,47 @@ secrets/
     is_flag=True,
     help="Generate .folder2md_ignore template file",
 )
+@click.option(
+    "--smart-condensing/--no-smart-condensing",
+    default=False,
+    help="Enable smart anti-truncation engine with priority-aware condensing",
+)
+@click.option(
+    "--token-budget-strategy",
+    type=click.Choice(["conservative", "balanced", "aggressive"]),
+    default="balanced",
+    help="Token budget allocation strategy for smart condensing",
+)
+@click.option(
+    "--priority-analysis/--no-priority-analysis",
+    default=True,
+    help="Enable content priority analysis",
+)
+@click.option(
+    "--progressive-condensing/--no-progressive-condensing",
+    default=True,
+    help="Enable progressive condensing based on available budget",
+)
+@click.option(
+    "--smart-chunking/--no-smart-chunking",
+    default=True,
+    help="Enable context-aware chunking that preserves code structure",
+)
+@click.option(
+    "--critical-files",
+    default="",
+    help="Comma-separated patterns for files that should never be condensed",
+)
+@click.option(
+    "--check-updates",
+    is_flag=True,
+    help="Check for available updates from PyPI",
+)
+@click.option(
+    "--disable-update-check",
+    is_flag=True,
+    help="Disable automatic update checking",
+)
 @click.version_option(version=__version__)
 def main(
     path: Path,
@@ -446,6 +515,11 @@ def main(
     include_preamble: bool,
     convert_docs: bool,
     describe_binaries: bool,
+    condense_python: bool,
+    python_condense_mode: str,
+    condense_code: bool,
+    code_condense_mode: str,
+    condense_languages: str,
     max_file_size: int,
     token_limit: int | None,
     char_limit: int | None,
@@ -456,6 +530,14 @@ def main(
     clipboard: bool,
     verbose: bool,
     init_ignore: bool,
+    smart_condensing: bool,
+    token_budget_strategy: str,
+    priority_analysis: bool,
+    progressive_condensing: bool,
+    smart_chunking: bool,
+    critical_files: str,
+    check_updates: bool,
+    disable_update_check: bool,
 ) -> None:
     """Convert a folder structure to markdown format for LLM consumption.
 
@@ -466,8 +548,32 @@ def main(
         if init_ignore:
             _generate_ignore_template(path)
             return
+
+        # Handle explicit update check request
+        if check_updates:
+            latest_version = check_for_updates(
+                enabled=True, force=True, show_notification=True
+            )
+            if latest_version:
+                console.print(f"✨ Update available: {latest_version}", style="green")
+            else:
+                console.print("✅ You're running the latest version!", style="green")
+            return
         # Load configuration
         config_obj = Config.load(config_path=config, repo_path=path)
+
+        # Perform automatic update check (unless disabled)
+        if not disable_update_check and getattr(
+            config_obj, "update_check_enabled", True
+        ):
+            check_for_updates(
+                enabled=True,
+                force=False,
+                show_notification=True,
+                check_interval=getattr(
+                    config_obj, "update_check_interval", 24 * 60 * 60
+                ),
+            )
 
         # Override config with command line options
         if ignore_file:
@@ -478,6 +584,17 @@ def main(
         config_obj.include_preamble = include_preamble
         config_obj.convert_docs = convert_docs
         config_obj.describe_binaries = describe_binaries
+        config_obj.condense_python = condense_python
+        config_obj.python_condense_mode = python_condense_mode
+        config_obj.condense_code = condense_code
+        config_obj.code_condense_mode = code_condense_mode
+        # Parse condense_languages
+        if condense_languages.lower() == "all":
+            config_obj.condense_languages = "all"
+        else:
+            config_obj.condense_languages = [
+                lang.strip() for lang in condense_languages.split(",")
+            ]
         config_obj.max_file_size = max_file_size
         config_obj.verbose = verbose
 
@@ -490,6 +607,21 @@ def main(
         config_obj.token_estimation_method = token_estimation_method
         config_obj.max_workers = max_workers
         config_obj.use_gitignore = use_gitignore
+
+        # Set smart condensing options
+        config_obj.smart_condensing = smart_condensing
+        config_obj.token_budget_strategy = token_budget_strategy
+        config_obj.priority_analysis = priority_analysis
+        config_obj.progressive_condensing = progressive_condensing
+        config_obj.smart_chunking = smart_chunking
+
+        # Parse critical files patterns
+        if critical_files:
+            config_obj.critical_files = [
+                pattern.strip() for pattern in critical_files.split(",")
+            ]
+        else:
+            config_obj.critical_files = []
 
         # Set output file
         if not output:

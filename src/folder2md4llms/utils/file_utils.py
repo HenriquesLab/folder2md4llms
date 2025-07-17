@@ -149,6 +149,95 @@ def should_convert_file(file_path: Path) -> bool:
     return file_path.suffix.lower() in convertible_extensions
 
 
+def should_condense_python_file(file_path: Path, condense_python: bool = False) -> bool:
+    """Check if a Python file should be condensed.
+
+    Args:
+        file_path: Path to the file
+        condense_python: Whether Python condensing is enabled
+
+    Returns:
+        True if the file should be condensed as Python code
+    """
+    return condense_python and file_path.suffix.lower() == ".py"
+
+
+def should_condense_code_file(
+    file_path: Path, condense_code: bool = False, condense_languages: list = None
+) -> bool:
+    """Check if a code file should be condensed.
+
+    Args:
+        file_path: Path to the file
+        condense_code: Whether code condensing is enabled
+        condense_languages: List of languages to condense (or "all")
+
+    Returns:
+        True if the file should be condensed as code
+    """
+    if not condense_code:
+        return False
+
+    extension = file_path.suffix.lower()
+
+    if not condense_languages:
+        return False
+
+    # If "all" is specified, check against supported extensions
+    if "all" in condense_languages:
+        supported_extensions = {
+            ".js",
+            ".ts",
+            ".jsx",
+            ".tsx",
+            ".mjs",
+            ".cjs",  # JavaScript/TypeScript
+            ".java",  # Java
+            ".json",
+            ".yaml",
+            ".yml",
+            ".toml",
+            ".ini",
+            ".cfg",
+            ".conf",  # Config files
+        }
+        return extension in supported_extensions
+
+    # Convert language names to extensions and check
+    target_extensions = set()
+    for lang in condense_languages:
+        if lang in ["js", "javascript"]:
+            target_extensions.update([".js", ".jsx", ".mjs", ".cjs"])
+        elif lang in ["ts", "typescript"]:
+            target_extensions.update([".ts", ".tsx"])
+        elif lang in ["java"]:
+            target_extensions.add(".java")
+        elif lang in ["json"]:
+            target_extensions.add(".json")
+        elif lang in ["yaml", "yml"]:
+            target_extensions.update([".yaml", ".yml"])
+        elif lang in ["toml"]:
+            target_extensions.add(".toml")
+        elif lang in ["ini", "cfg", "conf"]:
+            target_extensions.update([".ini", ".cfg", ".conf"])
+        elif lang.startswith("."):
+            target_extensions.add(lang)
+
+    return extension in target_extensions
+
+
+def is_python_file(file_path: Path) -> bool:
+    """Check if a file is a Python file.
+
+    Args:
+        file_path: Path to the file
+
+    Returns:
+        True if the file is a Python file
+    """
+    return file_path.suffix.lower() == ".py"
+
+
 def is_image_file(file_path: Path) -> bool:
     """Check if a file is an image."""
     image_extensions = {
@@ -215,18 +304,41 @@ def is_executable_file(file_path: Path) -> bool:
     return file_path.suffix.lower() in executable_extensions
 
 
+def is_data_file(file_path: Path) -> bool:
+    """Check if a file is a data/binary file."""
+    data_extensions = {
+        ".pickle",
+        ".pkl",
+        ".db",
+        ".sqlite",
+        ".sqlite3",
+        ".db3",
+        ".s3db",
+        ".sl3",
+        ".mdb",
+        ".accdb",
+        ".cache",
+        ".dat",
+        ".bin",
+        ".tmp",
+    }
+    return file_path.suffix.lower() in data_extensions
+
+
 def get_file_category(file_path: Path) -> str:
     """Get the category of a file."""
-    if is_text_file(file_path):
-        return "text"
-    elif should_convert_file(file_path):
+    if should_convert_file(file_path):
         return "document"
+    elif is_data_file(file_path):
+        return "data"
     elif is_image_file(file_path):
         return "image"
     elif is_archive_file(file_path):
         return "archive"
     elif is_executable_file(file_path):
         return "executable"
+    elif is_text_file(file_path):
+        return "text"
     else:
         return "binary"
 

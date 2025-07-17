@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-01-17
+
 ### Added
+- **🚀 Smart Anti-Truncation Engine**: Revolutionary system to eliminate crude content truncation
+  - **Priority-based File Classification**: Automatically categorizes files by importance (CRITICAL/HIGH/MEDIUM/LOW)
+  - **Dynamic Token Budget Allocation**: Intelligent distribution of token budget based on content priority
+  - **Progressive Condensing**: 5-level adaptive compression system (none → light → moderate → heavy → maximum)
+  - **Context-aware Chunking**: Preserves semantic boundaries and never breaks functions mid-implementation
+  - **AST-based Code Analysis**: Deep understanding of Python, JavaScript, and Java code structures
+  - **Import Graph Analysis**: Determines dependency importance for better prioritization
+  - **Multi-language Support**: Extensible architecture for different programming languages
+  - **Budget Optimization**: Maximizes information density within token constraints
+- **Enhanced CLI Options**: New smart condensing flags
+  - `--smart-condensing`: Enable intelligent content condensing
+  - `--token-budget-strategy`: Choose allocation strategy (conservative/balanced/aggressive)
+  - `--priority-analysis`: Control priority classification behavior
 - **Streaming File Processing**: Handle large files without loading entire content into memory
 - **Parallel Processing**: Multi-threaded file analysis using ThreadPoolExecutor for improved performance
 - **File Chunking**: Split very large files into configurable chunks with token/size limits
@@ -20,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Cross-platform Compatibility**: Enhanced support for Windows, macOS, and Linux with platform-specific dependencies
 - **GitHub Actions Workflows**: Automated testing and PyPI publishing workflows
 - **Tag-based Versioning**: Integrated hatch-vcs for automatic version management from git tags
+- **Update Checker**: Optional automatic update notifications with caching support
 
 ### Changed
 - **BREAKING**: Minimum Python version requirement raised from 3.8 to 3.11
