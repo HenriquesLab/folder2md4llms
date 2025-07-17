@@ -42,9 +42,20 @@ class RepositoryProcessor:
 
         # Initialize smart engine if enabled
         self.smart_engine = None
-        if getattr(config, "smart_condensing", False) and getattr(
-            config, "token_limit", None
-        ):
+        if getattr(config, "smart_condensing", False):
+            # Determine token limit - use token_limit if available, otherwise convert char_limit
+            token_limit = getattr(config, "token_limit", None)
+            char_limit = getattr(config, "char_limit", None)
+
+            if token_limit:
+                total_token_limit = token_limit
+            elif char_limit:
+                # Convert char limit to approximate token limit (avg ~4 chars per token)
+                total_token_limit = char_limit // 4
+            else:
+                # Use a reasonable default if no limit is specified
+                total_token_limit = 100000  # ~25k words
+
             strategy_name = getattr(config, "token_budget_strategy", "balanced")
             try:
                 strategy = getattr(BudgetStrategy, strategy_name.upper())
@@ -52,9 +63,8 @@ class RepositoryProcessor:
                 strategy = BudgetStrategy.BALANCED
 
             self.smart_engine = SmartAntiTruncationEngine(
-                total_token_limit=config.token_limit,
+                total_token_limit=total_token_limit,
                 strategy=strategy,
-                enable_chunking=getattr(config, "smart_chunking", True),
                 enable_priority_analysis=getattr(config, "priority_analysis", True),
                 enable_progressive_condensing=getattr(
                     config, "progressive_condensing", True
@@ -82,12 +92,12 @@ class RepositoryProcessor:
             token_estimation_method=getattr(
                 config, "token_estimation_method", "average"
             ),
+            smart_engine_active=self.smart_engine is not None,
         )
 
         # Initialize streaming processor
         self.streaming_processor = StreamingFileProcessor(
             max_file_size=getattr(config, "max_file_size", 10 * 1024 * 1024),
-            max_tokens_per_chunk=getattr(config, "max_tokens_per_chunk", 8000),
             max_workers=getattr(config, "max_workers", 4),
             token_estimation_method=getattr(
                 config, "token_estimation_method", "average"
@@ -187,6 +197,20 @@ class RepositoryProcessor:
                 "token_count": results["stats"].get("estimated_tokens", 0),
             }
 
+            # Add smart condensing stats if smart engine was used
+            if self.smart_engine and results["stats"].get("smart_engine_used", False):
+                processing_stats.update(
+                    {
+                        "smart_engine_active": True,
+                        "original_tokens": results["stats"].get(
+                            "original_tokens_total", 0
+                        ),
+                        "condensed_tokens": results["stats"].get(
+                            "condensed_tokens_total", 0
+                        ),
+                    }
+                )
+
             # Generate output
             output = self.markdown_formatter.format_repository(
                 repo_path=repo_path,
@@ -195,7 +219,6 @@ class RepositoryProcessor:
                 file_stats=results["stats"],
                 binary_descriptions=results["binary_files"],
                 converted_docs=results["converted_docs"],
-                chunked_files=results["chunked_files"],
                 processing_stats=processing_stats,
             )
 
@@ -255,7 +278,6 @@ class RepositoryProcessor:
             "text_files": {},
             "converted_docs": {},
             "binary_files": {},
-            "chunked_files": {},
             "stats": defaultdict(int),
         }
 
@@ -265,7 +287,6 @@ class RepositoryProcessor:
             "text_files": 0,
             "binary_files": 0,
             "converted_docs": 0,
-            "chunked_files": 0,
             "total_size": 0,
             "text_size": 0,
             "languages": defaultdict(int),
@@ -319,18 +340,6 @@ class RepositoryProcessor:
                     results["text_files"][rel_path] = result["content"]
                     stats["text_files"] += 1
                     stats["text_size"] += len(result["content"].encode("utf-8"))
-                    stats["estimated_tokens"] += result.get("estimated_tokens", 0)
-
-                    # Track language
-                    language = get_language_from_extension(file_path.suffix.lower())
-                    if language:
-                        stats["languages"][language] += 1
-                    else:
-                        stats["languages"]["unknown"] += 1
-
-                elif result["status"] == "chunked":
-                    results["chunked_files"][rel_path] = result["chunks"]
-                    stats["chunked_files"] += 1
                     stats["estimated_tokens"] += result.get("estimated_tokens", 0)
 
                     # Track language
@@ -403,8 +412,6 @@ class RepositoryProcessor:
         stats.update(
             {
                 "streaming_processed": streaming_stats["processed_files"],
-                "streaming_chunked": streaming_stats["chunked_files"],
-                "streaming_chunks": streaming_stats["total_chunks"],
                 "streaming_skipped": streaming_stats["skipped_files"],
                 "streaming_errors": streaming_stats["error_files"],
             }
@@ -438,13 +445,16 @@ class RepositoryProcessor:
             "text_files": {},
             "converted_docs": {},
             "binary_files": {},
-            "chunked_files": {},
             "stats": defaultdict(int),
         }
 
         stats = defaultdict(int)
         stats["total_files"] = len(file_list)
         stats["languages"] = defaultdict(int)
+
+        # Track token counts for smart condensing stats
+        original_tokens_total = 0
+        condensed_tokens_total = 0
 
         # Optimize file processing order
         optimized_files = optimize_file_processing_order(file_list)
@@ -507,6 +517,12 @@ class RepositoryProcessor:
                     stats["text_files"] += 1
                     stats["text_size"] += len(processed_content.encode("utf-8"))
                     stats["estimated_tokens"] += processing_info.get("final_tokens", 0)
+
+                    # Track original and condensed tokens for smart condensing stats
+                    original_tokens = processing_info.get("original_tokens", 0)
+                    final_tokens = processing_info.get("final_tokens", 0)
+                    original_tokens_total += original_tokens
+                    condensed_tokens_total += final_tokens
 
                     # Track language
                     language = get_language_from_extension(file_path.suffix.lower())
@@ -591,13 +607,26 @@ class RepositoryProcessor:
 
                             (
                                 processed_content,
-                                _,
+                                processing_info,
                             ) = self.smart_engine.process_file_with_budget(
                                 file_path, converted_content, allocation_dict
                             )
                             results["converted_docs"][rel_path] = processed_content
+
+                            # Track tokens for smart condensing stats
+                            original_tokens = processing_info.get("original_tokens", 0)
+                            final_tokens = processing_info.get("final_tokens", 0)
+                            original_tokens_total += original_tokens
+                            condensed_tokens_total += final_tokens
                         else:
                             results["converted_docs"][rel_path] = converted_content
+
+                            # Track tokens for files not processed by smart engine
+                            from ..utils.token_utils import estimate_tokens_from_text
+
+                            tokens = estimate_tokens_from_text(converted_content)
+                            original_tokens_total += tokens
+                            condensed_tokens_total += tokens
                         stats["converted_docs"] += 1
 
                 elif self.config.describe_binaries:
@@ -630,6 +659,8 @@ class RepositoryProcessor:
                     "budget_compression_ratio": smart_stats.get(
                         "budget_report", {}
                     ).get("compression_ratio", 1.0),
+                    "original_tokens_total": original_tokens_total,
+                    "condensed_tokens_total": condensed_tokens_total,
                 }
             )
 

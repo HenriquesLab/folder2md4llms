@@ -43,8 +43,14 @@ folder2md /path/to/repo --output analysis.md
 # Skip tree generation and copy to clipboard
 folder2md /path/to/repo --no-tree --clipboard
 
-# Verbose mode with custom settings
-folder2md /path/to/repo --verbose --max-file-size 2097152
+# Smart condensing with token limit (fits content under 50k tokens)
+folder2md /path/to/repo --smart-condensing --token-limit 50000
+
+# Smart condensing with character limit (fits content under 200k chars)
+folder2md /path/to/repo --smart-condensing --char-limit 200000
+
+# Smart condensing with aggressive budget strategy
+folder2md /path/to/repo --smart-condensing --token-limit 30000 --token-budget-strategy aggressive
 
 # Generate ignore template file
 folder2md --init-ignore
@@ -115,6 +121,49 @@ uv run pytest --cov=folder2md4llms --cov-report=term-missing
 - **Code Analysis** - Create structured summaries for large repositories
 - **Knowledge Management** - Convert project structures into searchable markdown
 - **Team Onboarding** - Provide new team members with project overviews
+
+## 🧠 Smart Condensing
+
+The smart condensing feature uses an intelligent anti-truncation engine to fit large repositories within token or character limits while preserving the most important content.
+
+### How It Works
+
+1. **Priority Analysis** - Automatically categorizes files by importance (CRITICAL/HIGH/MEDIUM/LOW)
+2. **Dynamic Budget Allocation** - Distributes available tokens based on content priority
+3. **Progressive Condensing** - Applies 5 levels of adaptive compression (none → light → moderate → heavy → maximum)
+4. **Context-Aware Chunking** - Preserves semantic boundaries and never breaks functions mid-implementation
+
+### Usage
+
+```bash
+# Enable smart condensing with token limit
+folder2md . --smart-condensing --token-limit 50000
+
+# Enable smart condensing with character limit
+folder2md . --smart-condensing --char-limit 200000
+
+# Use aggressive budget strategy for maximum compression
+folder2md . --smart-condensing --token-limit 30000 --token-budget-strategy aggressive
+
+# Protect critical files from condensing
+folder2md . --smart-condensing --token-limit 40000 --critical-files "README.md,main.py"
+```
+
+### Budget Strategies
+
+- **Conservative** - Preserves more content, less aggressive condensing
+- **Balanced** - Good balance between content preservation and compression (default)
+- **Aggressive** - Maximum compression to fit more files within limits
+
+### Configuration
+
+```yaml
+# Enable smart condensing
+smart_condensing: true
+token_limit: 50000
+token_budget_strategy: balanced
+critical_files: ["README.md", "main.py"]
+```
 
 ## 🔧 Configuration
 

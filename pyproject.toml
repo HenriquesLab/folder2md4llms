@@ -103,6 +103,7 @@ dependencies = [
     "types-PyYAML",
     "pre-commit>=3.5.0",
     "lazydocs>=0.4.8",
+    "bandit",
 ]
 
 [tool.hatch.envs.dev.scripts]

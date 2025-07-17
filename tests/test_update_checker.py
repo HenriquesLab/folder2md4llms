@@ -41,7 +41,7 @@ class TestUpdateChecker:
         assert update_checker.check_interval == 60
         assert update_checker.cache_dir == self.temp_dir
         assert update_checker.cache_file == self.cache_file
-        assert update_checker.current_version.startswith("0.3.1")
+        assert update_checker.current_version.startswith("0.4.1")
 
     def test_ensure_cache_dir(self, update_checker):
         """Test cache directory creation."""
@@ -132,17 +132,30 @@ class TestUpdateChecker:
 
     def test_is_newer_version(self, update_checker):
         """Test version comparison."""
-        # Current version starts with 0.3.1 -> normalized to (0, 3, 1)
+        # Current version starts with 0.4.1 -> normalized to (0, 4, 1)
 
         # Newer versions
-        assert update_checker._is_newer_version("0.3.2") is True
-        assert update_checker._is_newer_version("0.4.0") is True
+        assert update_checker._is_newer_version("0.4.2") is True
+        assert update_checker._is_newer_version("0.5.0") is True
         assert update_checker._is_newer_version("1.0.0") is True
 
-        # Same or older versions
-        assert update_checker._is_newer_version("0.3.1") is False
-        assert update_checker._is_newer_version("0.3.0") is False
-        assert update_checker._is_newer_version("0.2.9") is False
+        # Same version
+        assert update_checker._is_newer_version("0.4.1") is False
+
+        # Older versions
+        assert update_checker._is_newer_version("0.4.0") is False
+        assert update_checker._is_newer_version("0.3.9") is False
+
+        # With dev tags
+        assert update_checker._is_newer_version("0.4.2-dev") is True
+        assert update_checker._is_newer_version("0.4.1-dev") is False
+
+        # With different lengths
+        assert update_checker._is_newer_version("0.4.1.1") is True
+        assert update_checker._is_newer_version("0.4.0.1") is False
+
+        # Invalid versions should be handled gracefully
+        assert update_checker._is_newer_version("invalid") is False
 
     @pytest.mark.asyncio
     async def test_fetch_latest_version_success(self, update_checker):

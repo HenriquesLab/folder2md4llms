@@ -26,6 +26,9 @@ folder2md /path/to/repository
 - `--clipboard`: Copy output to clipboard
 - `--verbose, -v`: Verbose output
 - `--init-ignore`: Generate .folder2md_ignore template file
+- `--smart-condensing`: Enable smart anti-truncation engine with priority-aware condensing
+- `--token-budget-strategy`: Token budget allocation strategy (conservative/balanced/aggressive)
+- `--critical-files`: Comma-separated patterns for files that should never be condensed
 - `--version`: Show version information
 - `--help`: Show help message
 
@@ -46,6 +49,12 @@ folder2md /path/to/repo --verbose --max-file-size 2097152 --no-convert-docs
 
 # Use custom ignore file
 folder2md /path/to/repo --ignore-file my_custom_ignore
+
+# Smart condensing with token limit
+folder2md /path/to/repo --smart-condensing --token-limit 50000
+
+# Smart condensing with character limit
+folder2md /path/to/repo --smart-condensing --char-limit 200000
 
 # Generate ignore template file
 folder2md --init-ignore
@@ -95,6 +104,13 @@ chunk_large_files: true
 # Performance settings
 max_workers: 4
 progress_bar: true
+
+# Smart condensing settings
+smart_condensing: true
+token_limit: 50000
+char_limit: 200000
+token_budget_strategy: balanced  # conservative, balanced, aggressive
+critical_files: ["README.md", "main.py"]
 ```
 
 ### Ignore Patterns

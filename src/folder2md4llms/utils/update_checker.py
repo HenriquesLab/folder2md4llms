@@ -86,7 +86,14 @@ class UpdateChecker:
             Tuple of version parts for comparison
         """
         # Remove development/build suffixes for comparison
-        clean_version = version.split(".dev")[0].split("+")[0]
+        clean_version = (
+            version.split(".dev")[0]
+            .split("+")[0]
+            .split("-dev")[0]
+            .split("-rc")[0]
+            .split("-alpha")[0]
+            .split("-beta")[0]
+        )
 
         try:
             parts = []
@@ -102,18 +109,56 @@ class UpdateChecker:
             return (clean_version,)
 
     def _is_newer_version(self, latest_version: str) -> bool:
-        """Check if the latest version is newer than current version.
+        """Check if the latest version is newer than current version, handling mixed types."""
+        try:
+            current_normalized = self._normalize_version(self.current_version)
+            latest_normalized = self._normalize_version(latest_version)
 
-        Args:
-            latest_version: Latest version from PyPI
+            # If either version contains only strings, it's likely invalid
+            current_has_numbers = any(
+                isinstance(part, int) for part in current_normalized
+            )
+            latest_has_numbers = any(
+                isinstance(part, int) for part in latest_normalized
+            )
 
-        Returns:
-            True if latest_version is newer than current version
-        """
-        current_normalized = self._normalize_version(self.current_version)
-        latest_normalized = self._normalize_version(latest_version)
+            # If latest version has no numbers but current does, it's invalid
+            if current_has_numbers and not latest_has_numbers:
+                return False
 
-        return latest_normalized > current_normalized
+            # If current version has no numbers but latest does, latest is newer
+            if not current_has_numbers and latest_has_numbers:
+                return True
+
+            # Compare element-wise, handling int/str gracefully
+            max_length = max(len(current_normalized), len(latest_normalized))
+
+            for i in range(max_length):
+                # Get current part, defaulting to 0 if index doesn't exist
+                current_part = (
+                    current_normalized[i] if i < len(current_normalized) else 0
+                )
+                latest_part = latest_normalized[i] if i < len(latest_normalized) else 0
+
+                # Convert to same type for comparison
+                if isinstance(current_part, int) and isinstance(latest_part, int):
+                    if latest_part > current_part:
+                        return True
+                    if latest_part < current_part:
+                        return False
+                else:
+                    # If types differ, convert both to str for comparison
+                    current_str = str(current_part)
+                    latest_str = str(latest_part)
+                    if latest_str > current_str:
+                        return True
+                    if latest_str < current_str:
+                        return False
+            # If all compared equal, not newer
+            return False
+        except Exception:
+            # If comparison fails, assume not newer
+            return False
 
     async def _fetch_latest_version(self) -> str | None:
         """Fetch the latest version from PyPI API.

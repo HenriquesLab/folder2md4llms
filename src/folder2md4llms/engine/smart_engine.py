@@ -1,12 +1,14 @@
 """Smart anti-truncation engine that orchestrates intelligent content processing."""
 
+import logging
 from pathlib import Path
 
 from ..analyzers.priority_analyzer import ContentPriorityAnalyzer, PriorityLevel
 from ..analyzers.progressive_condenser import ProgressiveCondenser
 from ..utils.smart_budget_manager import BudgetStrategy, SmartTokenBudgetManager
-from ..utils.smart_chunker import SmartChunker
 from ..utils.token_utils import estimate_tokens_from_text
+
+logger = logging.getLogger(__name__)
 
 
 class SmartAntiTruncationEngine:
@@ -16,7 +18,6 @@ class SmartAntiTruncationEngine:
         self,
         total_token_limit: int,
         strategy: BudgetStrategy = BudgetStrategy.BALANCED,
-        enable_chunking: bool = True,
         enable_priority_analysis: bool = True,
         enable_progressive_condensing: bool = True,
     ):
@@ -25,13 +26,15 @@ class SmartAntiTruncationEngine:
         Args:
             total_token_limit: Total token budget for output
             strategy: Budget allocation strategy
-            enable_chunking: Whether to enable smart chunking
             enable_priority_analysis: Whether to analyze content priorities
             enable_progressive_condensing: Whether to use progressive condensing
         """
+        # Validate token limit
+        if total_token_limit is not None and total_token_limit <= 0:
+            raise ValueError("Total token limit must be positive")
+
         self.total_token_limit = total_token_limit
         self.strategy = strategy
-        self.enable_chunking = enable_chunking
         self.enable_priority_analysis = enable_priority_analysis
         self.enable_progressive_condensing = enable_progressive_condensing
 
@@ -52,16 +55,14 @@ class SmartAntiTruncationEngine:
             ProgressiveCondenser() if enable_progressive_condensing else None
         )
 
-        self.smart_chunker = SmartChunker() if enable_chunking else None
-
         # Track processing statistics
         self.stats = {
             "files_processed": 0,
             "total_tokens_saved": 0,
             "budget_allocations_made": 0,
-            "chunks_created": 0,
             "priority_analyses_performed": 0,
             "progressive_condensing_applied": 0,
+            "chunks_created": 0,
         }
 
     def analyze_repository(
@@ -170,11 +171,17 @@ class SmartAntiTruncationEngine:
 
         # Determine available tokens
         if allocation and "allocated_tokens" in allocation:
-            available_tokens = allocation["allocated_tokens"]
+            available_tokens = max(
+                0, allocation["allocated_tokens"]
+            )  # Ensure non-negative
             priority = allocation.get("priority", PriorityLevel.MEDIUM)
         else:
             available_tokens = estimate_tokens_from_text(content)
             priority = PriorityLevel.MEDIUM
+
+        # Ensure available_tokens is always positive
+        if available_tokens <= 0:
+            available_tokens = 100  # Minimum fallback
 
         processing_info = {
             "original_tokens": estimate_tokens_from_text(content),
@@ -223,68 +230,13 @@ class SmartAntiTruncationEngine:
             self.stats["progressive_condensing_applied"] += 1
             self.stats["total_tokens_saved"] += condensing_info.get("tokens_saved", 0)
 
-            # Check if chunking is still needed
-            final_tokens = processing_info["final_tokens"]
-            if final_tokens <= available_tokens or not self.enable_chunking:
-                return condensed_content, processing_info
-            else:
-                # Apply smart chunking to condensed content
-                return self._apply_smart_chunking(
-                    condensed_content, file_path, available_tokens, processing_info
-                )
-
-        # Fall back to chunking if no condensing available
-        elif self.enable_chunking and self.smart_chunker:
-            return self._apply_smart_chunking(
-                content, file_path, available_tokens, processing_info
-            )
+            return condensed_content, processing_info
 
         # Last resort: truncate intelligently
         else:
             return self._intelligent_truncate(
                 content, available_tokens, processing_info
             )
-
-    def _apply_smart_chunking(
-        self,
-        content: str,
-        file_path: Path,
-        available_tokens: int,
-        processing_info: dict,
-    ) -> tuple[str, dict]:
-        """Apply smart chunking to content."""
-        chunks = self.smart_chunker.chunk_with_context(
-            content=content,
-            file_path=file_path,
-            max_tokens=available_tokens,
-            priority=PriorityLevel.MEDIUM,  # Could be enhanced with actual priority
-        )
-
-        if chunks:
-            # For now, return the first chunk with continuation info
-            first_chunk = chunks[0]
-            chunked_content = first_chunk.content
-
-            if len(chunks) > 1:
-                chunked_content += (
-                    f"\n\n# [Continues in {len(chunks) - 1} more chunks...]"
-                )
-
-            processing_info.update(
-                {
-                    "method": "smart_chunking",
-                    "total_chunks": len(chunks),
-                    "chunk_info": f"Showing chunk 1 of {len(chunks)}",
-                    "final_tokens": first_chunk.estimated_tokens
-                    or estimate_tokens_from_text(chunked_content),
-                }
-            )
-
-            self.stats["chunks_created"] += len(chunks)
-
-            return chunked_content, processing_info
-
-        return content, processing_info
 
     def _intelligent_truncate(
         self, content: str, available_tokens: int, processing_info: dict
@@ -318,12 +270,19 @@ class SmartAntiTruncationEngine:
 
         # Add regular lines until we hit the limit
         for line in regular_lines:
-            line_tokens = estimate_tokens_from_text(line)
-            if current_tokens + line_tokens <= available_tokens * 0.9:  # Leave buffer
-                truncated_lines.append(line)
-                current_tokens += line_tokens
-            else:
-                break
+            try:
+                line_tokens = estimate_tokens_from_text(line)
+                if (
+                    current_tokens + line_tokens <= available_tokens * 0.9
+                ):  # Leave buffer
+                    truncated_lines.append(line)
+                    current_tokens += line_tokens
+                else:
+                    break
+            except Exception as e:
+                logger.error(f"Error processing line: {e}")
+                # Skip problematic lines
+                continue
 
         truncated_content = "\n".join(truncated_lines)
         if len(truncated_lines) < len(lines):
@@ -359,9 +318,6 @@ class SmartAntiTruncationEngine:
             report[
                 "condensing_stats"
             ] = self.progressive_condenser.get_condensing_stats()
-
-        if self.smart_chunker:
-            report["chunking_stats"] = self.smart_chunker.get_chunking_stats()
 
         return report
 
@@ -410,9 +366,9 @@ class SmartAntiTruncationEngine:
             "files_processed": 0,
             "total_tokens_saved": 0,
             "budget_allocations_made": 0,
-            "chunks_created": 0,
             "priority_analyses_performed": 0,
             "progressive_condensing_applied": 0,
+            "chunks_created": 0,
         }
 
         if self.budget_manager:
@@ -422,6 +378,3 @@ class SmartAntiTruncationEngine:
 
         if self.progressive_condenser:
             self.progressive_condenser = ProgressiveCondenser()
-
-        if self.smart_chunker:
-            self.smart_chunker = SmartChunker()

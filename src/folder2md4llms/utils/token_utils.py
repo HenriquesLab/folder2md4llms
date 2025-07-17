@@ -1,7 +1,7 @@
 """Token counting and streaming utilities for LLM workflows."""
 
 import re
-from collections.abc import Generator, Iterator
+from collections.abc import Generator
 from pathlib import Path
 
 # Token estimation constants for different models
@@ -47,6 +47,10 @@ def estimate_tokens_from_text(text: str, method: str = "average") -> int:
     # Code typically has more tokens per character
     if _is_likely_code(text):
         ratio *= 0.8  # Code has more tokens per character
+
+    # Ensure ratio is never zero or negative
+    if ratio <= 0:
+        ratio = CHAR_TO_TOKEN_RATIO["average"]
 
     return int(char_count / ratio)
 
@@ -95,6 +99,10 @@ def estimate_tokens_from_file(file_path: Path, method: str = "average") -> int:
         if _is_likely_code_file(file_path):
             ratio *= 0.8
 
+        # Ensure ratio is never zero or negative
+        if ratio <= 0:
+            ratio = CHAR_TO_TOKEN_RATIO["average"]
+
         return int(total_chars / ratio)
 
     except (OSError, PermissionError):
@@ -129,7 +137,7 @@ def _is_likely_code(text: str) -> bool:
                 break
 
     # If more than 30% of lines look like code, consider it code
-    return code_lines / len(lines) > 0.3 if lines else False
+    return (code_lines / len(lines) > 0.3) if lines else False
 
 
 def _is_likely_code_file(file_path: Path) -> bool:
@@ -240,105 +248,6 @@ def stream_file_content(
     except Exception:
         # If all fails, return empty generator
         return
-
-
-def chunk_text_by_tokens(
-    text: str, max_tokens: int, method: str = "average"
-) -> Iterator[str]:
-    """Split text into chunks that fit within token limits.
-
-    Args:
-        text: Text to chunk
-        max_tokens: Maximum tokens per chunk
-        method: Token estimation method
-
-    Yields:
-        Text chunks that fit within the token limit
-    """
-    if not text:
-        return
-
-    # Estimate tokens for the entire text
-    total_tokens = estimate_tokens_from_text(text, method)
-
-    if total_tokens <= max_tokens:
-        yield text
-        return
-
-    # Split by paragraphs first, then by sentences if needed
-    paragraphs = text.split("\n\n")
-    current_chunk = ""
-    current_tokens = 0
-
-    for paragraph in paragraphs:
-        paragraph_tokens = estimate_tokens_from_text(paragraph, method)
-
-        # If paragraph alone exceeds limit, split by sentences
-        if paragraph_tokens > max_tokens:
-            # Yield current chunk if it has content
-            if current_chunk:
-                yield current_chunk
-                current_chunk = ""
-                current_tokens = 0
-
-            # Split paragraph by sentences
-            sentences = re.split(r"[.!?]+", paragraph)
-
-            for sentence in sentences:
-                sentence = sentence.strip()
-                if not sentence:
-                    continue
-
-                sentence_tokens = estimate_tokens_from_text(sentence, method)
-
-                if current_tokens + sentence_tokens > max_tokens:
-                    if current_chunk:
-                        yield current_chunk
-                        current_chunk = sentence
-                        current_tokens = sentence_tokens
-                    else:
-                        # Single sentence too long, split by words
-                        words = sentence.split()
-                        word_chunk = ""
-
-                        for word in words:
-                            word_tokens = estimate_tokens_from_text(word, method)
-
-                            if current_tokens + word_tokens > max_tokens:
-                                if word_chunk:
-                                    yield word_chunk
-                                    word_chunk = word
-                                    current_tokens = word_tokens
-                                else:
-                                    # Single word too long, just yield it
-                                    yield word
-                                    current_tokens = 0
-                            else:
-                                word_chunk += " " + word if word_chunk else word
-                                current_tokens += word_tokens
-
-                        if word_chunk:
-                            current_chunk = word_chunk
-                        else:
-                            current_chunk = ""
-                            current_tokens = 0
-                else:
-                    current_chunk += "\n" + sentence if current_chunk else sentence
-                    current_tokens += sentence_tokens
-        else:
-            # Check if adding this paragraph would exceed limit
-            if current_tokens + paragraph_tokens > max_tokens:
-                if current_chunk:
-                    yield current_chunk
-                current_chunk = paragraph
-                current_tokens = paragraph_tokens
-            else:
-                current_chunk += "\n\n" + paragraph if current_chunk else paragraph
-                current_tokens += paragraph_tokens
-
-    # Yield final chunk
-    if current_chunk:
-        yield current_chunk
 
 
 def get_model_token_limit(model_name: str) -> int:

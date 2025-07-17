@@ -7,9 +7,7 @@ from pathlib import Path
 
 from .file_utils import is_text_file
 from .token_utils import (
-    chunk_text_by_tokens,
     estimate_tokens_from_file,
-    stream_file_content,
 )
 
 logger = logging.getLogger(__name__)
@@ -21,7 +19,6 @@ class StreamingFileProcessor:
     def __init__(
         self,
         max_file_size: int = 10 * 1024 * 1024,  # 10MB
-        max_tokens_per_chunk: int = 8000,
         max_workers: int = 4,
         token_estimation_method: str = "average",  # noqa: S107
     ):
@@ -29,12 +26,10 @@ class StreamingFileProcessor:
 
         Args:
             max_file_size: Maximum file size to process in bytes
-            max_tokens_per_chunk: Maximum tokens per chunk
             max_workers: Maximum number of worker threads
             token_estimation_method: Method for token estimation
         """
         self.max_file_size = max_file_size
-        self.max_tokens_per_chunk = max_tokens_per_chunk
         self.max_workers = max_workers
         self.token_estimation_method = token_estimation_method
 
@@ -42,8 +37,6 @@ class StreamingFileProcessor:
         self._stats_lock = threading.Lock()
         self._stats = {
             "processed_files": 0,
-            "chunked_files": 0,
-            "total_chunks": 0,
             "skipped_files": 0,
             "error_files": 0,
             "total_estimated_tokens": 0,
@@ -69,7 +62,6 @@ class StreamingFileProcessor:
                     "status": "skipped",
                     "reason": f"File too large: {file_size} bytes",
                     "content": None,
-                    "chunks": None,
                 }
 
             # Check if file is text
@@ -80,7 +72,6 @@ class StreamingFileProcessor:
                     "status": "skipped",
                     "reason": "Not a text file",
                     "content": None,
-                    "chunks": None,
                 }
 
             # Estimate tokens
@@ -91,42 +82,25 @@ class StreamingFileProcessor:
             with self._stats_lock:
                 self._stats["total_estimated_tokens"] += estimated_tokens
 
-            # If file is small enough, read normally
-            if estimated_tokens <= self.max_tokens_per_chunk:
-                content = self._read_file_content(file_path)
-                if content is not None:
-                    with self._stats_lock:
-                        self._stats["processed_files"] += 1
+            # Read file content
+            content = self._read_file_content(file_path)
+            if content is not None:
+                with self._stats_lock:
+                    self._stats["processed_files"] += 1
 
-                    return {
-                        "status": "processed",
-                        "content": content,
-                        "chunks": None,
-                        "estimated_tokens": estimated_tokens,
-                    }
-                else:
-                    with self._stats_lock:
-                        self._stats["error_files"] += 1
-                    return {
-                        "status": "error",
-                        "reason": "Failed to read file",
-                        "content": None,
-                        "chunks": None,
-                    }
-
-            # File is large, process in chunks
-            chunks = self._process_file_in_chunks(file_path)
-
-            with self._stats_lock:
-                self._stats["chunked_files"] += 1
-                self._stats["total_chunks"] += len(chunks)
-
-            return {
-                "status": "chunked",
-                "content": None,
-                "chunks": chunks,
-                "estimated_tokens": estimated_tokens,
-            }
+                return {
+                    "status": "processed",
+                    "content": content,
+                    "estimated_tokens": estimated_tokens,
+                }
+            else:
+                with self._stats_lock:
+                    self._stats["error_files"] += 1
+                return {
+                    "status": "error",
+                    "reason": "Failed to read file",
+                    "content": None,
+                }
 
         except Exception as e:
             logger.error(f"Error processing file {file_path}: {e}")
@@ -137,7 +111,6 @@ class StreamingFileProcessor:
                 "status": "error",
                 "reason": str(e),
                 "content": None,
-                "chunks": None,
             }
 
     def process_files_parallel(self, file_paths: list[Path]) -> dict[str, dict]:
@@ -170,7 +143,6 @@ class StreamingFileProcessor:
                         "status": "error",
                         "reason": str(e),
                         "content": None,
-                        "chunks": None,
                     }
 
         return results
@@ -194,32 +166,6 @@ class StreamingFileProcessor:
         except Exception:
             return None
 
-    def _process_file_in_chunks(self, file_path: Path) -> list[str]:
-        """Process a large file in chunks."""
-        chunks = []
-
-        try:
-            # Stream file content
-            content_parts = []
-
-            for chunk in stream_file_content(file_path):
-                content_parts.append(chunk)
-
-            # Combine all parts
-            full_content = "".join(content_parts)
-
-            # Split into token-limited chunks
-            for chunk in chunk_text_by_tokens(
-                full_content, self.max_tokens_per_chunk, self.token_estimation_method
-            ):
-                chunks.append(chunk)
-
-            return chunks
-
-        except Exception as e:
-            logger.error(f"Error chunking file {file_path}: {e}")
-            return []
-
     def get_stats(self) -> dict[str, int]:
         """Get processing statistics."""
         with self._stats_lock:
@@ -230,8 +176,6 @@ class StreamingFileProcessor:
         with self._stats_lock:
             self._stats = {
                 "processed_files": 0,
-                "chunked_files": 0,
-                "total_chunks": 0,
                 "skipped_files": 0,
                 "error_files": 0,
                 "total_estimated_tokens": 0,

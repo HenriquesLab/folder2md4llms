@@ -153,3 +153,6 @@ Claude.md
 
 # Ruff
 .ruff_cache/
+
+# Auto-generated version file
+src/folder2md4llms/__about__.py

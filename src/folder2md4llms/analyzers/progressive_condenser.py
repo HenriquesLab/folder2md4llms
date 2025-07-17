@@ -2,6 +2,7 @@
 
 import ast
 import re
+from collections import defaultdict
 from pathlib import Path
 
 from ..utils.token_utils import estimate_tokens_from_text
@@ -18,6 +19,56 @@ class CondensingLevel:
     MAXIMUM = "maximum"  # Minimal structure only
 
 
+class PythonCodeAnalyzer:
+    """Enhanced Python analyzer with better structure understanding."""
+
+    def extract_class_hierarchy(self, tree: ast.AST) -> dict:
+        """Extract class inheritance relationships."""
+        hierarchy = {}
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                bases = [self._get_name(base) for base in node.bases]
+                hierarchy[node.name] = {
+                    "bases": bases,
+                    "methods": [
+                        n.name for n in node.body if isinstance(n, ast.FunctionDef)
+                    ],
+                    "has_init": any(
+                        n.name == "__init__"
+                        for n in node.body
+                        if isinstance(n, ast.FunctionDef)
+                    ),
+                    "decorators": [self._get_name(d) for d in node.decorator_list],
+                }
+
+        return hierarchy
+
+    def identify_design_patterns(self, tree: ast.AST) -> list[str]:
+        """Identify common design patterns to preserve important structure."""
+        patterns = []
+
+        # Singleton pattern
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                methods = [n.name for n in node.body if isinstance(n, ast.FunctionDef)]
+                if "__new__" in methods or any(
+                    "_instance" in str(n) for n in ast.walk(node)
+                ):
+                    patterns.append(f"Singleton: {node.name}")
+
+        return patterns
+
+    def _get_name(self, node: ast.AST) -> str:
+        """Get name from AST node."""
+        if isinstance(node, ast.Name):
+            return node.id
+        elif isinstance(node, ast.Attribute):
+            return f"{self._get_name(node.value)}.{node.attr}"
+        else:
+            return str(node)
+
+
 class ProgressiveCondenser:
     """Adaptively condenses code based on available token budget and content priority."""
 
@@ -28,6 +79,9 @@ class ProgressiveCondenser:
             "tokens_saved": 0,
             "condensing_levels_used": {},
         }
+
+        # Enhanced pattern detection for better condensing
+        self.python_analyzer = PythonCodeAnalyzer()
 
     def condense_with_budget(
         self,
@@ -55,6 +109,10 @@ class ProgressiveCondenser:
         # Estimate tokens if not provided
         if estimated_tokens is None:
             estimated_tokens = estimate_tokens_from_text(content)
+
+        # Handle empty content
+        if estimated_tokens <= 0:
+            return content, {"level": CondensingLevel.NONE, "tokens_saved": 0}
 
         # Determine target condensing level
         target_level = self._determine_condensing_level(
@@ -158,12 +216,100 @@ class ProgressiveCondenser:
         """
         return self.stats.copy()
 
+    def generate_smart_statistics(self, processing_results: dict) -> dict:
+        """Generate intelligent statistics about the processing."""
+        stats = {
+            "condensing_effectiveness": {
+                "files_condensed": 0,
+                "average_compression": 0.0,
+                "tokens_saved": 0,
+            },
+            "priority_distribution": defaultdict(int),
+            "framework_detected": None,
+            "patterns_found": [],
+            "quality_metrics": {
+                "preserved_api_completeness": 0.0,
+                "documentation_coverage": 0.0,
+            },
+        }
+
+        # Calculate meaningful metrics
+        total_compression = 0.0
+        condensed_files = 0
+
+        for file_result in processing_results.get("files", []):
+            if file_result.get("condensed"):
+                condensed_files += 1
+                compression_ratio = file_result.get("compression_ratio", 1.0)
+                total_compression += compression_ratio
+                stats["condensing_effectiveness"]["tokens_saved"] += file_result.get(
+                    "tokens_saved", 0
+                )
+
+            priority = file_result.get("priority", "MEDIUM")
+            stats["priority_distribution"][priority] += 1
+
+        if condensed_files > 0:
+            stats["condensing_effectiveness"]["files_condensed"] = condensed_files
+            stats["condensing_effectiveness"]["average_compression"] = (
+                total_compression / condensed_files
+            )
+
+        return stats
+
+    def detect_repetitive_patterns(
+        self, content: str, file_extension: str
+    ) -> list[tuple[str, int]]:
+        """Detect repetitive code patterns that can be condensed."""
+        patterns = []
+
+        if file_extension == ".py":
+            try:
+                tree = ast.parse(content)
+                # Extract function names from AST
+                function_names = []
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.FunctionDef):
+                        function_names.append(node.name)
+
+                # Count similar patterns
+                pattern_counts = defaultdict(int)
+                for func_name in function_names:
+                    # Normalize to detect patterns like get_X, set_X
+                    normalized = re.sub(
+                        r"^(get|set|create|delete|update)_\w+$", r"\1_ACTION", func_name
+                    )
+                    if normalized != func_name:  # Only count if pattern was found
+                        pattern_counts[normalized] += 1
+
+                # Report patterns that occur more than twice
+                patterns = [(p, c) for p, c in pattern_counts.items() if c > 2]
+            except SyntaxError:
+                pass
+
+        return patterns
+
+    def create_pattern_summary(self, patterns: list[tuple[str, int]]) -> str:
+        """Create a concise summary of repetitive patterns."""
+        if not patterns:
+            return ""
+
+        summary = ["# Pattern Summary:"]
+        for pattern, count in patterns:
+            summary.append(f"# {pattern} pattern repeated {count} times")
+
+        return "\n".join(summary)
+
     def _determine_condensing_level(
         self, estimated_tokens: int, available_tokens: int, priority: PriorityLevel
     ) -> str:
         """Determine the appropriate condensing level."""
         if available_tokens >= estimated_tokens:
             return CondensingLevel.NONE
+
+        # Prevent division by zero
+        if available_tokens <= 0:
+            return CondensingLevel.MAXIMUM
 
         compression_needed = estimated_tokens / available_tokens
 
@@ -203,19 +349,213 @@ class ProgressiveCondenser:
         if level == CondensingLevel.NONE:
             return content
 
-        # Detect language from file extension
+        # Apply semantic-aware condensing that preserves logical units
+        return self._apply_semantic_condensing(content, level, file_path, priority)
+
+    def _apply_semantic_condensing(
+        self, content: str, level: str, file_path: Path, priority: PriorityLevel
+    ) -> str:
+        """Apply semantic-aware condensing that preserves logical units."""
         suffix = file_path.suffix.lower()
 
-        if suffix == ".py":
-            return self._condense_python_content(content, level, priority)
-        elif suffix in [".js", ".ts", ".jsx", ".tsx"]:
-            return self._condense_javascript_content(content, level, priority)
-        elif suffix == ".java":
-            return self._condense_java_content(content, level, priority)
-        elif suffix in [".json", ".yaml", ".yml"]:
-            return self._condense_config_content(content, level)
+        if level == CondensingLevel.LIGHT:
+            # Remove only truly redundant content
+            content = self._remove_obvious_comments(content)
+            content = self._normalize_whitespace(content)
+
+        elif level == CondensingLevel.MODERATE:
+            # Preserve structure but condense implementation
+            if suffix == ".py":
+                content = self._preserve_api_signatures(content)
+            elif suffix in [".js", ".ts", ".jsx", ".tsx"]:
+                content = self._condense_javascript_content(content, level, priority)
+            elif suffix == ".java":
+                content = self._condense_java_content(content, level, priority)
+            else:
+                content = self._condense_generic_content(content, level)
+
+        elif level == CondensingLevel.HEAVY:
+            # Keep only public interfaces
+            content = self._extract_public_api(content, suffix)
+
+        elif level == CondensingLevel.MAXIMUM:
+            # Maximum condensing with pattern detection
+            patterns = self.detect_repetitive_patterns(content, suffix)
+            if patterns:
+                content = self.create_pattern_summary(patterns)
+            else:
+                content = self._maximum_condense_content(content, suffix)
+
+        return content
+
+    def _remove_obvious_comments(self, content: str) -> str:
+        """Remove obvious comments while preserving important ones."""
+        lines = content.split("\n")
+        result = []
+
+        for line in lines:
+            stripped = line.strip()
+            # Keep docstrings and important comments
+            if stripped.startswith("#") and not any(
+                keyword in stripped.lower()
+                for keyword in ["todo", "fixme", "hack", "note", "important", "warning"]
+            ):
+                # Skip obvious comments
+                continue
+            result.append(line)
+
+        return "\n".join(result)
+
+    def _normalize_whitespace(self, content: str) -> str:
+        """Normalize excessive whitespace."""
+        # Remove multiple consecutive empty lines
+        content = re.sub(r"\n\s*\n\s*\n+", "\n\n", content)
+        # Remove trailing whitespace
+        lines = [line.rstrip() for line in content.split("\n")]
+        return "\n".join(lines)
+
+    def _preserve_api_signatures(self, content: str) -> str:
+        """Preserve public API signatures while condensing implementation."""
+        try:
+            tree = ast.parse(content)
+            preserved = []
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef):
+                    if not node.name.startswith("_"):  # Public method
+                        # Preserve signature and docstring
+                        sig_lines = self._extract_signature_and_docs(content, node)
+                        preserved.extend(sig_lines)
+
+            return "\n".join(preserved)
+        except SyntaxError:
+            return content
+
+    def _extract_signature_and_docs(
+        self, content: str, node: ast.FunctionDef
+    ) -> list[str]:
+        """Extract function signature and docstring."""
+        lines = content.split("\n")
+        result = []
+
+        if hasattr(node, "lineno"):
+            start_line = node.lineno - 1
+            # Add function signature
+            i = start_line
+            while i < len(lines) and ":" not in lines[i]:
+                result.append(lines[i])
+                i += 1
+            if i < len(lines):
+                result.append(lines[i])  # Line with colon
+
+            # Add docstring if present
+            docstring = ast.get_docstring(node)
+            if docstring:
+                result.append('    """')
+                result.append(f"    {docstring}")
+                result.append('    """')
+
+            result.append("")  # Empty line after function
+
+        return result
+
+    def _extract_public_api(self, content: str, file_type: str) -> str:
+        """Extract only public API interfaces."""
+        if file_type == ".py":
+            return self._extract_python_public_api(content)
+        elif file_type in [".js", ".ts", ".jsx", ".tsx"]:
+            return self._extract_js_public_api(content)
+        elif file_type == ".java":
+            return self._extract_java_public_api(content)
         else:
-            return self._condense_generic_content(content, level)
+            return self._condense_generic_content(content, CondensingLevel.HEAVY)
+
+    def _extract_python_public_api(self, content: str) -> str:
+        """Extract Python public API."""
+        try:
+            tree = ast.parse(content)
+            result = []
+
+            for node in tree.body:
+                if isinstance(node, ast.ClassDef):
+                    result.append(f"class {node.name}:")
+                    # Add public methods
+                    for item in node.body:
+                        if isinstance(
+                            item, ast.FunctionDef
+                        ) and not item.name.startswith("_"):
+                            args = [arg.arg for arg in item.args.args]
+                            result.append(
+                                f"    def {item.name}({', '.join(args)}): ..."
+                            )
+                elif isinstance(node, ast.FunctionDef) and not node.name.startswith(
+                    "_"
+                ):
+                    args = [arg.arg for arg in node.args.args]
+                    result.append(f"def {node.name}({', '.join(args)}): ...")
+
+            return "\n".join(result)
+        except SyntaxError:
+            return content
+
+    def _extract_js_public_api(self, content: str) -> str:
+        """Extract JavaScript/TypeScript public API."""
+        # Extract exports and public functions
+        exports = re.findall(
+            r"export\s+(?:default\s+)?(?:function|class|const|let|var)\s+\w+", content
+        )
+        functions = re.findall(
+            r"(?:export\s+)?(?:async\s+)?function\s+\w+\([^)]*\)", content
+        )
+        classes = re.findall(r"(?:export\s+)?class\s+\w+(?:\s+extends\s+\w+)?", content)
+
+        result = []
+        if exports:
+            result.extend(exports[:10])
+        if functions:
+            result.extend(functions[:10])
+        if classes:
+            result.extend(classes)
+
+        return "\n".join(result) if result else "// No public API found"
+
+    def _extract_java_public_api(self, content: str) -> str:
+        """Extract Java public API."""
+        # Extract public class and method signatures
+        public_classes = re.findall(
+            r"public\s+class\s+\w+(?:\s+extends\s+\w+)?(?:\s+implements\s+[\w,\s]+)?",
+            content,
+        )
+        public_methods = re.findall(
+            r"public\s+(?:static\s+)?[\w<>\[\]]+\s+\w+\([^)]*\)", content
+        )
+
+        result = []
+        if public_classes:
+            result.extend(public_classes)
+        if public_methods:
+            result.extend(public_methods[:15])
+
+        return "\n".join(result) if result else "// No public API found"
+
+    def _maximum_condense_content(self, content: str, file_type: str) -> str:
+        """Maximum condensing for any file type."""
+        if file_type == ".py":
+            try:
+                tree = ast.parse(content)
+                return self._maximum_condense_python(content, tree)
+            except SyntaxError:
+                return self._condense_generic_content(content, CondensingLevel.MAXIMUM)
+        elif file_type in [".js", ".ts", ".jsx", ".tsx"]:
+            return self._condense_javascript_content(
+                content, CondensingLevel.MAXIMUM, PriorityLevel.LOW
+            )
+        elif file_type == ".java":
+            return self._condense_java_content(
+                content, CondensingLevel.MAXIMUM, PriorityLevel.LOW
+            )
+        else:
+            return self._condense_generic_content(content, CondensingLevel.MAXIMUM)
 
     def _condense_python_content(
         self, content: str, level: str, priority: PriorityLevel
@@ -223,6 +563,10 @@ class ProgressiveCondenser:
         """Condense Python content based on the specified level."""
         try:
             tree = ast.parse(content)
+
+            # Use enhanced analysis for better condensing decisions
+            # hierarchy = self.python_analyzer.extract_class_hierarchy(tree)
+            # patterns = self.python_analyzer.identify_design_patterns(tree)
 
             if level == CondensingLevel.LIGHT:
                 return self._light_condense_python(content, tree)

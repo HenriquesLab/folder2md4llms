@@ -104,11 +104,16 @@ fix:
 # DOCUMENTATION
 # ============================================================================
 
-# Generate documentation
+# Generate documentation with lazydocs
 docs:
-	@echo "📚 Generating documentation..."
-	uv run hatch -e dev run lazydocs --output-path docs/ --src-base-url "https://github.com/henriqueslab/folder2md4llms/blob/main/" src/folder2md4llms/
-	@echo "📖 Documentation generated in docs/"
+	@echo "📚 Generating documentation with lazydocs..."
+	uv run lazydocs \
+		--output-path="./docs/api/" \
+		--overview-file="README.md" \
+		--src-base-url="https://github.com/henriqueslab/folder2md4llms/blob/main/" \
+		--no-watermark \
+		src/folder2md4llms
+	@echo "📖 Documentation generated in docs/api/"
 
 # Serve documentation locally (if available)
 docs-serve:

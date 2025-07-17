@@ -36,31 +36,19 @@ jobs:
       run: |
         VERSION=$(uv run hatch version)
         TAG_VERSION=${GITHUB_REF#refs/tags/v}
+
         echo "Package version: $VERSION"
         echo "Tag version: $TAG_VERSION"
-        echo "Git describe: $(git describe --tags --always)"
-        echo "Git status: $(git status --porcelain)"
-        echo "Git log --oneline -3: $(git log --oneline -3)"
-        # Remove the __about__.py file to force a clean state
-        rm -f src/folder2md4llms/__about__.py
-        git checkout HEAD -- src/folder2md4llms/__about__.py 2>/dev/null || true
-        echo "After cleanup - Package version: $(uv run hatch version)"
-        VERSION=$(uv run hatch version)
+
         if [ "$VERSION" != "$TAG_VERSION" ]; then
-          echo "Version mismatch: package=$VERSION, tag=$TAG_VERSION"
+          echo "Error: Version mismatch between package ($VERSION) and git tag (v$TAG_VERSION)."
+          echo "Ensure the auto-generated file 'src/folder2md4llms/__about__.py' is in your .gitignore."
           exit 1
-        fi
 
     - name: Build package
       run: |
-        # Clean up __about__.py file that might be modified during build
-        rm -f src/folder2md4llms/__about__.py
-        git checkout HEAD -- src/folder2md4llms/__about__.py 2>/dev/null || true
         echo "Building sdist..."
         uv run hatch build --target sdist
-        # Clean up again before wheel build
-        rm -f src/folder2md4llms/__about__.py
-        git checkout HEAD -- src/folder2md4llms/__about__.py 2>/dev/null || true
         echo "Building wheel..."
         uv run hatch build --target wheel
         # List the built packages

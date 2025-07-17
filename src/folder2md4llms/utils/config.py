@@ -45,14 +45,12 @@ class Config:
         self.markdown_toc = True
         self.syntax_highlighting = True
         self.file_size_limit = 1024 * 1024  # 1MB
-        self.chunk_large_files = True
 
         # Performance settings
         self.max_workers = 4
         self.progress_bar = True
 
         # Streaming and token management
-        self.max_tokens_per_chunk = 8000
         self.token_estimation_method = "average"  # noqa: S105  # conservative, average, optimistic
         self.max_memory_mb = 1024  # Memory limit in MB
         self.token_limit = None  # Optional token limit for LLM workflows
@@ -64,7 +62,6 @@ class Config:
         self.token_budget_strategy = "balanced"  # conservative, balanced, aggressive
         self.priority_analysis = True  # Enable content priority analysis
         self.progressive_condensing = True  # Enable progressive condensing
-        self.smart_chunking = True  # Enable context-aware chunking
         self.critical_files = []  # Patterns for files that should never be condensed
 
         # Update checking settings
@@ -149,10 +146,8 @@ class Config:
             "markdown_toc": self.markdown_toc,
             "syntax_highlighting": self.syntax_highlighting,
             "file_size_limit": self.file_size_limit,
-            "chunk_large_files": self.chunk_large_files,
             "max_workers": self.max_workers,
             "progress_bar": self.progress_bar,
-            "max_tokens_per_chunk": self.max_tokens_per_chunk,
             "token_estimation_method": self.token_estimation_method,
             "max_memory_mb": self.max_memory_mb,
             "token_limit": self.token_limit,
@@ -162,7 +157,6 @@ class Config:
             "token_budget_strategy": self.token_budget_strategy,
             "priority_analysis": self.priority_analysis,
             "progressive_condensing": self.progressive_condensing,
-            "smart_chunking": self.smart_chunking,
             "critical_files": self.critical_files,
             "update_check_enabled": self.update_check_enabled,
             "update_check_interval": self.update_check_interval,
@@ -233,14 +227,11 @@ executable_basic_info: true
 markdown_toc: true
 syntax_highlighting: true
 file_size_limit: 1048576  # 1MB
-chunk_large_files: true
-
 # Performance settings
 max_workers: 4
 progress_bar: true
 
 # Streaming and token management
-max_tokens_per_chunk: 8000
 token_estimation_method: average  # conservative, average, optimistic
 max_memory_mb: 1024
 token_limit: null  # Optional token limit for LLM workflows
@@ -252,7 +243,6 @@ smart_condensing: false  # Enable intelligent content processing
 token_budget_strategy: balanced  # conservative, balanced, aggressive
 priority_analysis: true  # Analyze content priority automatically
 progressive_condensing: true  # Apply condensing based on available budget
-smart_chunking: true  # Enable context-aware code-preserving chunking
 critical_files: []  # Patterns for files that should never be condensed
 
 # Update checking settings
