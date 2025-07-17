@@ -64,6 +64,10 @@ def estimate_tokens_from_file(file_path: Path, method: str = "average") -> int:
     try:
         file_size = file_path.stat().st_size
 
+        # Handle empty files
+        if file_size == 0:
+            return 0
+
         # Sample first few KB to get character distribution
         sample_size = min(4096, file_size)
 
@@ -73,6 +77,9 @@ def estimate_tokens_from_file(file_path: Path, method: str = "average") -> int:
         # Try to decode sample to estimate character count
         try:
             sample_text = sample_bytes.decode("utf-8")
+            # Avoid division by zero for empty samples
+            if len(sample_bytes) == 0:
+                return 0
             chars_per_byte = len(sample_text) / len(sample_bytes)
         except UnicodeDecodeError:
             # Binary file, estimate very roughly
