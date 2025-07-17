@@ -1,7 +1,7 @@
 # folder2md4llms
 
-[![Tests](https://github.com/AI-driven-Optical-Biology-Laboratory/folder2md4llms/actions/workflows/test.yml/badge.svg)](https://github.com/AI-driven-Optical-Biology-Laboratory/folder2md4llms/actions/workflows/test.yml)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://github.com/henriqueslab/folder2md4llms/actions/workflows/test.yml/badge.svg)](https://github.com/henriqueslab/folder2md4llms/actions/workflows/test.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Enhanced tool to concatenate folder contents into markdown format for LLM consumption, inspired by gpt-repository-loader with significant improvements.
@@ -62,7 +62,7 @@ folder2md --init-ignore
 
 ```bash
 # Clone the repository
-git clone https://github.com/AI-driven-Optical-Biology-Laboratory/folder2md4llms.git
+git clone https://github.com/henriqueslab/folder2md4llms.git
 cd folder2md4llms
 
 # Create virtual environment and install dependencies

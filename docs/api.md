@@ -256,7 +256,7 @@ counts = generator.count_items(repo_path)
 - Web files (HTML, CSS, etc.)
 
 ### Document Conversion
-- **PDF**: Text extraction using PyPDF2
+- **PDF**: Text extraction using pypdf
 - **DOCX**: Text and table extraction using python-docx
 - **XLSX**: Spreadsheet to markdown table conversion using openpyxl
 - **CSV**: Automatic markdown table formatting
