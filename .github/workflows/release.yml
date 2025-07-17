@@ -1,5 +1,7 @@
 name: Release to PyPI
 
+# This is a dummy comment to force a new commit and trigger workflow re-evaluation.
+
 on:
   push:
     tags:
@@ -25,7 +27,7 @@ jobs:
         version: "latest"
 
     - name: Install dependencies
-      run: uv sync --with dev
+      run: uv pip install -e .[dev]
 
     - name: Run tests
       run: hatch run test
