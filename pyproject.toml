@@ -39,6 +39,7 @@ dependencies = [
     "nbconvert>=7.0.0",
     "python-pptx>=0.6.21",
     "httpx>=0.24.0",
+    "pyperclip>=1.9.0",
 ]
 
 [project.optional-dependencies]
@@ -50,6 +51,7 @@ dev = [
     "mypy>=1.0.0",
     "pytest-mock>=3.14.0",
     "pyperclip>=1.8.2",
+    "build>=1.0.3",
 ]
 
 [project.urls]
@@ -184,4 +186,5 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "types-PyYAML",
+    "pytest-mock>=3.14.1",
 ]
