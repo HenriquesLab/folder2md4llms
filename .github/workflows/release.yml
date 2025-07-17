@@ -21,20 +21,21 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install UV
+    - name: Install uv
       uses: astral-sh/setup-uv@v4
       with:
         version: "latest"
 
-    - name: Install dependencies
-      run: uv pip install -e .[dev]
+    - name: Setup environment
+      run: |
+        uv sync --dev
 
     - name: Run tests
-      run: hatch run test
+      run: uv run pytest
 
     - name: Check version matches tag
       run: |
-        VERSION=$(hatch version)
+        VERSION=$(uv run python -c "from folder2md4llms.__about__ import __version__; print(__version__)")
         TAG_VERSION=${GITHUB_REF#refs/tags/v}
 
         echo "Package version: $VERSION"
@@ -48,10 +49,8 @@ jobs:
 
     - name: Build package
       run: |
-        echo "Building sdist..."
-        hatch build --target sdist
-        echo "Building wheel..."
-        hatch build --target wheel
+        echo "Building package..."
+        uv build
         # List the built packages
         ls -la dist/
         # Verify the built packages have the correct version
