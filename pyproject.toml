@@ -23,6 +23,7 @@ classifiers = [
 dependencies = [
     "click>=8.0.0",
     "rich>=13.0.0",
+    "rich-click>=1.6.0",
     "pathlib",
     "python-magic; sys_platform != 'win32'",
     "python-magic-bin; sys_platform == 'win32'",

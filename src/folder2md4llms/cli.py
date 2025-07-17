@@ -3,13 +3,52 @@
 import sys
 from pathlib import Path
 
-import click
+import rich_click as click
 from rich.console import Console
 
 from .__about__ import __version__
 from .processor import RepositoryProcessor
 from .utils.config import Config
 from .utils.update_checker import check_for_updates
+
+# Configure rich-click for better help formatting
+click.rich_click.USE_RICH_MARKUP = True
+click.rich_click.USE_MARKDOWN = True
+click.rich_click.SHOW_ARGUMENTS = True
+click.rich_click.GROUP_ARGUMENTS_OPTIONS = True
+click.rich_click.SHOW_METAVARS_COLUMN = False
+click.rich_click.APPEND_METAVARS_HELP = True
+click.rich_click.STYLE_ERRORS_SUGGESTION = "magenta italic"
+click.rich_click.STYLE_METAVAR = "bold yellow"
+click.rich_click.STYLE_OPTION = "bold green"
+click.rich_click.STYLE_ARGUMENT = "bold blue"
+click.rich_click.STYLE_COMMAND = "bold cyan"
+click.rich_click.STYLE_SWITCH = "bold magenta"
+click.rich_click.STYLE_HELPTEXT = "dim"
+click.rich_click.STYLE_USAGE = "yellow"
+click.rich_click.STYLE_USAGE_COMMAND = "bold"
+click.rich_click.STYLE_HELP_HEADER = "bold blue"
+click.rich_click.STYLE_FOOTER_TEXT = "dim"
+click.rich_click.OPTION_GROUPS = {
+    "folder2md4llms": [
+        {
+            "name": "Output Options",
+            "options": ["-o", "--output", "--clipboard"],
+        },
+        {
+            "name": "Processing Options",
+            "options": ["--limit", "--condense", "-c", "--config"],
+        },
+        {
+            "name": "Utility Options",
+            "options": ["--init-ignore", "--disable-update-check", "-v", "--verbose"],
+        },
+        {
+            "name": "Help & Version",
+            "options": ["--help", "--version"],
+        },
+    ]
+}
 
 console = Console()
 
@@ -391,26 +430,42 @@ def main(
     verbose: bool,
 ) -> None:
     """
-    folder2md4llms converts a folder's structure and file contents into a single
+    **folder2md4llms** converts a folder's structure and file contents into a single
     Markdown file, optimized for consumption by Large Language Models (LLMs).
 
-    PATH: The directory to process. Defaults to the current directory.
+    **PATH**: The directory to process. Defaults to the current directory.
 
-    Examples:
-      - Get help:
-        folder2md --help
+    ## Examples
 
-      - Basic usage (process current directory):
-        folder2md
+    **Get help:**
+    ```
+    $ folder2md --help
+    ```
 
-      - Process a specific directory and save to a custom file:
-        folder2md ./my-project -o my-project.md
+    **Basic usage (process current directory):**
+    ```
+    $ folder2md
+    ```
 
-      - Set a token limit to automatically condense files:
-        folder2md . --limit 80000t
+    **Process a specific directory and save to a custom file:**
+    ```
+    $ folder2md ./my-project -o my-project.md
+    ```
 
-      - Copy the output to the clipboard:
-        folder2md . --clipboard
+    **Set a token limit to automatically condense files:**
+    ```
+    $ folder2md PATH --limit 80000t
+    ```
+
+    **Copy the output to the clipboard:**
+    ```
+    $ folder2md PATH --clipboard
+    ```
+
+    **Generate ignore template:**
+    ```
+    $ folder2md PATH --init-ignore
+    ```
     """
     try:
         if init_ignore:
