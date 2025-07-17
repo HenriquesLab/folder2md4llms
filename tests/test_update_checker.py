@@ -41,10 +41,11 @@ class TestUpdateChecker:
         assert update_checker.check_interval == 60
         assert update_checker.cache_dir == self.temp_dir
         assert update_checker.cache_file == self.cache_file
-        # Version should be either 0.4.1 (dev) or 0.4.2 (tagged)
-        assert update_checker.current_version.startswith(
-            "0.4.1"
-        ) or update_checker.current_version.startswith("0.4.2")
+        # Version should be a valid semantic version string
+        import re
+
+        version_pattern = r"^\d+\.\d+\.\d+(\.\w+\d*)?(\+[\w\d\.]+)?$"
+        assert re.match(version_pattern, update_checker.current_version)
 
     def test_ensure_cache_dir(self, update_checker):
         """Test cache directory creation."""
@@ -135,32 +136,50 @@ class TestUpdateChecker:
 
     def test_is_newer_version(self, update_checker):
         """Test version comparison."""
-        # Test newer versions that should always be newer
-        assert update_checker._is_newer_version("0.5.0") is True
-        assert update_checker._is_newer_version("1.0.0") is True
-
-        # Test older versions that should always be older
-        assert update_checker._is_newer_version("0.4.0") is False
-        assert update_checker._is_newer_version("0.3.9") is False
-
-        # Test version-dependent cases based on current version
+        # Get current version parts for dynamic testing
         current_version = update_checker.current_version
-        if current_version.startswith("0.4.1"):
-            # Dev version tests
-            assert update_checker._is_newer_version("0.4.2") is True
-            assert update_checker._is_newer_version("0.4.1") is False
-            assert update_checker._is_newer_version("0.4.2-dev") is True
-            assert update_checker._is_newer_version("0.4.1-dev") is False
-        elif current_version.startswith("0.4.2"):
-            # Tagged version tests
-            assert update_checker._is_newer_version("0.4.3") is True
-            assert update_checker._is_newer_version("0.4.2") is False
-            assert update_checker._is_newer_version("0.4.1") is False
-            assert update_checker._is_newer_version("0.4.3-dev") is True
-            assert update_checker._is_newer_version("0.4.2-dev") is False
+        current_normalized = update_checker._normalize_version(current_version)
+
+        # Test with clearly newer versions
+        assert update_checker._is_newer_version("99.0.0") is True
+        assert update_checker._is_newer_version("10.0.0") is True
+
+        # Test with clearly older versions
+        assert update_checker._is_newer_version("0.1.0") is False
+        assert update_checker._is_newer_version("0.0.1") is False
+
+        # Test same version (should not be newer)
+        clean_current = current_version.split(".dev")[0].split("+")[0]
+        assert update_checker._is_newer_version(clean_current) is False
+
+        # Test version with dev suffix (should not be newer than clean version)
+        if "-dev" not in clean_current:
+            assert update_checker._is_newer_version(f"{clean_current}-dev") is False
+
+        # Test incremental versions based on current version
+        if len(current_normalized) >= 3 and isinstance(current_normalized[2], int):
+            # Test patch increment
+            patch_increment = f"{current_normalized[0]}.{current_normalized[1]}.{current_normalized[2] + 1}"
+            assert update_checker._is_newer_version(patch_increment) is True
+
+            # Test patch decrement (should be older)
+            if current_normalized[2] > 0:
+                patch_decrement = f"{current_normalized[0]}.{current_normalized[1]}.{current_normalized[2] - 1}"
+                assert update_checker._is_newer_version(patch_decrement) is False
+
+        # Test minor increment
+        if len(current_normalized) >= 2 and isinstance(current_normalized[1], int):
+            minor_increment = f"{current_normalized[0]}.{current_normalized[1] + 1}.0"
+            assert update_checker._is_newer_version(minor_increment) is True
+
+        # Test major increment
+        if len(current_normalized) >= 1 and isinstance(current_normalized[0], int):
+            major_increment = f"{current_normalized[0] + 1}.0.0"
+            assert update_checker._is_newer_version(major_increment) is True
 
         # Invalid versions should be handled gracefully
         assert update_checker._is_newer_version("invalid") is False
+        assert update_checker._is_newer_version("") is False
 
     @pytest.mark.asyncio
     async def test_fetch_latest_version_success(self, update_checker):
