@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Simplified and streamlined the command-line interface (CLI) for a more intuitive user experience.
+- Simplified the `Makefile` with fewer, more logical commands for easier development.
+
 ## [0.4.0] - 2025-01-17
 
 ### Added

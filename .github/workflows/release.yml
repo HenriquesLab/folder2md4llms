@@ -25,16 +25,14 @@ jobs:
         version: "latest"
 
     - name: Install dependencies
-      run: |
-        uv sync --dev
-        uv pip install hatch
+      run: uv sync --with dev
 
     - name: Run tests
-      run: uv run pytest
+      run: hatch run test
 
     - name: Check version matches tag
       run: |
-        VERSION=$(uv run hatch version)
+        VERSION=$(hatch version)
         TAG_VERSION=${GITHUB_REF#refs/tags/v}
 
         echo "Package version: $VERSION"
@@ -44,13 +42,14 @@ jobs:
           echo "Error: Version mismatch between package ($VERSION) and git tag (v$TAG_VERSION)."
           echo "Ensure the auto-generated file 'src/folder2md4llms/__about__.py' is in your .gitignore."
           exit 1
+        fi
 
     - name: Build package
       run: |
         echo "Building sdist..."
-        uv run hatch build --target sdist
+        hatch build --target sdist
         echo "Building wheel..."
-        uv run hatch build --target wheel
+        hatch build --target wheel
         # List the built packages
         ls -la dist/
         # Verify the built packages have the correct version

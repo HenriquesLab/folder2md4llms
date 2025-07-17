@@ -5,7 +5,6 @@ from pathlib import Path
 
 import click
 from rich.console import Console
-from rich.progress import Progress
 
 from .__about__ import __version__
 from .processor import RepositoryProcessor
@@ -336,7 +335,7 @@ repository_output.md
         sys.exit(1)
 
 
-@click.command()
+@click.command(context_settings={"help_option_names": ["-h", "--help"]})
 @click.argument(
     "path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
@@ -346,214 +345,80 @@ repository_output.md
     "-o",
     "--output",
     type=click.Path(path_type=Path),
-    help="Output file path (default: output.md)",
+    help="Output file path. Defaults to 'output.md'.",
+)
+@click.option(
+    "--limit",
+    type=str,
+    help="Set a size limit for the output. Automatically enables smart condensing. "
+    "Examples: '80000t' for tokens, '200000c' for characters.",
+)
+@click.option(
+    "--condense",
+    is_flag=True,
+    help="Enable code condensing for supported languages. Uses defaults from config.",
 )
 @click.option(
     "-c",
     "--config",
     type=click.Path(exists=True, path_type=Path),
-    help="Configuration file path",
+    help="Custom configuration file path.",
 )
 @click.option(
-    "--ignore-file",
-    type=click.Path(exists=True, path_type=Path),
-    help="Custom ignore file path (default: .folder2md_ignore)",
-)
-@click.option(
-    "--format",
-    type=click.Choice(["markdown", "html", "plain"]),
-    default="markdown",
-    help="Output format",
-)
-@click.option(
-    "--include-tree/--no-tree",
-    default=True,
-    help="Include folder structure tree",
-)
-@click.option(
-    "--include-stats/--no-stats",
-    default=True,
-    help="Include file statistics",
-)
-@click.option(
-    "--include-preamble/--no-preamble",
-    default=True,
-    help="Include explanatory preamble in output",
-)
-@click.option(
-    "--convert-docs/--no-convert-docs",
-    default=True,
-    help="Convert documents (PDF, DOCX, etc.)",
-)
-@click.option(
-    "--describe-binaries/--no-describe-binaries",
-    default=True,
-    help="Describe binary files",
-)
-@click.option(
-    "--condense-python/--no-condense-python",
-    default=False,
-    help="Condense Python files to signatures and docstrings",
-)
-@click.option(
-    "--python-condense-mode",
-    type=click.Choice(["signatures", "signatures_with_docstrings", "structure"]),
-    default="signatures_with_docstrings",
-    help="Python condensing mode",
-)
-@click.option(
-    "--condense-code/--no-condense-code",
-    default=False,
-    help="Condense code files (JS, TS, Java, etc.) to signatures",
-)
-@click.option(
-    "--code-condense-mode",
-    type=click.Choice(["signatures", "signatures_with_docstrings", "structure"]),
-    default="signatures_with_docstrings",
-    help="Code condensing mode for supported languages",
-)
-@click.option(
-    "--condense-languages",
-    default="js,ts,java,json,yaml",
-    help="Comma-separated list of languages to condense (or 'all')",
-)
-@click.option(
-    "--max-file-size",
-    type=int,
-    default=1024 * 1024,  # 1MB
-    help="Maximum file size to process (bytes)",
-)
-@click.option(
-    "--token-limit",
-    type=int,
-    help="Maximum tokens to include in output (for LLM workflows)",
-)
-@click.option(
-    "--char-limit",
-    type=int,
-    help="Maximum characters to include in output (for LLM workflows)",
-)
-@click.option(
-    "--token-estimation-method",
-    type=click.Choice(["conservative", "average", "optimistic"]),
-    default="average",
-    help="Method for estimating token counts",
-)
-@click.option(
-    "--max-workers",
-    type=int,
-    default=4,
-    help="Maximum number of parallel workers",
-)
-@click.option(
-    "--use-gitignore/--no-gitignore",
-    default=True,
-    help="Use .gitignore files for filtering",
-)
-@click.option(
-    "--clipboard",
-    is_flag=True,
-    help="Copy output to clipboard",
-)
-@click.option(
-    "-v",
-    "--verbose",
-    is_flag=True,
-    help="Verbose output",
+    "--clipboard", is_flag=True, help="Copy the final output to the clipboard."
 )
 @click.option(
     "--init-ignore",
     is_flag=True,
-    help="Generate .folder2md_ignore template file",
-)
-@click.option(
-    "--smart-condensing",
-    is_flag=True,
-    help="Enable smart anti-truncation engine with priority-aware condensing, progressive condensing, and context-aware chunking. When combined with --token-limit or --char-limit, intelligently condenses content to fit just under the limit.",
-)
-@click.option(
-    "--token-budget-strategy",
-    type=click.Choice(["conservative", "balanced", "aggressive"]),
-    default="balanced",
-    help="Token budget allocation strategy for smart condensing (only used with --smart-condensing)",
-)
-@click.option(
-    "--critical-files",
-    default="",
-    help="Comma-separated patterns for files that should never be condensed (only used with --smart-condensing)",
-)
-@click.option(
-    "--check-updates",
-    is_flag=True,
-    help="Check for available updates from PyPI",
+    help="Generate a .folder2md_ignore template file in the target directory.",
 )
 @click.option(
     "--disable-update-check",
     is_flag=True,
-    help="Disable automatic update checking",
+    help="Disable the automatic check for new versions.",
 )
-@click.version_option(version=__version__)
+@click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging.")
+@click.version_option(version=__version__, prog_name="folder2md4llms")
 def main(
     path: Path,
     output: Path | None,
+    limit: str | None,
+    condense: bool,
     config: Path | None,
-    ignore_file: Path | None,
-    format: str,
-    include_tree: bool,
-    include_stats: bool,
-    include_preamble: bool,
-    convert_docs: bool,
-    describe_binaries: bool,
-    condense_python: bool,
-    python_condense_mode: str,
-    condense_code: bool,
-    code_condense_mode: str,
-    condense_languages: str,
-    max_file_size: int,
-    token_limit: int | None,
-    char_limit: int | None,
-    token_estimation_method: str,
-    max_workers: int,
-    use_gitignore: bool,
     clipboard: bool,
-    verbose: bool,
     init_ignore: bool,
-    smart_condensing: bool,
-    token_budget_strategy: str,
-    critical_files: str,
-    check_updates: bool,
     disable_update_check: bool,
+    verbose: bool,
 ) -> None:
-    """Convert a folder structure to markdown format for LLM consumption.
+    """
+    folder2md4llms converts a folder's structure and file contents into a single
+    Markdown file, optimized for consumption by Large Language Models (LLMs).
 
-    PATH: Directory to process (default: current directory)
+    PATH: The directory to process. Defaults to the current directory.
 
     Examples:
-      folder2md .                                    # Basic usage
-      folder2md . --smart-condensing                 # Enable smart condensing
-      folder2md . --smart-condensing --token-limit 50000  # Smart condensing with token limit
-      folder2md . --smart-condensing --char-limit 200000  # Smart condensing with char limit
+      - Get help:
+        folder2md --help
+
+      - Basic usage (process current directory):
+        folder2md
+
+      - Process a specific directory and save to a custom file:
+        folder2md ./my-project -o my-project.md
+
+      - Set a token limit to automatically condense files:
+        folder2md . --limit 80000t
+
+      - Copy the output to the clipboard:
+        folder2md . --clipboard
     """
     try:
-        # Handle init-ignore flag
         if init_ignore:
             _generate_ignore_template(path)
             return
 
-        # Handle explicit update check request
-        if check_updates:
-            latest_version = check_for_updates(
-                enabled=True, force=True, show_notification=True
-            )
-            if latest_version:
-                console.print(f"✨ Update available: {latest_version}", style="green")
-            else:
-                console.print("✅ You're running the latest version!", style="green")
-            return
-        # Load configuration
         config_obj = Config.load(config_path=config, repo_path=path)
 
-        # Perform automatic update check (unless disabled)
         if not disable_update_check and getattr(
             config_obj, "update_check_enabled", True
         ):
@@ -566,115 +431,70 @@ def main(
                 ),
             )
 
-        # Override config with command line options
-        if ignore_file:
-            config_obj.ignore_file = ignore_file
-        config_obj.output_format = format
-        config_obj.include_tree = include_tree
-        config_obj.include_stats = include_stats
-        config_obj.include_preamble = include_preamble
-        config_obj.convert_docs = convert_docs
-        config_obj.describe_binaries = describe_binaries
-        config_obj.condense_python = condense_python
-        config_obj.python_condense_mode = python_condense_mode
-        config_obj.condense_code = condense_code
-        config_obj.code_condense_mode = code_condense_mode
-        # Parse condense_languages
-        if condense_languages.lower() == "all":
-            config_obj.condense_languages = "all"
-        else:
-            config_obj.condense_languages = [
-                lang.strip() for lang in condense_languages.split(",")
-            ]
-        config_obj.max_file_size = max_file_size
-        config_obj.verbose = verbose
+        # --- Override config with CLI options ---
+        if output:
+            config_obj.output_file = output
+        if verbose:
+            config_obj.verbose = verbose
+        if condense:
+            config_obj.condense_code = True
 
-        # Set streaming and token management options
-        if token_limit:
-            if token_limit <= 0:
-                console.print("❌ Token limit must be positive", style="red")
+        if limit:
+            config_obj.smart_condensing = True
+            limit_val_str = limit[:-1]
+            limit_unit = limit[-1].lower()
+
+            if not limit_val_str.isdigit() or limit_unit not in ["t", "c"]:
+                console.print(
+                    "❌ Invalid limit format. Use <number>t for tokens or <number>c for characters.",
+                    style="red",
+                )
                 sys.exit(1)
-            if token_limit < 100:
-                console.print(
-                    "⚠️  Token limit is very small (< 100), output may be severely truncated",
-                    style="yellow",
-                )
-            config_obj.token_limit = token_limit
-        if char_limit:
-            if char_limit <= 0:
-                console.print("❌ Character limit must be positive", style="red")
+
+            limit_value = int(limit_val_str)
+            if limit_value <= 0:
+                console.print("❌ Limit must be a positive number.", style="red")
                 sys.exit(1)
-            if char_limit < 500:
-                console.print(
-                    "⚠️  Character limit is very small (< 500), output may be severely truncated",
-                    style="yellow",
-                )
-            config_obj.char_limit = char_limit
-        config_obj.token_estimation_method = token_estimation_method
-        config_obj.max_workers = max_workers
-        config_obj.use_gitignore = use_gitignore
 
-        # Set smart condensing options
-        config_obj.smart_condensing = smart_condensing
-        if smart_condensing:
-            # When smart condensing is enabled, automatically enable all smart features
-            config_obj.priority_analysis = True
-            config_obj.progressive_condensing = True
-            config_obj.token_budget_strategy = token_budget_strategy
+            if limit_unit == "t":
+                config_obj.token_limit = limit_value
+                if limit_value < 100:
+                    console.print(
+                        "⚠️  Token limit is very small (< 100).", style="yellow"
+                    )
+            elif limit_unit == "c":
+                config_obj.char_limit = limit_value
+                if limit_value < 500:
+                    console.print(
+                        "⚠️  Character limit is very small (< 500).", style="yellow"
+                    )
 
-            # Parse critical files patterns
-            if critical_files:
-                config_obj.critical_files = [
-                    pattern.strip() for pattern in critical_files.split(",")
-                ]
-            else:
-                config_obj.critical_files = []
-
-            # Warn if no token/char limit is specified
-            if verbose and not token_limit and not char_limit:
-                console.print(
-                    "💡 Smart condensing enabled without token/char limit - will use default condensing behavior",
-                    style="yellow",
-                )
-        else:
-            # When smart condensing is disabled, disable all smart features
-            config_obj.priority_analysis = False
-            config_obj.progressive_condensing = False
-            config_obj.critical_files = []
-
-        # Set output file
-        if not output:
-            output = Path("output.md")
-
-        # Store output file in config for suggestions
-        config_obj.output_file = output
-
-        # Initialize processor
+        # --- Initialize and run the processor ---
         processor = RepositoryProcessor(config_obj)
+        result = processor.process(path)
 
-        # Process repository
-        with Progress(console=console, disable=not verbose) as progress:
-            result = processor.process(path, progress)
+        # --- Handle output ---
+        output_file = Path(getattr(config_obj, "output_file", "output.md"))
+        output_file.write_text(result, encoding="utf-8")
 
-        # Write output
-        output.write_text(result, encoding="utf-8")
+        console.print(
+            f"✅ Repository processed successfully: {output_file}", style="green"
+        )
 
-        # Copy to clipboard if requested
         if clipboard:
             try:
                 import pyperclip
 
                 pyperclip.copy(result)
-                console.print("✅ Output copied to clipboard", style="green")
+                console.print("✅ Output copied to clipboard.", style="green")
             except ImportError:
                 console.print(
-                    "⚠️  pyperclip not available for clipboard support", style="yellow"
+                    "⚠️  'pyperclip' is not installed. Cannot copy to clipboard.",
+                    style="yellow",
                 )
 
-        console.print(f"✅ Repository processed successfully: {output}", style="green")
-
     except Exception as e:
-        console.print(f"❌ Error: {e}", style="red")
+        console.print(f"❌ An unexpected error occurred: {e}", style="red")
         if verbose:
             console.print_exception()
         sys.exit(1)
