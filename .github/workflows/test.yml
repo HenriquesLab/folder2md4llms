@@ -48,12 +48,10 @@ jobs:
         cache-dependency-glob: "pyproject.toml"
 
     - name: Install dependencies
-      run: |
-        uv sync --group dev
-        uv pip install hatch
+      run: uv sync --with dev
 
     - name: Run tests
-      run: uv run pytest --cov=folder2md4llms --cov-report=xml -n 2 --maxfail=5 --tb=short
+      run: hatch run test -- --cov=folder2md4llms --cov-report=xml -n 2 --maxfail=5 --tb=short
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4

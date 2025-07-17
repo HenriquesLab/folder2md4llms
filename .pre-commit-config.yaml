@@ -31,13 +31,3 @@ repos:
       - id: bandit
         args: ["-s", "B105,B107"]
         exclude: tests/
-
-  - repo: local
-    hooks:
-      - id: pytest
-        name: pytest
-        entry: uv run pytest --cov=folder2md4llms --cov-report=term-missing
-        language: system
-        pass_filenames: false
-        always_run: true
-        stages: [pre-commit]
