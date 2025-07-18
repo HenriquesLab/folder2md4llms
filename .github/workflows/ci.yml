@@ -45,7 +45,7 @@ jobs:
         enable-cache: true
 
     - name: Install dependencies
-      run: uv sync --group dev
+      run: uv sync --group dev --extra tiktoken
 
     - name: Run linting and formatting checks
       run: |
@@ -103,7 +103,7 @@ jobs:
         enable-cache: true
 
     - name: Install dependencies
-      run: uv sync --group dev
+      run: uv sync --group dev --extra tiktoken
 
     - name: Run tests
       run: |
@@ -184,7 +184,7 @@ jobs:
         enable-cache: true
 
     - name: Install package
-      run: uv sync --group dev
+      run: uv sync --group dev --extra tiktoken
 
     - name: Test CLI functionality
       run: |
