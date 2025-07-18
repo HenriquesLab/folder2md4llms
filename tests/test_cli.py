@@ -94,7 +94,8 @@ class TestSimplifiedCLI:
         runner = CliRunner()
         result = runner.invoke(main, ["--help"])
         assert result.exit_code == 0
-        assert "Usage: main [OPTIONS] [PATH]" in result.output
+        assert "Usage:" in result.output
+        assert "folder2md" in result.output
         assert "--limit" in result.output
         assert "--condense" in result.output
         assert "--output" in result.output
