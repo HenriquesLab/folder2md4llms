@@ -51,7 +51,7 @@ jobs:
       run: uv sync --group dev
 
     - name: Run tests
-      run: hatch run test -- --cov=folder2md4llms --cov-report=xml -n 2 --maxfail=5 --tb=short
+      run: uv run hatch run test -- --cov=folder2md4llms --cov-report=xml -n 2 --maxfail=5 --tb=short
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
