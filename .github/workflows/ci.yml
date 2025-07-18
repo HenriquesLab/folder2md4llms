@@ -100,7 +100,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        extra-deps: [pdf, docx, xlsx, image, notebook, all]
+        extra-deps: [all]
 
     steps:
     - name: Checkout code
@@ -129,7 +129,7 @@ jobs:
 
     - name: Test with optional dependencies
       run: |
-        uv run pytest tests/test_converters.py -v -k "${{ matrix.extra-deps }}" || true
+        uv run pytest tests/test_converters.py -v || true
         uv run pytest tests/test_processor.py -v
 
   integration-test:
