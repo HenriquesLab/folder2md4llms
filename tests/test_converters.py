@@ -786,4 +786,6 @@ class SmartClass:
         converter = SmartPythonConverter({})
         result = converter.convert(Path("nonexistent.py"))
         assert result is None
+
+
 # Additional test coverage comments
