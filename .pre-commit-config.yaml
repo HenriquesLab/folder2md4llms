@@ -31,3 +31,12 @@ repos:
       - id: bandit
         args: ["-s", "B105,B107"]
         exclude: tests/
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: uv run pytest
+        language: system
+        types: [python]
+        pass_filenames: false

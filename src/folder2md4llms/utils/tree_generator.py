@@ -110,7 +110,7 @@ class TreeGenerator:
 
     def count_items(self, root_path: Path) -> dict[str, object]:
         """Count files and directories in the tree."""
-        counts = {
+        counts: dict[str, object] = {
             "total_files": 0,
             "total_dirs": 0,
             "total_size": 0,
@@ -124,13 +124,19 @@ class TreeGenerator:
                         continue
 
                     if item.is_dir():
-                        counts["total_dirs"] += 1  # type: ignore[operator]
+                        total_dirs = counts["total_dirs"]
+                        if isinstance(total_dirs, int):
+                            counts["total_dirs"] = total_dirs + 1
                         count_recursive(item)
                     else:
-                        counts["total_files"] += 1  # type: ignore[operator]
+                        total_files = counts["total_files"]
+                        if isinstance(total_files, int):
+                            counts["total_files"] = total_files + 1
                         try:
                             size = item.stat().st_size
-                            counts["total_size"] += size  # type: ignore[operator]
+                            total_size = counts["total_size"]
+                            if isinstance(total_size, int):
+                                counts["total_size"] = total_size + size
 
                             # Count by extension
                             ext = item.suffix.lower()
