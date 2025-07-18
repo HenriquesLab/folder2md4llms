@@ -106,15 +106,7 @@ jobs:
       run: uv sync --group dev --extra tiktoken
 
     - name: Run tests
-      run: |
-        uv run pytest tests/ \
-          --cov=folder2md4llms \
-          --cov-report=xml \
-          --cov-report=term-missing \
-          -n auto \
-          --maxfail=10 \
-          --tb=short \
-          -v
+      run: uv run pytest tests/ --cov=folder2md4llms --cov-report=xml --cov-report=term-missing -n auto --maxfail=10 --tb=short -v
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
