@@ -165,10 +165,12 @@ jobs:
         Write-Host "Version output: $VERSION_OUTPUT"
 
         # Check if version matches expected
-        if ($VERSION_OUTPUT -match "${{ needs.build.outputs.version }}") {
+        if ($VERSION_OUTPUT -match [regex]::Escape("${{ needs.build.outputs.version }}")) {
           Write-Host "✅ Version matches expected: ${{ needs.build.outputs.version }}"
         } else {
           Write-Host "❌ Version mismatch!"
+          Write-Host "Expected: ${{ needs.build.outputs.version }}"
+          Write-Host "Got: $VERSION_OUTPUT"
           exit 1
         }
         echo "::endgroup::"
