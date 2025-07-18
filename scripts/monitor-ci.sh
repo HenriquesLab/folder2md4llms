@@ -26,7 +26,7 @@ readonly GITHUB_API_BASE="https://api.github.com"
 # Repository configurations (using arrays since macOS has old bash)
 REPO_KEYS=("main" "homebrew" "scoop")
 REPO_NAMES=("HenriquesLab/folder2md4llms" "HenriquesLab/homebrew-folder2md4llms" "HenriquesLab/scoop-folder2md4llms")
-REPO_BRANCHES=("main" "main" "main")
+REPO_BRANCHES=("dev" "main" "main")
 
 # GitHub API token (optional, for higher rate limits)
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
