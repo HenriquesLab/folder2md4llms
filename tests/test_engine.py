@@ -10,6 +10,7 @@ import pytest
 from folder2md4llms.analyzers.priority_analyzer import PriorityLevel
 from folder2md4llms.engine.smart_engine import SmartAntiTruncationEngine
 from folder2md4llms.utils.smart_budget_manager import BudgetStrategy
+from folder2md4llms.utils.token_utils import is_tiktoken_available
 
 
 class TestSmartAntiTruncationEngine:
@@ -22,7 +23,9 @@ class TestSmartAntiTruncationEngine:
         assert engine.strategy == BudgetStrategy.BALANCED
         assert engine.enable_priority_analysis is True
         assert engine.enable_progressive_condensing is True
-        assert engine.token_counting_method == "tiktoken"
+        # Check if tiktoken is available or fallback to 'average'
+        expected_method = "tiktoken" if is_tiktoken_available() else "average"
+        assert engine.token_counting_method == expected_method
         assert engine.target_model == "gpt-4"
         assert engine.budget_manager is not None
         assert engine.priority_analyzer is not None

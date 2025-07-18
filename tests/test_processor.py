@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from folder2md4llms.processor import RepositoryProcessor
+from folder2md4llms.utils.token_utils import is_tiktoken_available
 
 
 class TestRepositoryProcessor:
@@ -396,7 +397,9 @@ class TestRepositoryProcessor:
         assert processor.smart_engine.total_token_limit == 1000
         assert processor.smart_engine.enable_priority_analysis is True
         assert processor.smart_engine.enable_progressive_condensing is True
-        assert processor.smart_engine.token_counting_method == "tiktoken"
+        # Check if tiktoken is available or fallback to 'average'
+        expected_method = "tiktoken" if is_tiktoken_available() else "average"
+        assert processor.smart_engine.token_counting_method == expected_method
         assert processor.smart_engine.target_model == "gpt-4"
 
     def test_load_ignore_patterns_with_custom_file(self, temp_dir, config):
