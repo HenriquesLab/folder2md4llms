@@ -251,9 +251,8 @@ monitor_repositories() {
             continue
         fi
 
-        # Get actual branch
-        local branch
-        branch=$(get_repo_branch "$repo" "$default_branch")
+        # Use configured branch instead of querying GitHub API
+        local branch="$default_branch"
 
         # Check CI status
         if ! get_repo_ci_status "$repo" "$branch"; then
