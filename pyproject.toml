@@ -54,6 +54,9 @@ dev = [
     "pyperclip>=1.8.2",
     "build>=1.0.3",
 ]
+tiktoken = [
+    "tiktoken>=0.5.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/henriqueslab/folder2md4llms"

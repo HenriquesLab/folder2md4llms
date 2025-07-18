@@ -79,6 +79,10 @@ class RepositoryProcessor:
                 enable_progressive_condensing=getattr(
                     config, "progressive_condensing", True
                 ),
+                token_counting_method=getattr(
+                    config, "token_counting_method", "tiktoken"
+                ),
+                target_model=getattr(config, "target_model", "gpt-4"),
             )
 
         # Initialize components (ignore_patterns will be loaded in process method)
@@ -241,7 +245,9 @@ class RepositoryProcessor:
 
             # Display ignore suggestions if enabled
             if self.config.verbose and self.ignore_suggester:
-                output_file = Path(getattr(self.config, "output_file", "output.md"))
+                output_file = Path(
+                    getattr(self.config, "output_file", None) or "output.md"
+                )
                 self.ignore_suggester.display_suggestions(output_file)
 
             return output
@@ -303,7 +309,7 @@ class RepositoryProcessor:
         }
 
         # Statistics
-        stats: dict[str, int | dict[str, int]] = {
+        stats: dict[str, Any] = {
             "total_files": len(file_list),
             "text_files": 0,
             "binary_files": 0,
@@ -361,7 +367,12 @@ class RepositoryProcessor:
                     results["text_files"][rel_path] = result["content"]
                     stats["text_files"] += 1
                     stats["text_size"] += len(result["content"].encode("utf-8"))
-                    stats["estimated_tokens"] += result.get("estimated_tokens", 0)
+                    estimated_tokens = result.get("estimated_tokens", 0)
+                    stats["estimated_tokens"] += (
+                        int(estimated_tokens)
+                        if isinstance(estimated_tokens, str)
+                        else estimated_tokens
+                    )
 
                     # Track language
                     language = get_language_from_extension(file_path.suffix.lower())
@@ -450,6 +461,8 @@ class RepositoryProcessor:
     ) -> dict[str, Any]:
         """Process files using the smart anti-truncation engine."""
         # First, analyze the repository to get priorities and estimates
+        if self.smart_engine is None:
+            raise ValueError("Smart engine is not initialized")
         (
             file_priorities,
             token_estimates,
@@ -462,14 +475,14 @@ class RepositoryProcessor:
         )
 
         # Process files normally but with smart engine enhancements
-        results = {
+        results: dict[str, Any] = {
             "text_files": {},
             "converted_docs": {},
             "binary_files": {},
             "stats": defaultdict(int),
         }
 
-        stats = defaultdict(int)
+        stats: dict[str, Any] = defaultdict(int)
         stats["total_files"] = len(file_list)
         stats["languages"] = defaultdict(int)
 
@@ -537,11 +550,18 @@ class RepositoryProcessor:
                     results["text_files"][rel_path] = processed_content
                     stats["text_files"] += 1
                     stats["text_size"] += len(processed_content.encode("utf-8"))
-                    stats["estimated_tokens"] += processing_info.get("final_tokens", 0)
+                    if isinstance(processing_info, dict):
+                        stats["estimated_tokens"] += processing_info.get(
+                            "final_tokens", 0
+                        )
 
                     # Track original and condensed tokens for smart condensing stats
-                    original_tokens = processing_info.get("original_tokens", 0)
-                    final_tokens = processing_info.get("final_tokens", 0)
+                    if isinstance(processing_info, dict):
+                        original_tokens = processing_info.get("original_tokens", 0)
+                        final_tokens = processing_info.get("final_tokens", 0)
+                    else:
+                        original_tokens = 0
+                        final_tokens = 0
                     original_tokens_total += original_tokens
                     condensed_tokens_total += final_tokens
 
@@ -553,8 +573,9 @@ class RepositoryProcessor:
                         stats["languages"]["unknown"] += 1
 
                     # Update smart engine stats
-                    if hasattr(self.smart_engine, "stats"):
-                        self.smart_engine.stats["files_processed"] += 1
+                    if self.smart_engine and hasattr(self.smart_engine, "stats"):
+                        count = self.smart_engine.stats.get("files_processed", 0)
+                        self.smart_engine.stats["files_processed"] = int(count) + 1
 
                 except Exception as e:
                     logger.error(f"Error processing file {file_path}: {e}")
@@ -635,8 +656,14 @@ class RepositoryProcessor:
                             results["converted_docs"][rel_path] = processed_content
 
                             # Track tokens for smart condensing stats
-                            original_tokens = processing_info.get("original_tokens", 0)
-                            final_tokens = processing_info.get("final_tokens", 0)
+                            if isinstance(processing_info, dict):
+                                original_tokens = processing_info.get(
+                                    "original_tokens", 0
+                                )
+                                final_tokens = processing_info.get("final_tokens", 0)
+                            else:
+                                original_tokens = 0
+                                final_tokens = 0
                             original_tokens_total += original_tokens
                             condensed_tokens_total += final_tokens
                         else:

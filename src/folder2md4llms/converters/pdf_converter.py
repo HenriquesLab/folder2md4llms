@@ -10,7 +10,7 @@ try:
     PDF_AVAILABLE = True
 except ImportError:
     try:
-        import PyPDF2 as pypdf
+        import PyPDF2 as pypdf  # type: ignore[no-redef]
 
         PDF_AVAILABLE = True
     except ImportError:
@@ -69,7 +69,7 @@ class PDFConverter(BaseConverter):
                                 page_text = page.extract_text()
                             else:
                                 # Fallback for older PyPDF2
-                                page_text = page.extractText()
+                                page_text = page.extract_text()
                         except Exception:
                             # Final fallback
                             page_text = str(page)

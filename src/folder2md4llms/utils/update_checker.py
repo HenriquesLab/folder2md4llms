@@ -49,7 +49,8 @@ class UpdateChecker:
 
         try:
             with open(self.cache_file, encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                return data if isinstance(data, dict) else {}
         except (json.JSONDecodeError, OSError):
             return {}
 
@@ -102,7 +103,7 @@ class UpdateChecker:
                     parts.append(int(part))
                 except ValueError:
                     # Handle non-numeric parts (like "rc1")
-                    parts.append(part)
+                    pass
             return tuple(parts)
         except Exception:
             # Fallback to string comparison if parsing fails
@@ -174,7 +175,14 @@ class UpdateChecker:
                 response = await client.get(PYPI_API_URL)
                 response.raise_for_status()
                 data = response.json()
-                return data["info"]["version"]
+                if (
+                    isinstance(data, dict)
+                    and "info" in data
+                    and "version" in data["info"]
+                ):
+                    version = data["info"]["version"]
+                    return version if isinstance(version, str) else None
+                return None
         except Exception:
             # Silently fail on any network/API errors
             return None
@@ -211,8 +219,12 @@ class UpdateChecker:
             # Check cache for previously found update
             cache_data = self._load_cache()
             cached_latest = cache_data.get("latest_version")
-            if cached_latest and self._is_newer_version(cached_latest):
-                return cached_latest
+            if (
+                cached_latest
+                and isinstance(cached_latest, str)
+                and self._is_newer_version(cached_latest)
+            ):
+                return str(cached_latest)
             return None
 
         latest_version = await self._fetch_latest_version()

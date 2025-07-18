@@ -19,7 +19,7 @@ class ConverterFactory:
 
     def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
-        self._converters = None
+        self._converters: list[BaseConverter] | None = None
 
     def _get_converters(self) -> list[BaseConverter]:
         """Get all available converters."""
@@ -66,8 +66,9 @@ class ConverterFactory:
     def get_file_info(self, file_path: Path) -> dict[str, Any]:
         """Get file information using the appropriate converter."""
         converter = self.get_converter(file_path)
-        if converter:
-            return converter.get_document_info(file_path)
+        if converter and hasattr(converter, "get_document_info"):
+            info = converter.get_document_info(file_path)
+            return info if isinstance(info, dict) else {}
         else:
             # Return basic file info
             try:

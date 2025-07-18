@@ -61,7 +61,7 @@ class StreamingFileProcessor:
                 return {
                     "status": "skipped",
                     "reason": f"File too large: {file_size} bytes",
-                    "content": None,
+                    "content": "",
                 }
 
             # Check if file is text
@@ -71,7 +71,7 @@ class StreamingFileProcessor:
                 return {
                     "status": "skipped",
                     "reason": "Not a text file",
-                    "content": None,
+                    "content": "",
                 }
 
             # Estimate tokens
@@ -91,7 +91,7 @@ class StreamingFileProcessor:
                 return {
                     "status": "processed",
                     "content": content,
-                    "estimated_tokens": estimated_tokens,
+                    "estimated_tokens": str(estimated_tokens),
                 }
             else:
                 with self._stats_lock:
@@ -99,7 +99,7 @@ class StreamingFileProcessor:
                 return {
                     "status": "error",
                     "reason": "Failed to read file",
-                    "content": None,
+                    "content": "",
                 }
 
         except Exception as e:
@@ -110,7 +110,7 @@ class StreamingFileProcessor:
             return {
                 "status": "error",
                 "reason": str(e),
-                "content": None,
+                "content": "",
             }
 
     def process_files_parallel(self, file_paths: list[Path]) -> dict[str, dict]:
@@ -142,7 +142,7 @@ class StreamingFileProcessor:
                     results[str(file_path)] = {
                         "status": "error",
                         "reason": str(e),
-                        "content": None,
+                        "content": "",
                     }
 
         return results

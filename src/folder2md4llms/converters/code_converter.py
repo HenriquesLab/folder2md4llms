@@ -55,7 +55,9 @@ class CodeConverter(BaseConverter):
                     self.condense_languages.add(lang)
 
         # Initialize analyzers
-        self.analyzers = {}
+        from typing import Any
+
+        self.analyzers: dict[str, Any] = {}
         if self.condense_code:
             self._initialize_analyzers()
 
@@ -124,8 +126,10 @@ class CodeConverter(BaseConverter):
             return None
 
         try:
-            result = analyzer.analyze_file(file_path)
-            return result
+            if hasattr(analyzer, "analyze_file"):
+                result = analyzer.analyze_file(file_path)
+                return result if isinstance(result, str) else None
+            return None
 
         except Exception as e:
             return f"# Error processing {file_path.suffix} file {file_path}: {e}"

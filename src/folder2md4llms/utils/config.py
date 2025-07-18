@@ -45,6 +45,7 @@ class Config:
         self.markdown_toc = True
         self.syntax_highlighting = True
         self.file_size_limit = 1024 * 1024  # 1MB
+        self.output_file: Path | None = None
 
         # Performance settings
         self.max_workers = 4
@@ -63,6 +64,10 @@ class Config:
         self.priority_analysis = True  # Enable content priority analysis
         self.progressive_condensing = True  # Enable progressive condensing
         self.critical_files = []  # Patterns for files that should never be condensed
+        self.token_counting_method = (
+            "tiktoken"  # tiktoken, average, conservative, optimistic
+        )
+        self.target_model = "gpt-4"  # Target model for tiktoken encoding
 
         # Update checking settings
         self.update_check_enabled = True  # Enable automatic update checking
@@ -158,6 +163,8 @@ class Config:
             "priority_analysis": self.priority_analysis,
             "progressive_condensing": self.progressive_condensing,
             "critical_files": self.critical_files,
+            "token_counting_method": self.token_counting_method,
+            "target_model": self.target_model,
             "update_check_enabled": self.update_check_enabled,
             "update_check_interval": self.update_check_interval,
         }
@@ -244,6 +251,10 @@ token_budget_strategy: balanced  # conservative, balanced, aggressive
 priority_analysis: true  # Analyze content priority automatically
 progressive_condensing: true  # Apply condensing based on available budget
 critical_files: []  # Patterns for files that should never be condensed
+
+# Token counting settings
+token_counting_method: tiktoken  # tiktoken, average, conservative, optimistic
+target_model: gpt-4  # Target model for tiktoken encoding
 
 # Update checking settings
 update_check_enabled: true  # Enable automatic update checking

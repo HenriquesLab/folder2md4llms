@@ -26,7 +26,7 @@ class IgnoreSuggester:
         self.min_file_size = min_file_size
         self.min_dir_size = min_dir_size
         self.ignore_patterns = ignore_patterns
-        self.base_path = None
+        self.base_path: Path | None = None
         self.suggestions: dict[str, set[str]] = {}
 
     def analyze_path(self, path: Path, base_path: Path | None = None) -> None:
@@ -251,7 +251,7 @@ class IgnoreSuggester:
         for unit in ["B", "KB", "MB", "GB"]:
             if size < 1024.0:
                 return f"{size:.1f} {unit}"
-            size /= 1024.0
+            size = int(size / 1024.0)
         return f"{size:.1f} TB"
 
     def get_suggestions(self) -> list[tuple[str, list[str]]]:

@@ -146,9 +146,9 @@ class ConfigAnalyzer(BaseCodeAnalyzer):
         result.append("")
 
         # Extract sections and key-value pairs
-        sections = []
+        sections: list[tuple[str, list[str]]] = []
         current_section = None
-        key_value_pairs = []
+        key_value_pairs: list[str] = []
 
         for line in content.split("\n"):
             line = line.strip()
@@ -158,7 +158,7 @@ class ConfigAnalyzer(BaseCodeAnalyzer):
             # Section headers
             if line.startswith("[") and line.endswith("]"):
                 if current_section:
-                    sections.append((current_section, key_value_pairs))
+                    sections.append((current_section, key_value_pairs[:]))
                 current_section = line[1:-1]
                 key_value_pairs = []
             # Key-value pairs
@@ -200,7 +200,7 @@ class ConfigAnalyzer(BaseCodeAnalyzer):
         result.append("")
 
         # Parse INI structure
-        sections = {}
+        sections: dict[str, list[str]] = {}
         current_section = "DEFAULT"
 
         for line in content.split("\n"):
@@ -331,7 +331,7 @@ class ConfigAnalyzer(BaseCodeAnalyzer):
             return ["- **Empty array**"]
 
         # Analyze array content types
-        type_counts = {}
+        type_counts: dict[str, int] = {}
         for item in data[:100]:  # Sample first 100 items
             type_name = type(item).__name__
             type_counts[type_name] = type_counts.get(type_name, 0) + 1

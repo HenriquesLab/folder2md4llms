@@ -529,7 +529,7 @@ def main(
         result = processor.process(path)
 
         # --- Handle output ---
-        output_file = Path(getattr(config_obj, "output_file", "output.md"))
+        output_file = Path(getattr(config_obj, "output_file", None) or "output.md")
         output_file.write_text(result, encoding="utf-8")
 
         console.print(
