@@ -245,7 +245,10 @@ class MarkdownFormatter:
             stats_pattern = (
                 r"\*\*Stats:\*\* ([\d,]+) files • ([\d,]+(?:/[\d,]+)?) tokens.*"
             )
-            new_stats = f"**Stats:** {processing_stats.get('file_count', 0):,} files • {truncation_info['truncated_tokens']:,}/{original_tokens:,} tokens"
+            file_count = (
+                processing_stats.get("file_count", 0) if processing_stats else 0
+            )
+            new_stats = f"**Stats:** {file_count:,} files • {truncation_info['truncated_tokens']:,}/{original_tokens:,} tokens"
             content = re.sub(stats_pattern, new_stats, content, count=1)
         elif truncation_info["type"] == "character":
             # For character limits, we don't have truncated token info, so just show original

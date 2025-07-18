@@ -26,7 +26,9 @@ class PythonConverter(BaseConverter):
         )
 
         if self.condense_python:
-            self.analyzer = PythonCodeAnalyzer(condense_mode=self.condense_mode)
+            self.analyzer: PythonCodeAnalyzer | None = PythonCodeAnalyzer(
+                condense_mode=self.condense_mode
+            )
         else:
             self.analyzer = None
 

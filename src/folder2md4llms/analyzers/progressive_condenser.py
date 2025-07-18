@@ -129,10 +129,12 @@ class ProgressiveCondenser:
         tokens_saved = estimated_tokens - final_tokens
 
         # Update stats
-        self.stats["files_processed"] += 1
-        self.stats["tokens_saved"] += tokens_saved
-        level_count = self.stats["condensing_levels_used"].get(target_level, 0)
-        self.stats["condensing_levels_used"][target_level] = level_count + 1
+        self.stats["files_processed"] += 1  # type: ignore[operator]
+        self.stats["tokens_saved"] += tokens_saved  # type: ignore[operator]
+        levels_used = self.stats["condensing_levels_used"]
+        if isinstance(levels_used, dict):
+            level_count = levels_used.get(target_level, 0)
+            levels_used[target_level] = level_count + 1
 
         condensing_info = {
             "level": target_level,
@@ -242,18 +244,22 @@ class ProgressiveCondenser:
                 condensed_files += 1
                 compression_ratio = file_result.get("compression_ratio", 1.0)
                 total_compression += compression_ratio
-                stats["condensing_effectiveness"]["tokens_saved"] += file_result.get(
-                    "tokens_saved", 0
-                )
+                effectiveness = stats["condensing_effectiveness"]
+                if isinstance(effectiveness, dict):
+                    effectiveness["tokens_saved"] += file_result.get("tokens_saved", 0)  # type: ignore[operator]
 
             priority = file_result.get("priority", "MEDIUM")
-            stats["priority_distribution"][priority] += 1
+            priority_dist = stats["priority_distribution"]
+            if isinstance(priority_dist, dict):
+                priority_dist[priority] += 1  # type: ignore[operator]
 
         if condensed_files > 0:
-            stats["condensing_effectiveness"]["files_condensed"] = condensed_files
-            stats["condensing_effectiveness"]["average_compression"] = (
-                total_compression / condensed_files
-            )
+            effectiveness = stats["condensing_effectiveness"]
+            if isinstance(effectiveness, dict):
+                effectiveness["files_condensed"] = condensed_files
+                effectiveness["average_compression"] = (
+                    total_compression / condensed_files
+                )
 
         return stats
 
@@ -273,7 +279,7 @@ class ProgressiveCondenser:
                         function_names.append(node.name)
 
                 # Count similar patterns
-                pattern_counts = defaultdict(int)
+                pattern_counts: dict[str, int] = defaultdict(int)
                 for func_name in function_names:
                     # Normalize to detect patterns like get_X, set_X
                     normalized = re.sub(
@@ -586,7 +592,7 @@ class ProgressiveCondenser:
     def _light_condense_python(self, content: str, tree: ast.AST) -> str:
         """Light condensing: remove comments and excessive whitespace."""
         lines = content.split("\n")
-        condensed_lines = []
+        condensed_lines: list[str] = []
 
         for line in lines:
             stripped = line.strip()
@@ -614,7 +620,9 @@ class ProgressiveCondenser:
         lines = content.split("\n")
 
         # Get module docstring
-        module_docstring = ast.get_docstring(tree)
+        module_docstring = None
+        if hasattr(tree, "body") and isinstance(tree, ast.Module):
+            module_docstring = ast.get_docstring(tree)
         if module_docstring and priority in [
             PriorityLevel.CRITICAL,
             PriorityLevel.HIGH,
@@ -624,9 +632,10 @@ class ProgressiveCondenser:
 
         # Process imports (keep first 10, summarize rest)
         imports = []
-        for node in tree.body:
-            if isinstance(node, ast.Import | ast.ImportFrom):
-                imports.append(self._get_source_segment(lines, node))
+        if hasattr(tree, "body"):
+            for node in tree.body:
+                if isinstance(node, ast.Import | ast.ImportFrom):
+                    imports.append(self._get_source_segment(lines, node))
 
         if imports:
             result.extend(imports[:10])
@@ -635,13 +644,14 @@ class ProgressiveCondenser:
             result.append("")
 
         # Process classes and functions
-        for node in tree.body:
-            if isinstance(node, ast.ClassDef):
-                result.extend(self._condense_python_class(node, lines, priority))
-                result.append("")
-            elif isinstance(node, ast.FunctionDef):
-                result.extend(self._condense_python_function(node, lines, priority))
-                result.append("")
+        if hasattr(tree, "body"):
+            for node in tree.body:
+                if isinstance(node, ast.ClassDef):
+                    result.extend(self._condense_python_class(node, lines, priority))
+                    result.append("")
+                elif isinstance(node, ast.FunctionDef):
+                    result.extend(self._condense_python_function(node, lines, priority))
+                    result.append("")
 
         return "\n".join(result)
 
@@ -652,36 +662,38 @@ class ProgressiveCondenser:
 
         # Essential imports only
         essential_imports = []
-        for node in tree.body:
-            if isinstance(node, ast.Import | ast.ImportFrom):
-                import_line = self._get_source_segment(lines, node)
-                if any(
-                    keyword in import_line.lower()
-                    for keyword in ["from __future__", "import os", "import sys"]
-                ):
-                    essential_imports.append(import_line)
+        if hasattr(tree, "body"):
+            for node in tree.body:
+                if isinstance(node, ast.Import | ast.ImportFrom):
+                    import_line = self._get_source_segment(lines, node)
+                    if any(
+                        keyword in import_line.lower()
+                        for keyword in ["from __future__", "import os", "import sys"]
+                    ):
+                        essential_imports.append(import_line)
 
         if essential_imports:
             result.extend(essential_imports[:5])
             result.append("")
 
         # Class and function signatures only
-        for node in tree.body:
-            if isinstance(node, ast.ClassDef):
-                result.append(self._get_class_signature(node, lines))
-                # Include only critical methods
-                for item in node.body:
-                    if isinstance(item, ast.FunctionDef) and item.name in [
-                        "__init__",
-                        "__call__",
-                        "main",
-                    ]:
-                        result.append(
-                            "    " + self._get_function_signature(item, lines)
-                        )
-                result.append("")
-            elif isinstance(node, ast.FunctionDef):
-                result.append(self._get_function_signature(node, lines))
+        if hasattr(tree, "body"):
+            for node in tree.body:
+                if isinstance(node, ast.ClassDef):
+                    result.append(self._get_class_signature(node, lines))
+                    # Include only critical methods
+                    for item in node.body:
+                        if isinstance(item, ast.FunctionDef) and item.name in [
+                            "__init__",
+                            "__call__",
+                            "main",
+                        ]:
+                            result.append(
+                                "    " + self._get_function_signature(item, lines)
+                            )
+                    result.append("")
+                elif isinstance(node, ast.FunctionDef):
+                    result.append(self._get_function_signature(node, lines))
 
         return "\n".join(result)
 
@@ -692,16 +704,19 @@ class ProgressiveCondenser:
         classes = []
         functions = []
 
-        for node in tree.body:
-            if isinstance(node, ast.ClassDef):
-                methods = [
-                    item.name for item in node.body if isinstance(item, ast.FunctionDef)
-                ]
-                classes.append(
-                    f"class {node.name}: # Methods: {', '.join(methods[:5])}"
-                )
-            elif isinstance(node, ast.FunctionDef):
-                functions.append(f"def {node.name}(...)")
+        if hasattr(tree, "body"):
+            for node in tree.body:
+                if isinstance(node, ast.ClassDef):
+                    methods = [
+                        item.name
+                        for item in node.body
+                        if isinstance(item, ast.FunctionDef)
+                    ]
+                    classes.append(
+                        f"class {node.name}: # Methods: {', '.join(methods[:5])}"
+                    )
+                elif isinstance(node, ast.FunctionDef):
+                    functions.append(f"def {node.name}(...)")
 
         if classes:
             result.append("# Classes:")
@@ -1058,7 +1073,7 @@ class ProgressiveCondenser:
                     continue
                 elif in_docstring:
                     result.append(line)
-                    if docstring_quotes in line:
+                    if docstring_quotes and docstring_quotes in line:
                         in_docstring = False
                     continue
 
