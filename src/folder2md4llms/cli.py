@@ -53,7 +53,7 @@ click.rich_click.OPTION_GROUPS = {
 console = Console()
 
 
-def _generate_ignore_template(target_path: Path) -> None:
+def _generate_ignore_template(target_path: Path, force: bool = False) -> None:
     """Generate a .folder2md_ignore template file."""
     ignore_file = target_path / ".folder2md_ignore"
 
@@ -61,9 +61,17 @@ def _generate_ignore_template(target_path: Path) -> None:
         console.print(
             f"⚠️  .folder2md_ignore already exists at {ignore_file}", style="yellow"
         )
-        if not click.confirm("Overwrite existing file?"):
-            console.print("❌ Operation cancelled", style="red")
-            return
+        if not force:
+            # Handle non-interactive environment
+            if not sys.stdin.isatty():
+                console.print(
+                    "❌ File exists and --force not specified in non-interactive environment",
+                    style="red",
+                )
+                return
+            if not click.confirm("Overwrite existing file?"):
+                console.print("❌ Operation cancelled", style="red")
+                return
 
     template_content = """# folder2md4llms ignore patterns
 # This file specifies patterns for files and directories to ignore
@@ -412,6 +420,11 @@ repository_output.md
     help="Generate a .folder2md_ignore template file in the target directory.",
 )
 @click.option(
+    "--force",
+    is_flag=True,
+    help="Force overwrite existing files when using --init-ignore.",
+)
+@click.option(
     "--disable-update-check",
     is_flag=True,
     help="Disable the automatic check for new versions.",
@@ -426,6 +439,7 @@ def main(
     config: Path | None,
     clipboard: bool,
     init_ignore: bool,
+    force: bool,
     disable_update_check: bool,
     verbose: bool,
 ) -> None:
@@ -469,7 +483,7 @@ def main(
     """
     try:
         if init_ignore:
-            _generate_ignore_template(path)
+            _generate_ignore_template(path, force=force)
             return
 
         config_obj = Config.load(config_path=config, repo_path=path)

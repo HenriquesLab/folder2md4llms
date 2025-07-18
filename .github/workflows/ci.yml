@@ -189,7 +189,7 @@ jobs:
         echo "::endgroup::"
 
         echo "::group::Testing ignore file generation"
-        uv run folder2md --init-ignore
+        uv run folder2md --init-ignore --force
         test -f .folder2md_ignore
         echo "::endgroup::"
 
