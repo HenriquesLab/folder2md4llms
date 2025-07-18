@@ -91,7 +91,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.9', '3.11', '3.13']
+        python-version: ['3.11', '3.12', '3.13']
 
     steps:
     - name: Set up Python ${{ matrix.python-version }}
@@ -110,7 +110,8 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install dist/${{ needs.build.outputs.wheel-name }}
 
-    - name: Test installed package
+    - name: Test installed package (Unix)
+      if: runner.os != 'Windows'
       run: |
         echo "::group::Testing CLI availability"
         folder2md --help
@@ -151,10 +152,59 @@ jobs:
         fi
         echo "::endgroup::"
 
-    - name: Cleanup
-      if: always()
+    - name: Test installed package (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        echo "::group::Testing CLI availability"
+        folder2md --help
+        echo "::endgroup::"
+
+        echo "::group::Testing version"
+        folder2md --version
+        $VERSION_OUTPUT = folder2md --version 2>&1
+        Write-Host "Version output: $VERSION_OUTPUT"
+
+        # Check if version matches expected
+        if ($VERSION_OUTPUT -match "${{ needs.build.outputs.version }}") {
+          Write-Host "✅ Version matches expected: ${{ needs.build.outputs.version }}"
+        } else {
+          Write-Host "❌ Version mismatch!"
+          exit 1
+        }
+        echo "::endgroup::"
+
+        echo "::group::Testing basic functionality"
+        New-Item -ItemType Directory -Path "test_dir" -Force
+        Set-Content -Path "test_dir/README.md" -Value "# Test"
+        Set-Content -Path "test_dir/script.py" -Value "print('test')"
+
+        folder2md test_dir --output test_output.md
+
+        if (Test-Path "test_output.md") {
+          Write-Host "✅ Output file created"
+          if (Select-String -Path "test_output.md" -Pattern "Test" -Quiet) {
+            Write-Host "✅ Content processed correctly"
+          } else {
+            Write-Host "❌ Content not found in output"
+            exit 1
+          }
+        } else {
+          Write-Host "❌ Output file not created"
+          exit 1
+        }
+        echo "::endgroup::"
+      shell: pwsh
+
+    - name: Cleanup (Unix)
+      if: always() && runner.os != 'Windows'
       run: |
         rm -rf test_dir test_output.md || true
+
+    - name: Cleanup (Windows)
+      if: always() && runner.os == 'Windows'
+      run: |
+        Remove-Item -Path "test_dir", "test_output.md" -Recurse -Force -ErrorAction SilentlyContinue
+      shell: pwsh
 
   test-sdist:
     runs-on: ubuntu-latest
