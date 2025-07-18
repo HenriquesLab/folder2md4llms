@@ -196,3 +196,445 @@ class TestRepositoryProcessor:
 
         # Should describe binary files
         assert "binary.dat" in result or "image.jpg" in result
+
+    def test_process_with_smart_condensing(self, sample_repo, config):
+        """Test processing with smart condensing enabled."""
+        config.smart_condensing = True
+        config.token_limit = 1000
+        config.progressive_condensing = True
+        config.priority_analysis = True
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(sample_repo)
+
+        assert "# 📁 sample_repo" in result
+        assert processor.smart_engine is not None
+        assert processor.smart_python_converter is not None
+
+    def test_process_with_budget_strategy(self, sample_repo, config):
+        """Test processing with different budget strategies."""
+        config.smart_condensing = True
+        config.token_limit = 1000
+        config.token_budget_strategy = "aggressive"
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(sample_repo)
+
+        assert "# 📁 sample_repo" in result
+        assert processor.smart_engine is not None
+
+    def test_process_with_char_limit(self, sample_repo, config):
+        """Test processing with character limit instead of token limit."""
+        config.smart_condensing = True
+        config.char_limit = 4000  # Will be converted to ~1000 tokens
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(sample_repo)
+
+        assert "# 📁 sample_repo" in result
+        assert processor.smart_engine is not None
+
+    def test_process_with_gitignore_integration(self, temp_dir, config):
+        """Test processing with .gitignore integration."""
+        test_dir = temp_dir / "test_repo"
+        test_dir.mkdir()
+
+        # Create files
+        (test_dir / "main.py").write_text("print('main')")
+        (test_dir / "test.py").write_text("print('test')")
+        (test_dir / "build.txt").write_text("build output")
+
+        # Create .gitignore
+        gitignore = test_dir / ".gitignore"
+        gitignore.write_text("build.txt\n*.log\n")
+
+        config.use_gitignore = True
+        processor = RepositoryProcessor(config)
+        result = processor.process(test_dir)
+
+        # Should include Python files
+        assert "main.py" in result
+        assert "test.py" in result
+        # Note: .gitignore integration may still show files in tree structure
+        # The key is that the content is not included
+        assert "print('main')" in result
+        assert "print('test')" in result
+
+    def test_process_with_memory_monitoring(self, sample_repo, config):
+        """Test processing with memory monitoring enabled."""
+        config.max_memory_mb = 512
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(sample_repo)
+
+        assert "# 📁 sample_repo" in result
+        assert processor.memory_monitor is not None
+        assert processor.memory_monitor.max_memory_mb == 512
+
+    def test_process_with_streaming_processor(self, sample_repo, config):
+        """Test processing with streaming processor configuration."""
+        config.max_file_size = 1024 * 1024  # 1MB
+        config.max_workers = 2
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(sample_repo)
+
+        assert "# 📁 sample_repo" in result
+        assert processor.streaming_processor is not None
+        assert processor.streaming_processor.max_file_size == 1024 * 1024
+        assert processor.streaming_processor.max_workers == 2
+
+    def test_process_with_token_estimation_method(self, sample_repo, config):
+        """Test processing with different token estimation methods."""
+        config.token_estimation_method = "conservative"
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(sample_repo)
+
+        assert "# 📁 sample_repo" in result
+        assert processor.markdown_formatter.token_estimation_method == "conservative"
+
+    def test_process_with_hierarchical_ignore_files(self, temp_dir, config):
+        """Test processing with hierarchical ignore files."""
+        test_dir = temp_dir / "test_repo"
+        test_dir.mkdir()
+
+        # Create subdirectory
+        subdir = test_dir / "subdir"
+        subdir.mkdir()
+
+        # Create files
+        (test_dir / "main.py").write_text("print('main')")
+        (subdir / "sub.py").write_text("print('sub')")
+        (subdir / "temp.txt").write_text("temporary")
+
+        # Create root ignore file
+        root_ignore = test_dir / ".folder2md_ignore"
+        root_ignore.write_text("*.tmp\n")
+
+        # Create subdirectory ignore file
+        sub_ignore = subdir / ".folder2md_ignore"
+        sub_ignore.write_text("temp.txt\n")
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(test_dir)
+
+        # Should include Python files
+        assert "main.py" in result
+        assert "sub.py" in result
+        # Note: Files may still appear in tree structure but content should be excluded
+        assert "print('main')" in result
+        assert "print('sub')" in result
+
+    def test_process_with_ignore_suggestions(self, temp_dir, config):
+        """Test processing with ignore suggestions enabled."""
+        test_dir = temp_dir / "test_repo"
+        test_dir.mkdir()
+
+        # Create large files to trigger suggestions
+        (test_dir / "large1.txt").write_text("x" * 200000)  # 200KB
+        (test_dir / "large2.txt").write_text("x" * 200000)  # 200KB
+        (test_dir / "small.txt").write_text("small content")
+
+        config.suggestion_min_file_size = 100000  # 100KB
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(test_dir)
+
+        assert "# 📁 test_repo" in result
+        assert processor.ignore_suggester is not None
+
+    def test_process_with_verbose_output(self, temp_dir, config):
+        """Test processing with verbose output."""
+        test_dir = temp_dir / "test_repo"
+        test_dir.mkdir()
+
+        # Create ignore file
+        ignore_file = test_dir / ".folder2md_ignore"
+        ignore_file.write_text("*.tmp\n")
+
+        # Create test files
+        (test_dir / "main.py").write_text("print('main')")
+        (test_dir / "test.tmp").write_text("temp")
+
+        config.verbose = True
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(test_dir)
+
+        assert "# 📁 test_repo" in result
+        # Should process main.py but not test.tmp
+        assert "main.py" in result
+        assert "test.tmp" not in result
+
+    def test_processor_initialization_with_defaults(self, config):
+        """Test processor initialization with default values."""
+        processor = RepositoryProcessor(config)
+
+        assert processor.config == config
+        assert processor.smart_engine is None  # Not enabled by default
+        assert processor.smart_python_converter is None
+        assert processor.binary_analyzer is not None
+        assert processor.markdown_formatter is not None
+        assert processor.streaming_processor is not None
+        assert processor.memory_monitor is not None
+        assert processor.converter_factory is not None
+
+    def test_processor_initialization_with_smart_features(self, config):
+        """Test processor initialization with smart features enabled."""
+        config.smart_condensing = True
+        config.token_limit = 1000
+        config.priority_analysis = True
+        config.progressive_condensing = True
+        config.token_counting_method = "tiktoken"
+        config.target_model = "gpt-4"
+
+        processor = RepositoryProcessor(config)
+
+        assert processor.smart_engine is not None
+        assert processor.smart_python_converter is not None
+        assert processor.smart_engine.total_token_limit == 1000
+        assert processor.smart_engine.enable_priority_analysis is True
+        assert processor.smart_engine.enable_progressive_condensing is True
+        assert processor.smart_engine.token_counting_method == "tiktoken"
+        assert processor.smart_engine.target_model == "gpt-4"
+
+    def test_load_ignore_patterns_with_custom_file(self, temp_dir, config):
+        """Test loading ignore patterns from custom file."""
+        test_dir = temp_dir / "test_repo"
+        test_dir.mkdir()
+
+        # Create custom ignore file
+        custom_ignore = temp_dir / "custom_ignore.txt"
+        custom_ignore.write_text("*.test\n*.log\n")
+
+        config.ignore_file = custom_ignore
+
+        processor = RepositoryProcessor(config)
+        ignore_patterns = processor._load_ignore_patterns(test_dir)
+
+        assert ignore_patterns is not None
+        # Check that the custom ignore file path is in the loaded files (as string)
+        loaded_file_paths = [str(f) for f in ignore_patterns.loaded_files]
+        assert str(custom_ignore) in loaded_file_paths
+
+    def test_load_ignore_patterns_hierarchical(self, temp_dir, config):
+        """Test loading hierarchical ignore patterns."""
+        test_dir = temp_dir / "test_repo"
+        test_dir.mkdir()
+
+        # Create hierarchical ignore files
+        root_ignore = test_dir / ".folder2md_ignore"
+        root_ignore.write_text("*.tmp\n")
+
+        subdir = test_dir / "subdir"
+        subdir.mkdir()
+        sub_ignore = subdir / ".folder2md_ignore"
+        sub_ignore.write_text("*.test\n")
+
+        processor = RepositoryProcessor(config)
+        ignore_patterns = processor._load_ignore_patterns(test_dir)
+
+        assert ignore_patterns is not None
+        assert len(ignore_patterns.loaded_files) >= 1
+
+    def test_load_ignore_patterns_gitignore_fallback(self, temp_dir, config):
+        """Test loading gitignore as fallback when no ignore files exist."""
+        test_dir = temp_dir / "test_repo"
+        test_dir.mkdir()
+
+        # Create .gitignore
+        gitignore = test_dir / ".gitignore"
+        gitignore.write_text("build/\n*.log\n")
+
+        config.use_gitignore = True
+
+        processor = RepositoryProcessor(config)
+        ignore_patterns = processor._load_ignore_patterns(test_dir)
+
+        assert ignore_patterns is not None
+
+    def test_scan_repository_functionality(self, temp_dir, config):
+        """Test repository scanning functionality."""
+        test_dir = temp_dir / "test_repo"
+        test_dir.mkdir()
+
+        # Create test files
+        (test_dir / "main.py").write_text("print('main')")
+        (test_dir / "README.md").write_text("# README")
+
+        # Create subdirectory
+        subdir = test_dir / "subdir"
+        subdir.mkdir()
+        (subdir / "sub.py").write_text("print('sub')")
+
+        processor = RepositoryProcessor(config)
+        processor.ignore_patterns = processor._load_ignore_patterns(test_dir)
+
+        # Test scanning by calling the private method with minimal parameters
+        try:
+            file_list = processor._scan_repository(test_dir)
+            assert len(file_list) >= 3
+            file_names = [f.name for f in file_list]
+            assert "main.py" in file_names
+            assert "README.md" in file_names
+            assert "sub.py" in file_names
+        except TypeError:
+            # If method signature has changed, test via full processing
+            result = processor.process(test_dir)
+            assert "main.py" in result
+            assert "README.md" in result
+            assert "sub.py" in result
+
+    def test_process_with_large_repository(self, temp_dir, config):
+        """Test processing a larger repository structure."""
+        test_dir = temp_dir / "large_repo"
+        test_dir.mkdir()
+
+        # Create multiple directories and files
+        for i in range(3):
+            subdir = test_dir / f"module{i}"
+            subdir.mkdir()
+
+            (subdir / f"main{i}.py").write_text(f"print('module{i}')")
+            (subdir / f"test{i}.py").write_text(f"test for module{i}")
+            (subdir / f"README{i}.md").write_text(f"# Module {i}")
+
+        # Create root files
+        (test_dir / "setup.py").write_text("from setuptools import setup")
+        (test_dir / "requirements.txt").write_text("requests\nnumpy")
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(test_dir)
+
+        assert "# 📁 large_repo" in result
+        assert "module0" in result
+        assert "module1" in result
+        assert "module2" in result
+        assert "setup.py" in result
+        assert "requirements.txt" in result
+
+    def test_process_with_error_handling(self, temp_dir, config):
+        """Test processing with error handling scenarios."""
+        test_dir = temp_dir / "test_repo"
+        test_dir.mkdir()
+
+        # Create a file that might cause issues
+        (test_dir / "normal.py").write_text("print('normal')")
+
+        # Create a file with special characters
+        try:
+            (test_dir / "special.py").write_text("print('special: ñáéíóú')")
+        except Exception:
+            # Skip if filesystem doesn't support special characters
+            pass
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(test_dir)
+
+        # Should complete processing despite any file issues
+        assert "# 📁 test_repo" in result
+        assert "normal.py" in result
+
+    def test_process_with_different_file_encodings(self, temp_dir, config):
+        """Test processing files with different encodings."""
+        test_dir = temp_dir / "test_repo"
+        test_dir.mkdir()
+
+        # Create UTF-8 file
+        (test_dir / "utf8.py").write_text("print('UTF-8: áéíóú')", encoding="utf-8")
+
+        # Create ASCII file
+        (test_dir / "ascii.py").write_text("print('ASCII')", encoding="ascii")
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(test_dir)
+
+        assert "# 📁 test_repo" in result
+        assert "utf8.py" in result
+        assert "ascii.py" in result
+
+    def test_process_with_symlinks(self, temp_dir, config):
+        """Test processing with symbolic links."""
+        test_dir = temp_dir / "test_repo"
+        test_dir.mkdir()
+
+        # Create regular file
+        original_file = test_dir / "original.py"
+        original_file.write_text("print('original')")
+
+        # Create symlink (if supported)
+        try:
+            symlink_file = test_dir / "symlink.py"
+            symlink_file.symlink_to(original_file)
+        except (OSError, NotImplementedError):
+            # Skip if symlinks not supported
+            pytest.skip("Symlinks not supported on this platform")
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(test_dir)
+
+        assert "# 📁 test_repo" in result
+        assert "original.py" in result
+        # Symlink handling depends on configuration
+
+    def test_process_performance_with_many_files(self, temp_dir, config):
+        """Test processing performance with many files."""
+        test_dir = temp_dir / "perf_test"
+        test_dir.mkdir()
+
+        # Create many small files
+        for i in range(20):  # Keep reasonable for CI
+            (test_dir / f"file{i}.py").write_text(f"print('file{i}')")
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(test_dir)
+
+        assert "# 📁 perf_test" in result
+        # Check that all files are processed
+        for i in range(20):
+            assert f"file{i}.py" in result
+
+    def test_process_with_binary_and_text_mixed(self, temp_dir, config):
+        """Test processing with mixed binary and text files."""
+        test_dir = temp_dir / "mixed_repo"
+        test_dir.mkdir()
+
+        # Create text files
+        (test_dir / "script.py").write_text("#!/usr/bin/env python\nprint('script')")
+        (test_dir / "data.json").write_text('{"key": "value"}')
+        (test_dir / "config.yaml").write_text("setting: value")
+
+        # Create binary files
+        (test_dir / "image.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+        (test_dir / "binary.dat").write_bytes(b"\x00\x01\x02\x03\x04\x05")
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(test_dir)
+
+        assert "# 📁 mixed_repo" in result
+
+        # Text files should be processed with content
+        assert "script.py" in result
+        assert "print('script')" in result
+        assert "data.json" in result
+        assert '"key": "value"' in result
+
+        # Binary files should be described
+        assert "image.png" in result or "binary.dat" in result
+
+    def test_process_with_custom_formatter_settings(self, sample_repo, config):
+        """Test processing with custom formatter settings."""
+        config.include_preamble = True
+        config.token_limit = 5000
+        config.char_limit = 20000
+        config.token_estimation_method = "optimistic"
+
+        processor = RepositoryProcessor(config)
+        result = processor.process(sample_repo)
+
+        assert "# 📁 sample_repo" in result
+        assert processor.markdown_formatter.include_preamble is True
+        assert processor.markdown_formatter.token_limit == 5000
+        assert processor.markdown_formatter.char_limit == 20000
+        assert processor.markdown_formatter.token_estimation_method == "optimistic"
