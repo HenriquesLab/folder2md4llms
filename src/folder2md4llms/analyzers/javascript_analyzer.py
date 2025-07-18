@@ -226,7 +226,7 @@ class JavaScriptAnalyzer(RegexBasedAnalyzer):
         lines = preceding_content.split("\n")
 
         # Work backwards to find JSDoc
-        jsdoc_lines = []
+        jsdoc_lines: list[str] = []
         in_jsdoc = False
 
         for line in reversed(lines[-10:]):  # Check last 10 lines

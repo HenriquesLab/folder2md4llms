@@ -58,7 +58,6 @@ jobs:
       with:
         version: "latest"
         enable-cache: true
-        cache-dependency-glob: "pyproject.toml"
 
     - name: Install dependencies
       run: uv sync --group dev

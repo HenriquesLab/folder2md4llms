@@ -108,9 +108,9 @@ class TreeGenerator:
 
         return "\n".join(lines)
 
-    def count_items(self, root_path: Path) -> dict:
+    def count_items(self, root_path: Path) -> dict[str, int | dict[str, int]]:
         """Count files and directories in the tree."""
-        counts = {
+        counts: dict[str, int | dict[str, int]] = {
             "total_files": 0,
             "total_dirs": 0,
             "total_size": 0,

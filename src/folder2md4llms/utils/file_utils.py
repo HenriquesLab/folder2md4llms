@@ -163,7 +163,7 @@ def should_condense_python_file(file_path: Path, condense_python: bool = False) 
 
 
 def should_condense_code_file(
-    file_path: Path, condense_code: bool = False, condense_languages: list = None
+    file_path: Path, condense_code: bool = False, condense_languages: list | None = None
 ) -> bool:
     """Check if a code file should be condensed.
 

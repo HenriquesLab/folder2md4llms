@@ -69,7 +69,9 @@ class PythonCodeAnalyzer:
         result = []
 
         # Extract module-level docstring
-        module_docstring = ast.get_docstring(tree)
+        module_docstring = (
+            ast.get_docstring(tree) if isinstance(tree, ast.Module) else None
+        )
         if module_docstring:
             result.append(f'"""Module docstring:\n{module_docstring}\n"""')
             result.append("")
@@ -87,16 +89,17 @@ class PythonCodeAnalyzer:
             result.append("")
 
         # Process classes and functions
-        for node in tree.body:
-            if isinstance(node, ast.ClassDef):
-                result.extend(self._extract_class(node, lines))
-                result.append("")
-            elif isinstance(node, ast.FunctionDef):
-                result.extend(self._extract_function(node, lines))
-                result.append("")
-            elif isinstance(node, ast.AsyncFunctionDef):
-                result.extend(self._extract_async_function(node, lines))
-                result.append("")
+        if hasattr(tree, "body"):
+            for node in tree.body:
+                if isinstance(node, ast.ClassDef):
+                    result.extend(self._extract_class(node, lines))
+                    result.append("")
+                elif isinstance(node, ast.FunctionDef):
+                    result.extend(self._extract_function(node, lines))
+                    result.append("")
+                elif isinstance(node, ast.AsyncFunctionDef):
+                    result.extend(self._extract_async_function(node, lines))
+                    result.append("")
 
         return "\n".join(result)
 
@@ -286,7 +289,7 @@ class PythonCodeAnalyzer:
             # Simple single-line extraction
             line_idx = node.lineno - 1
             if 0 <= line_idx < len(lines):
-                return lines[line_idx].strip()
+                return str(lines[line_idx].strip())
             return str(node)
         except (AttributeError, IndexError):
             return str(node)
