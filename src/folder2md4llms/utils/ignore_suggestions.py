@@ -248,11 +248,12 @@ class IgnoreSuggester:
 
     def _format_size(self, size: int) -> str:
         """Format file size in human-readable format."""
+        size_float = float(size)
         for unit in ["B", "KB", "MB", "GB"]:
-            if size < 1024.0:
-                return f"{size:.1f} {unit}"
-            size = int(size / 1024.0)
-        return f"{size:.1f} TB"
+            if size_float < 1024.0:
+                return f"{size_float:.1f} {unit}"
+            size_float = size_float / 1024.0
+        return f"{size_float:.1f} TB"
 
     def get_suggestions(self) -> list[tuple[str, list[str]]]:
         """Get all suggestions grouped by category."""

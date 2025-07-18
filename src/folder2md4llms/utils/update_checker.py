@@ -103,7 +103,7 @@ class UpdateChecker:
                     parts.append(int(part))
                 except ValueError:
                     # Handle non-numeric parts (like "rc1")
-                    pass
+                    parts.append(part)
             return tuple(parts)
         except Exception:
             # Fallback to string comparison if parsing fails
