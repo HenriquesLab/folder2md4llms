@@ -97,7 +97,7 @@ class UpdateChecker:
         )
 
         try:
-            parts = []
+            parts: list[int | str] = []
             for part in clean_version.split("."):
                 try:
                     parts.append(int(part))
