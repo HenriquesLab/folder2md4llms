@@ -167,6 +167,7 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+exclude = ["src/folder2md4llms/__about__.py"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -195,4 +196,6 @@ dev = [
     "mypy>=1.0.0",
     "types-PyYAML",
     "pytest-mock>=3.14.1",
+    "build>=1.2.2.post1",
+    "setuptools-scm>=8.3.1",
 ]
