@@ -354,9 +354,9 @@ class SmartAntiTruncationEngine:
             report["budget_report"] = self.budget_manager.get_budget_report()
 
         if self.progressive_condenser:
-            report[
-                "condensing_stats"
-            ] = self.progressive_condenser.get_condensing_stats()
+            report["condensing_stats"] = (
+                self.progressive_condenser.get_condensing_stats()
+            )
 
         return report
 
