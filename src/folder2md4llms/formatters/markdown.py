@@ -7,7 +7,7 @@ from pathlib import Path
 from pygments.lexers import guess_lexer_for_filename
 from pygments.util import ClassNotFound
 
-from ..__about__ import __version__
+from ..__version__ import __version__
 from ..utils.file_utils import get_language_from_extension
 from ..utils.token_utils import estimate_tokens_from_text
 

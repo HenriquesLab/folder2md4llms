@@ -1,27 +1,29 @@
-"""Update checker for folder2md4llms."""
+"""Update checker module for folder2md4llms."""
 
 import asyncio
 import json
+import os
+import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any, Dict, Optional, Union
 
+import httpx
+import rich
+from packaging.version import Version
 from rich.console import Console
 
-try:
-    import httpx
+from ..__version__ import __version__
 
-    HTTPX_AVAILABLE = True
-except ImportError:
-    HTTPX_AVAILABLE = False
-
-from ..__about__ import __version__
-
-console = Console()
-
+# Constants
+DEFAULT_CHECK_INTERVAL = 24 * 60 * 60  # 24 hours in seconds
 CACHE_DIR = Path.home() / ".cache" / "folder2md4llms"
 CACHE_FILE = CACHE_DIR / "update_check.json"
 PYPI_API_URL = "https://pypi.org/pypi/folder2md4llms/json"
-DEFAULT_CHECK_INTERVAL = 24 * 60 * 60  # 24 hours in seconds
+HTTPX_AVAILABLE = True
+
+# Console for rich output
+console = Console()
 
 
 class UpdateChecker:
