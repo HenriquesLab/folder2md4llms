@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling>=1.4.1", "hatch-vcs"]
+requires = ["hatchling>=1.4.1"]
 build-backend = "hatchling.build"
 
 [project]
 name = "folder2md4llms"
-dynamic = ["version"]
+version = "0.4.31"
 description = "Enhanced tool to concatenate folder contents into markdown format for LLM consumption"
 authors = [
     {name = "Ricardo Henriques", email = "ricardo@henriqueslab.org"}
@@ -66,12 +66,6 @@ Issues = "https://github.com/henriqueslab/folder2md4llms/issues"
 
 [project.scripts]
 folder2md = "folder2md4llms.cli:main"
-
-[tool.hatch.version]
-source = "vcs"
-
-[tool.hatch.build.hooks.vcs]
-version-file = "src/folder2md4llms/__about__.py"
 
 # Hatch environments configuration
 [tool.hatch.envs.default]

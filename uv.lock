@@ -382,6 +382,7 @@ wheels = [
 
 [[package]]
 name = "folder2md4llms"
+version = "0.4.31"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
