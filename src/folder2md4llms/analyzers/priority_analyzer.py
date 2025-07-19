@@ -594,25 +594,37 @@ class ContentPriorityAnalyzer:
 
     def detect_framework(self, repo_path: Path) -> str | None:
         """Detect the primary framework used in the repository."""
-        # Check for framework-specific files
-        indicators = {
-            "django": ["manage.py", "django.po"],
-            "flask": ["flask.py", "flask_app.py"],
-            "fastapi": ["fastapi", "uvicorn"],
-            "react": ["package.json", "react"],
-            "nextjs": ["next.config.js", "next.config.mjs"],
-        }
+        # Skip framework detection if path doesn't exist or isn't accessible
+        if not repo_path.exists() or not repo_path.is_dir():
+            return None
 
-        for framework, files in indicators.items():
-            for indicator in files:
-                if list(repo_path.rglob(indicator)):
-                    return framework
+        try:
+            # Check for framework-specific files
+            indicators = {
+                "django": ["manage.py", "django.po"],
+                "flask": ["flask.py", "flask_app.py"],
+                "fastapi": ["fastapi", "uvicorn"],
+                "react": ["package.json", "react"],
+                "nextjs": ["next.config.js", "next.config.mjs"],
+            }
+
+            for framework, files in indicators.items():
+                for indicator in files:
+                    if list(repo_path.rglob(indicator)):
+                        return framework
+        except (OSError, PermissionError):
+            # Return None if directory is inaccessible
+            return None
 
         # Check package files for dependencies
         return self._check_dependencies(repo_path)
 
     def _check_dependencies(self, repo_path: Path) -> str | None:
         """Check package files for framework dependencies."""
+        # Skip if path doesn't exist
+        if not repo_path.exists():
+            return None
+
         # Check package.json for JS frameworks
         package_json = repo_path / "package.json"
         if package_json.exists():
