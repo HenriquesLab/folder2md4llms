@@ -83,6 +83,7 @@ dev = [
     "bandit>=1.8.6",
     "build>=1.2.2.post1",
     "twine>=6.1.0",
+    "tiktoken>=0.5.0",  # For accurate token counting in tests
 ]
 
 # Keep Rye section for backwards compatibility but managed=false

@@ -436,6 +436,7 @@ dev = [
     { name = "pytest-mock" },
     { name = "pytest-xdist" },
     { name = "ruff" },
+    { name = "tiktoken" },
     { name = "twine" },
     { name = "types-pyyaml" },
 ]
@@ -488,6 +489,7 @@ dev = [
     { name = "pytest-mock", specifier = ">=3.14.0" },
     { name = "pytest-xdist", specifier = ">=3.0.0" },
     { name = "ruff", specifier = ">=0.12.4" },
+    { name = "tiktoken", specifier = ">=0.5.0" },
     { name = "twine", specifier = ">=6.1.0" },
     { name = "types-pyyaml" },
 ]
