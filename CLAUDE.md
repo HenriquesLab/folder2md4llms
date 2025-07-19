@@ -146,16 +146,14 @@ The folder2md4llms project maintains a multi-repository structure for cross-plat
 **Purpose**: Windows package distribution via Scoop package manager
 
 **GitHub Actions Workflows**:
-- **Excavator** (`excavator.yml`): Automated version monitoring and updates
+- **Test Manifest** (`test-manifest.yml`): Comprehensive testing pipeline
+  - Matrix testing across Windows versions and Python versions (3.11, 3.12, 3.13)
+  - JSON validation, installation, and functionality testing
+  - Runs on push, PR, and daily schedule
+- **Update Manifest** (`update-manifest.yml`): Automated version monitoring and updates
   - Runs every 4 hours to check PyPI for new versions
   - Automatically updates Scoop manifest and creates PRs
-  - Comprehensive testing pipeline (JSON validation, installation, functionality)
-- **CI** (`ci.yml`): Continuous integration testing
-  - Matrix testing across Windows versions and Python versions (3.11, 3.12)
-  - Full installation and functionality testing
-- **Issue Handler** (`issue-handler.yml`): Automated user support
-  - Handles installation issues with automated testing
-  - Auto-labels and responds to common issues
+  - Tests updated manifest before creating PR
 
 **Package Manifest**: `bucket/folder2md4llms.json`
 - Current version tracking and autoupdate configuration
@@ -169,8 +167,7 @@ The folder2md4llms project maintains a multi-repository structure for cross-plat
 - **Test Formula** (`test-formula.yml`): Formula syntax and installation testing
   - Validates Homebrew formula syntax
   - Tests installation from source
-- **Test Installation** (`test-installation.yml`): Cross-platform functionality testing
-  - Matrix testing on macOS and Ubuntu
+- Matrix testing on macOS-13 and macOS-14
   - Comprehensive functionality testing including CLI commands, file conversion, configuration
 
 **Formula File**: `Formula/folder2md4llms.rb`
