@@ -104,6 +104,7 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
+        password: ${{ secrets.TESTPYPI_TOKEN }}
         verbose: true
         print-hash: true
 
@@ -138,6 +139,7 @@ jobs:
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
+        password: ${{ secrets.PYPI_TOKEN }}
         verbose: true
         print-hash: true
 
