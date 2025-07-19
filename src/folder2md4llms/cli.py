@@ -6,7 +6,7 @@ from pathlib import Path
 import rich_click as click
 from rich.console import Console
 
-from .__about__ import __version__
+from .__version__ import __version__
 from .processor import RepositoryProcessor
 from .utils.config import Config
 from .utils.update_checker import check_for_updates
