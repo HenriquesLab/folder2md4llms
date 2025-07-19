@@ -67,9 +67,9 @@ Issues = "https://github.com/henriqueslab/folder2md4llms/issues"
 [project.scripts]
 folder2md = "folder2md4llms.cli:main"
 
-# Rye environments configuration
-[tool.rye]
-dev-dependencies = [
+# UV dependency groups configuration
+[dependency-groups]
+dev = [
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
     "pytest-asyncio>=0.21.0",
@@ -84,6 +84,10 @@ dev-dependencies = [
     "build>=1.2.2.post1",
     "twine>=6.1.0",
 ]
+
+# Keep Rye section for backwards compatibility but managed=false
+[tool.rye]
+managed = false
 
 [tool.ruff]
 line-length = 88
