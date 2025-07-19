@@ -37,7 +37,7 @@ class DOCXConverter(BaseConverter):
             return "DOCX conversion not available. Install python-docx: pip install python-docx"
 
         try:
-            doc = Document(file_path)
+            doc = Document(str(file_path))
 
             text_parts = []
             text_parts.append(f"Word Document: {file_path.name}")
@@ -86,7 +86,7 @@ class DOCXConverter(BaseConverter):
             return info
 
         try:
-            doc = Document(file_path)
+            doc = Document(str(file_path))
 
             # Count content elements
             paragraph_count = len(doc.paragraphs)

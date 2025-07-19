@@ -1,19 +1,25 @@
 name: Release to PyPI
 
-# This is a dummy comment to force a new commit and trigger workflow re-evaluation.
-
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write  # Required for trusted publishing
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag-version: ${{ steps.tag.outputs.tag-version }}
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Fetch all history for hatch-vcs
 
@@ -22,46 +28,155 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install uv
+    - name: Install UV
       uses: astral-sh/setup-uv@v4
       with:
         version: "latest"
+        enable-cache: true
 
-    - name: Setup environment
-      run: |
-        uv sync --dev
+    - name: Install dependencies
+      run: uv sync --group dev
 
-    - name: Run tests
-      run: uv run pytest
-
-    - name: Check version matches tag
+    - name: Get versions
+      id: version
       run: |
         VERSION=$(uv run python -c "from folder2md4llms.__about__ import __version__; print(__version__)")
-        TAG_VERSION=${GITHUB_REF#refs/tags/v}
-
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Package version: $VERSION"
+
+    - name: Get tag version
+      id: tag
+      run: |
+        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+        else
+          TAG_VERSION="manual"
+        fi
+        echo "tag-version=$TAG_VERSION" >> $GITHUB_OUTPUT
         echo "Tag version: $TAG_VERSION"
 
-        if [ "$VERSION" != "$TAG_VERSION" ]; then
-          echo "Error: Version mismatch between package ($VERSION) and git tag (v$TAG_VERSION)."
-          echo "Ensure the auto-generated file 'src/folder2md4llms/__about__.py' is in your .gitignore."
+    - name: Check version matches tag
+      if: github.ref_type == 'tag'
+      run: |
+        if [ "${{ steps.version.outputs.version }}" != "${{ steps.tag.outputs.tag-version }}" ]; then
+          echo "❌ Error: Version mismatch between package (${{ steps.version.outputs.version }}) and git tag (v${{ steps.tag.outputs.tag-version }})."
           exit 1
         fi
+        echo "✅ Version matches tag"
+
+    - name: Run tests
+      run: |
+        uv run pytest -x --tb=short
 
     - name: Build package
       run: |
-        echo "Building package..."
+        echo "::group::Building package"
         uv build
-        # List the built packages
+        echo "::endgroup::"
+
+        echo "::group::Package contents"
         ls -la dist/
-        # Verify the built packages have the correct version
-        echo "Built packages:"
-        for file in dist/*; do
-          echo "  $file"
-        done
+        echo "::endgroup::"
+
+        echo "::group::Validate package"
+        uv run twine check dist/*
+        echo "::endgroup::"
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-packages
+        path: dist/
+        retention-days: 30
+
+  test-pypi:
+    runs-on: ubuntu-latest
+    needs: build
+    environment: test-pypi
+
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist-packages
+        path: dist/
+
+    - name: Publish to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        verbose: true
+        print-hash: true
+
+    - name: Test installation from TestPyPI
+      run: |
+        sleep 60  # Wait for TestPyPI to process the package
+
+        python -m pip install --upgrade pip
+        python -m pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ folder2md4llms==${{ needs.build.outputs.version }}
+
+        # Test the installation
+        folder2md --version
+        echo "# Test" > test.md
+        folder2md . --output test_output.md
+        test -f test_output.md
+
+        echo "✅ TestPyPI installation successful"
+
+  pypi:
+    runs-on: ubuntu-latest
+    needs: [build, test-pypi]
+    environment: pypi
+    if: github.ref_type == 'tag'
+
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist-packages
+        path: dist/
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        password: ${{ secrets.PYPI_API_TOKEN }}
         verbose: true
+        print-hash: true
+
+    - name: Test installation from PyPI
+      run: |
+        sleep 120  # Wait for PyPI to process the package
+
+        python -m pip install --upgrade pip
+        python -m pip install folder2md4llms==${{ needs.build.outputs.version }}
+
+        # Test the installation
+        folder2md --version
+        echo "# Test" > test.md
+        folder2md . --output test_output.md
+        test -f test_output.md
+
+        echo "✅ PyPI installation successful"
+
+  update-submodules:
+    runs-on: ubuntu-latest
+    needs: [build, pypi]
+    if: github.ref_type == 'tag' && success()
+
+    steps:
+    - name: Trigger submodule updates
+      run: |
+        # Trigger Homebrew formula update
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/HenriquesLab/homebrew-folder2md4llms/dispatches \
+          -d '{"event_type":"new_release","client_payload":{"version":"${{ needs.build.outputs.version }}","tag":"v${{ needs.build.outputs.version }}"}}'
+
+        # Trigger Scoop manifest update
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/HenriquesLab/scoop-folder2md4llms/dispatches \
+          -d '{"event_type":"new_release","client_payload":{"version":"${{ needs.build.outputs.version }}","tag":"v${{ needs.build.outputs.version }}"}}'
+
+        echo "✅ Submodule update triggers sent"

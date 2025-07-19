@@ -88,9 +88,9 @@ class RTFConverter(BaseConverter):
             )
 
             if file_size > self.max_size:
-                info[
-                    "warning"
-                ] = f"File too large for conversion (max {self.max_size} bytes)"
+                info["warning"] = (
+                    f"File too large for conversion (max {self.max_size} bytes)"
+                )
 
         except Exception as e:
             info["error"] = str(e)

@@ -344,7 +344,7 @@ class ContentPriorityAnalyzer:
         Returns:
             Dictionary mapping file paths to normalized importance scores (0.0 to 1.0)
         """
-        import_counts = defaultdict(int)
+        import_counts: dict[Path, int] = defaultdict(int)
 
         # Build reverse import graph - who imports what
         for file_path in repo_path.rglob("*.py"):

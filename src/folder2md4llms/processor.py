@@ -37,6 +37,16 @@ logger = logging.getLogger(__name__)
 class RepositoryProcessor:
     """Main processor for converting repositories to markdown."""
 
+    config: Config
+    smart_engine: SmartAntiTruncationEngine | None
+    ignore_patterns: IgnorePatterns | None
+    tree_generator: TreeGenerator | None
+    converter_factory: ConverterFactory
+    smart_python_converter: SmartPythonConverter | None
+    binary_analyzer: BinaryAnalyzer
+    markdown_formatter: MarkdownFormatter
+    ignore_suggester: IgnoreSuggester | None
+
     def __init__(self, config: Config):
         self.config = config
 
@@ -69,11 +79,16 @@ class RepositoryProcessor:
                 enable_progressive_condensing=getattr(
                     config, "progressive_condensing", True
                 ),
+                token_counting_method=getattr(
+                    config, "token_counting_method", "tiktoken"
+                ),
+                target_model=getattr(config, "target_model", "gpt-4"),
             )
 
         # Initialize components (ignore_patterns will be loaded in process method)
         self.ignore_patterns = None
         self.tree_generator = None
+        self.ignore_suggester = None
         self.converter_factory = ConverterFactory(config.__dict__)
 
         # Add smart Python converter if smart condensing is enabled
@@ -141,17 +156,23 @@ class RepositoryProcessor:
 
         # Load ignore patterns and initialize tree generator
         self.ignore_patterns = self._load_ignore_patterns(repo_path)
-        self.tree_generator = TreeGenerator(self.ignore_patterns)
+        if self.ignore_patterns is not None:
+            self.tree_generator = TreeGenerator(self.ignore_patterns)
 
         # Initialize ignore suggester with loaded patterns
-        self.ignore_suggester = IgnoreSuggester(
-            min_file_size=getattr(self.config, "suggestion_min_file_size", 100_000),
-            min_dir_size=getattr(self.config, "suggestion_min_dir_size", 1_000_000),
-            ignore_patterns=self.ignore_patterns,
-        )
+        if self.ignore_patterns is not None:
+            self.ignore_suggester = IgnoreSuggester(
+                min_file_size=getattr(self.config, "suggestion_min_file_size", 100_000),
+                min_dir_size=getattr(self.config, "suggestion_min_dir_size", 1_000_000),
+                ignore_patterns=self.ignore_patterns,
+            )
 
         # Display loaded ignore files if verbose
-        if self.config.verbose and self.ignore_patterns.loaded_files:
+        if (
+            self.config.verbose
+            and self.ignore_patterns
+            and self.ignore_patterns.loaded_files
+        ):
             from rich.console import Console
 
             console = Console()
@@ -162,17 +183,17 @@ class RepositoryProcessor:
             console.print()
 
         # Initialize progress tracking
+        scan_task: TaskID | None = None
+        process_task: TaskID | None = None
         if progress:
             scan_task = progress.add_task("Scanning files...", total=None)
             process_task = progress.add_task("Processing files...", total=None)
-        else:
-            scan_task = process_task = None
 
         try:
             # Scan repository
             file_list = self._scan_repository(repo_path, progress, scan_task)
 
-            if progress:
+            if progress and scan_task is not None and process_task is not None:
                 progress.update(scan_task, completed=True, total=len(file_list))
                 progress.update(process_task, total=len(file_list))
 
@@ -188,7 +209,7 @@ class RepositoryProcessor:
 
             # Generate tree structure
             tree_structure = None
-            if self.config.include_tree:
+            if self.config.include_tree and self.tree_generator:
                 tree_structure = self.tree_generator.generate_tree(repo_path)
 
             # Create processing stats for preamble
@@ -223,14 +244,16 @@ class RepositoryProcessor:
             )
 
             # Display ignore suggestions if enabled
-            if self.config.verbose:
-                output_file = Path(getattr(self.config, "output_file", "output.md"))
+            if self.config.verbose and self.ignore_suggester:
+                output_file = Path(
+                    getattr(self.config, "output_file", None) or "output.md"
+                )
                 self.ignore_suggester.display_suggestions(output_file)
 
             return output
 
         finally:
-            if progress:
+            if progress and scan_task is not None and process_task is not None:
                 progress.remove_task(scan_task)
                 progress.remove_task(process_task)
 
@@ -243,18 +266,22 @@ class RepositoryProcessor:
         def scan_directory(path: Path):
             try:
                 for item in path.iterdir():
-                    if self.ignore_patterns.should_ignore(item, repo_path):
+                    if self.ignore_patterns and self.ignore_patterns.should_ignore(
+                        item, repo_path
+                    ):
                         continue
 
                     if item.is_file():
                         files.append(item)
                         # Analyze files that will be processed for suggestions
-                        self.ignore_suggester.analyze_path(item, repo_path)
+                        if self.ignore_suggester:
+                            self.ignore_suggester.analyze_path(item, repo_path)
                         if progress and task:
                             progress.update(task, advance=1)
                     elif item.is_dir():
                         # Analyze directories for suggestions
-                        self.ignore_suggester.analyze_path(item, repo_path)
+                        if self.ignore_suggester:
+                            self.ignore_suggester.analyze_path(item, repo_path)
                         scan_directory(item)
 
             except (OSError, PermissionError) as e:
@@ -274,7 +301,7 @@ class RepositoryProcessor:
         task: TaskID | None,
     ) -> dict[str, Any]:
         """Process all files and categorize them using streaming and parallel processing."""
-        results = {
+        results: dict[str, Any] = {
             "text_files": {},
             "converted_docs": {},
             "binary_files": {},
@@ -282,7 +309,7 @@ class RepositoryProcessor:
         }
 
         # Statistics
-        stats = {
+        stats: dict[str, Any] = {
             "total_files": len(file_list),
             "text_files": 0,
             "binary_files": 0,
@@ -340,7 +367,12 @@ class RepositoryProcessor:
                     results["text_files"][rel_path] = result["content"]
                     stats["text_files"] += 1
                     stats["text_size"] += len(result["content"].encode("utf-8"))
-                    stats["estimated_tokens"] += result.get("estimated_tokens", 0)
+                    estimated_tokens = result.get("estimated_tokens", 0)
+                    stats["estimated_tokens"] += (
+                        int(estimated_tokens)
+                        if isinstance(estimated_tokens, str)
+                        else estimated_tokens
+                    )
 
                     # Track language
                     language = get_language_from_extension(file_path.suffix.lower())
@@ -429,6 +461,8 @@ class RepositoryProcessor:
     ) -> dict[str, Any]:
         """Process files using the smart anti-truncation engine."""
         # First, analyze the repository to get priorities and estimates
+        if self.smart_engine is None:
+            raise ValueError("Smart engine is not initialized")
         (
             file_priorities,
             token_estimates,
@@ -441,14 +475,14 @@ class RepositoryProcessor:
         )
 
         # Process files normally but with smart engine enhancements
-        results = {
+        results: dict[str, Any] = {
             "text_files": {},
             "converted_docs": {},
             "binary_files": {},
             "stats": defaultdict(int),
         }
 
-        stats = defaultdict(int)
+        stats: dict[str, Any] = defaultdict(int)
         stats["total_files"] = len(file_list)
         stats["languages"] = defaultdict(int)
 
@@ -516,11 +550,18 @@ class RepositoryProcessor:
                     results["text_files"][rel_path] = processed_content
                     stats["text_files"] += 1
                     stats["text_size"] += len(processed_content.encode("utf-8"))
-                    stats["estimated_tokens"] += processing_info.get("final_tokens", 0)
+                    if isinstance(processing_info, dict):
+                        stats["estimated_tokens"] += processing_info.get(
+                            "final_tokens", 0
+                        )
 
                     # Track original and condensed tokens for smart condensing stats
-                    original_tokens = processing_info.get("original_tokens", 0)
-                    final_tokens = processing_info.get("final_tokens", 0)
+                    if isinstance(processing_info, dict):
+                        original_tokens = processing_info.get("original_tokens", 0)
+                        final_tokens = processing_info.get("final_tokens", 0)
+                    else:
+                        original_tokens = 0
+                        final_tokens = 0
                     original_tokens_total += original_tokens
                     condensed_tokens_total += final_tokens
 
@@ -532,8 +573,9 @@ class RepositoryProcessor:
                         stats["languages"]["unknown"] += 1
 
                     # Update smart engine stats
-                    if hasattr(self.smart_engine, "stats"):
-                        self.smart_engine.stats["files_processed"] += 1
+                    if self.smart_engine and hasattr(self.smart_engine, "stats"):
+                        count = self.smart_engine.stats.get("files_processed", 0)
+                        self.smart_engine.stats["files_processed"] = int(count) + 1
 
                 except Exception as e:
                     logger.error(f"Error processing file {file_path}: {e}")
@@ -614,8 +656,14 @@ class RepositoryProcessor:
                             results["converted_docs"][rel_path] = processed_content
 
                             # Track tokens for smart condensing stats
-                            original_tokens = processing_info.get("original_tokens", 0)
-                            final_tokens = processing_info.get("final_tokens", 0)
+                            if isinstance(processing_info, dict):
+                                original_tokens = processing_info.get(
+                                    "original_tokens", 0
+                                )
+                                final_tokens = processing_info.get("final_tokens", 0)
+                            else:
+                                original_tokens = 0
+                                final_tokens = 0
                             original_tokens_total += original_tokens
                             condensed_tokens_total += final_tokens
                         else:

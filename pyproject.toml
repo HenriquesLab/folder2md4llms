@@ -54,6 +54,9 @@ dev = [
     "pyperclip>=1.8.2",
     "build>=1.0.3",
 ]
+tiktoken = [
+    "tiktoken>=0.5.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/henriqueslab/folder2md4llms"
@@ -154,6 +157,7 @@ extend-ignore = [
 "__init__.py" = ["F401"]
 "tests/**/*.py" = ["S101", "D103", "PLR2004"]  # Allow asserts, missing docstrings, magic values in tests
 "src/folder2md4llms/cli.py" = ["T201"]  # Allow print statements in CLI
+"src/folder2md4llms/__about__.py" = ["UP035", "UP006", "UP007", "I001"]  # Generated file - ignore type annotation updates
 
 [tool.ruff.lint.isort]
 known-first-party = ["folder2md4llms"]
@@ -163,6 +167,7 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+exclude = ["src/folder2md4llms/__about__.py"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -191,4 +196,7 @@ dev = [
     "mypy>=1.0.0",
     "types-PyYAML",
     "pytest-mock>=3.14.1",
+    "build>=1.2.2.post1",
+    "setuptools-scm>=8.3.1",
+    "bandit>=1.8.6",
 ]

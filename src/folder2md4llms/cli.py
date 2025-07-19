@@ -53,17 +53,26 @@ click.rich_click.OPTION_GROUPS = {
 console = Console()
 
 
-def _generate_ignore_template(target_path: Path) -> None:
+def _generate_ignore_template(target_path: Path, force: bool = False) -> None:
     """Generate a .folder2md_ignore template file."""
     ignore_file = target_path / ".folder2md_ignore"
 
     if ignore_file.exists():
         console.print(
-            f"⚠️  .folder2md_ignore already exists at {ignore_file}", style="yellow"
+            f"[WARNING] .folder2md_ignore already exists at {ignore_file}",
+            style="yellow",
         )
-        if not click.confirm("Overwrite existing file?"):
-            console.print("❌ Operation cancelled", style="red")
-            return
+        if not force:
+            # Handle non-interactive environment
+            if not sys.stdin.isatty():
+                console.print(
+                    "[ERROR] File exists and --force not specified in non-interactive environment",
+                    style="red",
+                )
+                return
+            if not click.confirm("Overwrite existing file?"):
+                console.print("[ERROR] Operation cancelled", style="red")
+                return
 
     template_content = """# folder2md4llms ignore patterns
 # This file specifies patterns for files and directories to ignore
@@ -363,14 +372,15 @@ repository_output.md
     try:
         ignore_file.write_text(template_content, encoding="utf-8")
         console.print(
-            f"✅ Generated .folder2md_ignore template at {ignore_file}", style="green"
+            f"[SUCCESS] Generated .folder2md_ignore template at {ignore_file}",
+            style="green",
         )
         console.print(
-            "📝 Edit the file to customize ignore patterns for your project",
+            "[NOTE] Edit the file to customize ignore patterns for your project",
             style="cyan",
         )
     except Exception as e:
-        console.print(f"❌ Error creating ignore template: {e}", style="red")
+        console.print(f"[ERROR] Error creating ignore template: {e}", style="red")
         sys.exit(1)
 
 
@@ -412,6 +422,11 @@ repository_output.md
     help="Generate a .folder2md_ignore template file in the target directory.",
 )
 @click.option(
+    "--force",
+    is_flag=True,
+    help="Force overwrite existing files when using --init-ignore.",
+)
+@click.option(
     "--disable-update-check",
     is_flag=True,
     help="Disable the automatic check for new versions.",
@@ -426,6 +441,7 @@ def main(
     config: Path | None,
     clipboard: bool,
     init_ignore: bool,
+    force: bool,
     disable_update_check: bool,
     verbose: bool,
 ) -> None:
@@ -469,7 +485,7 @@ def main(
     """
     try:
         if init_ignore:
-            _generate_ignore_template(path)
+            _generate_ignore_template(path, force=force)
             return
 
         config_obj = Config.load(config_path=config, repo_path=path)
@@ -501,27 +517,28 @@ def main(
 
             if not limit_val_str.isdigit() or limit_unit not in ["t", "c"]:
                 console.print(
-                    "❌ Invalid limit format. Use <number>t for tokens or <number>c for characters.",
+                    "[ERROR] Invalid limit format. Use <number>t for tokens or <number>c for characters.",
                     style="red",
                 )
                 sys.exit(1)
 
             limit_value = int(limit_val_str)
             if limit_value <= 0:
-                console.print("❌ Limit must be a positive number.", style="red")
+                console.print("[ERROR] Limit must be a positive number.", style="red")
                 sys.exit(1)
 
             if limit_unit == "t":
                 config_obj.token_limit = limit_value
                 if limit_value < 100:
                     console.print(
-                        "⚠️  Token limit is very small (< 100).", style="yellow"
+                        "[WARNING] Token limit is very small (< 100).", style="yellow"
                     )
             elif limit_unit == "c":
                 config_obj.char_limit = limit_value
                 if limit_value < 500:
                     console.print(
-                        "⚠️  Character limit is very small (< 500).", style="yellow"
+                        "[WARNING] Character limit is very small (< 500).",
+                        style="yellow",
                     )
 
         # --- Initialize and run the processor ---
@@ -529,11 +546,11 @@ def main(
         result = processor.process(path)
 
         # --- Handle output ---
-        output_file = Path(getattr(config_obj, "output_file", "output.md"))
+        output_file = Path(getattr(config_obj, "output_file", None) or "output.md")
         output_file.write_text(result, encoding="utf-8")
 
         console.print(
-            f"✅ Repository processed successfully: {output_file}", style="green"
+            f"[SUCCESS] Repository processed successfully: {output_file}", style="green"
         )
 
         if clipboard:
@@ -541,15 +558,15 @@ def main(
                 import pyperclip
 
                 pyperclip.copy(result)
-                console.print("✅ Output copied to clipboard.", style="green")
+                console.print("[SUCCESS] Output copied to clipboard.", style="green")
             except ImportError:
                 console.print(
-                    "⚠️  'pyperclip' is not installed. Cannot copy to clipboard.",
+                    "[WARNING] 'pyperclip' is not installed. Cannot copy to clipboard.",
                     style="yellow",
                 )
 
     except Exception as e:
-        console.print(f"❌ An unexpected error occurred: {e}", style="red")
+        console.print(f"[ERROR] An unexpected error occurred: {e}", style="red")
         if verbose:
             console.print_exception()
         sys.exit(1)

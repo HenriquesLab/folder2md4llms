@@ -36,6 +36,8 @@ class BudgetAllocation:
     estimated_content_tokens: int
     condensing_level: str
     is_critical_preserve: bool = False
+    actual_tokens: int = 0
+    efficiency: float = 0.0
 
 
 class SmartTokenBudgetManager:
@@ -88,7 +90,7 @@ class SmartTokenBudgetManager:
         priority_weights = self._get_priority_weights()
 
         # Calculate total weighted demand
-        total_weighted_demand = 0
+        total_weighted_demand = 0.0
         for file_path, priority in file_priorities.items():
             base_tokens = file_token_estimates.get(file_path, 0)
             import_boost = (

@@ -41,7 +41,7 @@ class PPTXConverter(BaseConverter):
 
         try:
             # Load presentation
-            prs = Presentation(file_path)
+            prs = Presentation(str(file_path))
 
             # Get slide count
             slide_count = len(prs.slides)
@@ -143,7 +143,8 @@ class PPTXConverter(BaseConverter):
             if notes_slide and hasattr(notes_slide, "notes_text_frame"):
                 text_frame = notes_slide.notes_text_frame
                 if text_frame and hasattr(text_frame, "text"):
-                    return text_frame.text.strip()
+                    text = text_frame.text
+                    return text.strip() if isinstance(text, str) else ""
         except Exception:
             return ""
         return ""
@@ -161,7 +162,7 @@ class PPTXConverter(BaseConverter):
             return info
 
         try:
-            prs = Presentation(file_path)
+            prs = Presentation(str(file_path))
 
             slide_count = len(prs.slides)
             slides_with_notes = sum(1 for slide in prs.slides if slide.has_notes_slide)

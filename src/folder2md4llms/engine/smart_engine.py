@@ -6,7 +6,7 @@ from pathlib import Path
 from ..analyzers.priority_analyzer import ContentPriorityAnalyzer, PriorityLevel
 from ..analyzers.progressive_condenser import ProgressiveCondenser
 from ..utils.smart_budget_manager import BudgetStrategy, SmartTokenBudgetManager
-from ..utils.token_utils import estimate_tokens_from_text
+from ..utils.token_utils import estimate_tokens_from_text, is_tiktoken_available
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,8 @@ class SmartAntiTruncationEngine:
         strategy: BudgetStrategy = BudgetStrategy.BALANCED,
         enable_priority_analysis: bool = True,
         enable_progressive_condensing: bool = True,
+        token_counting_method: str = "tiktoken",
+        target_model: str = "gpt-4",
     ):
         """Initialize the smart engine.
 
@@ -28,6 +30,8 @@ class SmartAntiTruncationEngine:
             strategy: Budget allocation strategy
             enable_priority_analysis: Whether to analyze content priorities
             enable_progressive_condensing: Whether to use progressive condensing
+            token_counting_method: Method for counting tokens ('tiktoken', 'average', 'conservative', 'optimistic')
+            target_model: Target model for token counting (used with tiktoken)
         """
         # Validate token limit
         if total_token_limit is not None and total_token_limit <= 0:
@@ -37,6 +41,18 @@ class SmartAntiTruncationEngine:
         self.strategy = strategy
         self.enable_priority_analysis = enable_priority_analysis
         self.enable_progressive_condensing = enable_progressive_condensing
+
+        # Token counting configuration
+        self.token_counting_method = token_counting_method
+        self.target_model = target_model
+
+        # Automatically fallback to character-based if tiktoken not available
+        if token_counting_method == "tiktoken" and not is_tiktoken_available():
+            logger.warning(
+                "tiktoken not available, falling back to 'average' character-based estimation. "
+                "Install tiktoken for more accurate token counting: pip install tiktoken"
+            )
+            self.token_counting_method = "average"
 
         # Initialize components
         self.budget_manager = (
@@ -56,14 +72,32 @@ class SmartAntiTruncationEngine:
         )
 
         # Track processing statistics
-        self.stats = {
+        self.stats: dict[str, int | str] = {
             "files_processed": 0,
             "total_tokens_saved": 0,
             "budget_allocations_made": 0,
             "priority_analyses_performed": 0,
             "progressive_condensing_applied": 0,
             "chunks_created": 0,
+            "token_counting_method": self.token_counting_method,
+            "target_model": self.target_model,
         }
+
+    def _count_tokens(self, text: str) -> int:
+        """Count tokens using the configured method and model.
+
+        Args:
+            text: Text to count tokens for
+
+        Returns:
+            Token count
+        """
+        if self.token_counting_method == "tiktoken":
+            return estimate_tokens_from_text(
+                text, method="tiktoken", model_name=self.target_model
+            )
+        else:
+            return estimate_tokens_from_text(text, method=self.token_counting_method)
 
     def analyze_repository(
         self, file_paths: list[Path], repo_path: Path
@@ -99,13 +133,14 @@ class SmartAntiTruncationEngine:
                         file_path, content
                     )
                     file_priorities[file_path] = priority
-                    self.stats["priority_analyses_performed"] += 1
+                    count = self.stats.get("priority_analyses_performed", 0)
+                    self.stats["priority_analyses_performed"] = int(count) + 1
                 else:
                     file_priorities[file_path] = PriorityLevel.MEDIUM
 
                 # Estimate tokens
                 if content:
-                    tokens = estimate_tokens_from_text(content)
+                    tokens = self._count_tokens(content)
                     token_estimates[file_path] = tokens
                 else:
                     token_estimates[file_path] = 0
@@ -176,7 +211,7 @@ class SmartAntiTruncationEngine:
             )  # Ensure non-negative
             priority = allocation.get("priority", PriorityLevel.MEDIUM)
         else:
-            available_tokens = estimate_tokens_from_text(content)
+            available_tokens = self._count_tokens(content)
             priority = PriorityLevel.MEDIUM
 
         # Ensure available_tokens is always positive
@@ -184,7 +219,7 @@ class SmartAntiTruncationEngine:
             available_tokens = 100  # Minimum fallback
 
         processing_info = {
-            "original_tokens": estimate_tokens_from_text(content),
+            "original_tokens": self._count_tokens(content),
             "available_tokens": available_tokens,
             "priority": priority.name if hasattr(priority, "name") else str(priority),
             "method": "smart_engine",
@@ -227,8 +262,12 @@ class SmartAntiTruncationEngine:
                 }
             )
 
-            self.stats["progressive_condensing_applied"] += 1
-            self.stats["total_tokens_saved"] += condensing_info.get("tokens_saved", 0)
+            count = self.stats.get("progressive_condensing_applied", 0)
+            self.stats["progressive_condensing_applied"] = int(count) + 1
+            saved = self.stats.get("total_tokens_saved", 0)
+            self.stats["total_tokens_saved"] = int(saved) + condensing_info.get(
+                "tokens_saved", 0
+            )
 
             return condensed_content, processing_info
 
@@ -266,12 +305,12 @@ class SmartAntiTruncationEngine:
 
         # Build truncated content prioritizing important lines
         truncated_lines = important_lines[:]
-        current_tokens = estimate_tokens_from_text("\n".join(truncated_lines))
+        current_tokens = self._count_tokens("\n".join(truncated_lines))
 
         # Add regular lines until we hit the limit
         for line in regular_lines:
             try:
-                line_tokens = estimate_tokens_from_text(line)
+                line_tokens = self._count_tokens(line)
                 if (
                     current_tokens + line_tokens <= available_tokens * 0.9
                 ):  # Leave buffer
@@ -293,7 +332,7 @@ class SmartAntiTruncationEngine:
                 "method": "intelligent_truncation",
                 "lines_kept": len(truncated_lines),
                 "lines_omitted": len(lines) - len(truncated_lines),
-                "final_tokens": estimate_tokens_from_text(truncated_content),
+                "final_tokens": self._count_tokens(truncated_content),
             }
         )
 
@@ -315,9 +354,9 @@ class SmartAntiTruncationEngine:
             report["budget_report"] = self.budget_manager.get_budget_report()
 
         if self.progressive_condenser:
-            report[
-                "condensing_stats"
-            ] = self.progressive_condenser.get_condensing_stats()
+            report["condensing_stats"] = (
+                self.progressive_condenser.get_condensing_stats()
+            )
 
         return report
 
@@ -338,12 +377,16 @@ class SmartAntiTruncationEngine:
                 )
 
         # Add general suggestions based on stats
-        if self.stats["chunks_created"] > self.stats["files_processed"] * 2:
+        chunks_created = int(self.stats.get("chunks_created", 0))
+        files_processed = int(self.stats.get("files_processed", 0))
+        if chunks_created > files_processed * 2:
             suggestions.append(
                 "Many files were chunked - consider increasing token limit or more aggressive condensing"
             )
 
-        if self.stats["total_tokens_saved"] < self.stats["files_processed"] * 100:
+        total_tokens_saved = int(self.stats.get("total_tokens_saved", 0))
+        files_processed = int(self.stats.get("files_processed", 0))
+        if total_tokens_saved < files_processed * 100:
             suggestions.append(
                 "Low token savings - consider enabling more aggressive condensing modes"
             )
@@ -369,6 +412,8 @@ class SmartAntiTruncationEngine:
             "priority_analyses_performed": 0,
             "progressive_condensing_applied": 0,
             "chunks_created": 0,
+            "token_counting_method": self.token_counting_method,
+            "target_model": self.target_model,
         }
 
         if self.budget_manager:

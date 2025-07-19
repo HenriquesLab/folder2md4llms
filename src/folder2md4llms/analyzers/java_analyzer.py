@@ -195,7 +195,7 @@ class JavaAnalyzer(RegexBasedAnalyzer):
         lines = preceding_content.split("\n")
 
         # Work backwards to find Javadoc
-        javadoc_lines = []
+        javadoc_lines: list[str] = []
         in_javadoc = False
 
         for line in reversed(lines[-15:]):  # Check last 15 lines
@@ -224,7 +224,7 @@ class JavaAnalyzer(RegexBasedAnalyzer):
 
     def _extract_preceding_annotations(self, preceding_content: str) -> list[str]:
         """Extract annotations that precede the current position."""
-        annotations = []
+        annotations: list[str] = []
 
         if not self.annotation_pattern:
             return annotations

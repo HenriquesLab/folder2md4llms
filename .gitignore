@@ -124,7 +124,6 @@ dmypy.json
 
 # UV
 .uv/
-uv.lock
 
 # Generated files
 *.md
@@ -156,3 +155,6 @@ Claude.md
 
 # Auto-generated version file
 src/folder2md4llms/__about__.py
+
+# Git submodules working directories (optional - submodules are tracked by git)
+# git_submodules/

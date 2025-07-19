@@ -33,6 +33,8 @@ class SmartPythonConverter(BaseConverter):
         )
 
         # Initialize smart components if enabled
+        self.priority_analyzer: ContentPriorityAnalyzer | None
+        self.progressive_condenser: ProgressiveCondenser | None
         if self.smart_condensing:
             self.priority_analyzer = ContentPriorityAnalyzer()
             self.progressive_condenser = ProgressiveCondenser()
@@ -101,7 +103,11 @@ class SmartPythonConverter(BaseConverter):
     def _smart_convert(self, file_path: Path, content: str) -> str:
         """Perform smart conversion with priority analysis and budget management."""
         # Analyze file priority
-        file_priority = self.priority_analyzer.analyze_file_priority(file_path, content)
+        file_priority = (
+            self.priority_analyzer.analyze_file_priority(file_path, content)
+            if self.priority_analyzer
+            else PriorityLevel.MEDIUM
+        )
 
         # Get budget allocation if available
         allocation = self.budget_allocations.get(file_path)
@@ -113,15 +119,19 @@ class SmartPythonConverter(BaseConverter):
             available_tokens = total_tokens  # No limit if no allocation
 
         # Apply progressive condensing
-        (
-            condensed_content,
-            condensing_info,
-        ) = self.progressive_condenser.condense_with_budget(
-            content=content,
-            file_path=file_path,
-            available_tokens=available_tokens,
-            priority=file_priority,
-        )
+        if self.progressive_condenser:
+            (
+                condensed_content,
+                condensing_info,
+            ) = self.progressive_condenser.condense_with_budget(
+                content=content,
+                file_path=file_path,
+                available_tokens=available_tokens,
+                priority=file_priority,
+            )
+        else:
+            condensed_content = content
+            condensing_info = {}
 
         # Generate enhanced header with smart analysis info
         header = self._generate_smart_header(
@@ -205,22 +215,32 @@ class SmartPythonConverter(BaseConverter):
             return basic_result, {"priority": "unknown", "method": "basic"}
 
         # Analyze file and function priorities
-        file_priority = self.priority_analyzer.analyze_file_priority(file_path, content)
+        file_priority = (
+            self.priority_analyzer.analyze_file_priority(file_path, content)
+            if self.priority_analyzer
+            else PriorityLevel.MEDIUM
+        )
 
         # Apply progressive condensing
-        (
-            condensed_content,
-            condensing_info,
-        ) = self.progressive_condenser.condense_with_budget(
-            content=content,
-            file_path=file_path,
-            available_tokens=available_tokens,
-            priority=file_priority,
-        )
+        if self.progressive_condenser:
+            (
+                condensed_content,
+                condensing_info,
+            ) = self.progressive_condenser.condense_with_budget(
+                content=content,
+                file_path=file_path,
+                available_tokens=available_tokens,
+                priority=file_priority,
+            )
+        else:
+            condensed_content = content
+            condensing_info = {}
 
         # Prepare analysis info
         analysis_info = {
-            "priority": file_priority.name,
+            "priority": file_priority.name
+            if hasattr(file_priority, "name")
+            else str(file_priority),
             "method": "smart",
             "condensing_info": condensing_info,
             "original_tokens": estimate_tokens_from_text(content),
@@ -259,7 +279,7 @@ class SmartPythonConverter(BaseConverter):
                     lines = content.split("\n")
                     if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
                         start = max(0, node.lineno - 1)
-                        end = min(len(lines), node.end_lineno)
+                        end = min(len(lines), node.end_lineno or len(lines))
                         function_content = "\n".join(lines[start:end])
 
                         priority = self.priority_analyzer.analyze_function_priority(
