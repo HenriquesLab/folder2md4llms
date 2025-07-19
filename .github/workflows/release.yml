@@ -79,7 +79,8 @@ jobs:
         echo "::endgroup::"
 
         echo "::group::Validate package"
-        uv run twine check dist/*
+        uv pip install twine
+        uv run python -m twine check dist/*
         echo "::endgroup::"
 
     - name: Upload build artifacts
