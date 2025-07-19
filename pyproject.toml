@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "folder2md4llms"
-version = "0.4.31"
+version = "0.4.32"
 description = "Enhanced tool to concatenate folder contents into markdown format for LLM consumption"
 authors = [
     {name = "Ricardo Henriques", email = "ricardo@henriqueslab.org"}
