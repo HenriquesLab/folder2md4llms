@@ -196,8 +196,7 @@ jobs:
       if: runner.os != 'Windows'
       run: |
         WHEEL_NAME=$(ls dist/*.whl | head -1 | xargs basename)
-        python -m pip install --upgrade pip
-        python -m pip install "dist/$WHEEL_NAME"
+        uv pip install --system "dist/$WHEEL_NAME"
 
         folder2md --help
         folder2md --version
@@ -212,8 +211,7 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         $WHEEL_NAME = (Get-ChildItem dist/*.whl | Select-Object -First 1).Name
-        python -m pip install --upgrade pip
-        python -m pip install "dist/$WHEEL_NAME"
+        uv pip install --system "dist/$WHEEL_NAME"
 
         folder2md --help
         folder2md --version
