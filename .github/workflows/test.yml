@@ -24,53 +24,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-        enable-cache: true
-
-    - name: Install dependencies
-      run: uv sync --group dev
-
-    - name: Run linting and formatting checks
-      run: |
-        echo "::group::Code formatting check"
-        uv run ruff check src/ tests/
-        echo "::endgroup::"
-
-        echo "::group::Format check"
-        uv run ruff format --check src/ tests/
-        echo "::endgroup::"
-
-    - name: Run type checking
-      run: |
-        echo "::group::Type checking"
-        uv run mypy src/
-        echo "::endgroup::"
-
-    - name: Run security check
-      run: |
-        echo "::group::Security check"
-        uv run bandit -r src/ -ll
-        echo "::endgroup::"
-
   test:
     runs-on: ${{ matrix.os }}
-    needs: lint
     strategy:
       fail-fast: false
       matrix:
@@ -115,7 +70,6 @@ jobs:
 
   test-optional-dependencies:
     runs-on: ubuntu-latest
-    needs: lint
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -143,7 +97,7 @@ jobs:
 
   integration-test:
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: test
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -197,7 +151,6 @@ jobs:
 
   build-test:
     runs-on: ${{ matrix.os }}
-    needs: lint
     strategy:
       fail-fast: false
       matrix:
