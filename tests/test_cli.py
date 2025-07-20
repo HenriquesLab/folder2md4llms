@@ -1,4 +1,7 @@
-"""Tests for the simplified CLI of folder2md4llms."""
+"""Tests for the simplified CLI of folder2md4llms.
+
+This module tests the command-line interface functionality.
+"""
 
 from pathlib import Path
 
