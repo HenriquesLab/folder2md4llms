@@ -1,4 +1,4 @@
-name: Release to PyPI
+name: Release
 
 on:
   push:
@@ -8,20 +8,19 @@ on:
 
 permissions:
   contents: read
-  id-token: write  # Required for trusted publishing
+  id-token: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
-      tag-version: ${{ steps.tag.outputs.tag-version }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Fetch all history for hatch-vcs
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -37,43 +36,20 @@ jobs:
     - name: Install dependencies
       run: uv sync --group dev
 
-    - name: Get versions
+    - name: Get version
       id: version
       run: |
         VERSION=$(uv run python -c "from folder2md4llms.__about__ import __version__; print(__version__)")
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Package version: $VERSION"
 
-    - name: Get tag version
-      id: tag
-      run: |
-        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-          TAG_VERSION=${GITHUB_REF#refs/tags/v}
-        else
-          TAG_VERSION="manual"
-        fi
-        echo "tag-version=$TAG_VERSION" >> $GITHUB_OUTPUT
-        echo "Tag version: $TAG_VERSION"
-
-    - name: Check version matches tag
-      if: github.ref_type == 'tag'
-      run: |
-        echo "Package version: ${{ steps.version.outputs.version }}"
-        echo "Tag version: ${{ steps.tag.outputs.tag-version }}"
-        echo "⚠️ Version check temporarily disabled for troubleshooting"
-
     - name: Run tests
-      run: |
-        uv run pytest -x --tb=short
+      run: uv run pytest -x --tb=short
 
     - name: Build package
       run: |
         echo "::group::Building package"
         uv build
-        echo "::endgroup::"
-
-        echo "::group::Package contents"
-        ls -la dist/
         echo "::endgroup::"
 
         echo "::group::Validate package"
@@ -105,23 +81,16 @@ jobs:
       with:
         repository-url: https://test.pypi.org/legacy/
         password: ${{ secrets.TESTPYPI_TOKEN }}
-        verbose: true
-        print-hash: true
 
     - name: Test installation from TestPyPI
       run: |
-        sleep 60  # Wait for TestPyPI to process the package
-
+        sleep 60
         python -m pip install --upgrade pip
         python -m pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ folder2md4llms==${{ needs.build.outputs.version }}
-
-        # Test the installation
         folder2md --version
         echo "# Test" > test.md
         folder2md . --output test_output.md
         test -f test_output.md
-
-        echo "✅ TestPyPI installation successful"
 
   pypi:
     runs-on: ubuntu-latest
@@ -140,23 +109,16 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_TOKEN }}
-        verbose: true
-        print-hash: true
 
     - name: Test installation from PyPI
       run: |
-        sleep 120  # Wait for PyPI to process the package
-
+        sleep 120
         python -m pip install --upgrade pip
         python -m pip install folder2md4llms==${{ needs.build.outputs.version }}
-
-        # Test the installation
         folder2md --version
         echo "# Test" > test.md
         folder2md . --output test_output.md
         test -f test_output.md
-
-        echo "✅ PyPI installation successful"
 
   update-submodules:
     runs-on: ubuntu-latest
@@ -166,18 +128,14 @@ jobs:
     steps:
     - name: Trigger submodule updates
       run: |
-        # Trigger Homebrew formula update
         curl -X POST \
           -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           -H "Accept: application/vnd.github.v3+json" \
           https://api.github.com/repos/HenriquesLab/homebrew-folder2md4llms/dispatches \
           -d '{"event_type":"new_release","client_payload":{"version":"${{ needs.build.outputs.version }}","tag":"v${{ needs.build.outputs.version }}"}}'
 
-        # Trigger Scoop manifest update
         curl -X POST \
           -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           -H "Accept: application/vnd.github.v3+json" \
           https://api.github.com/repos/HenriquesLab/scoop-folder2md4llms/dispatches \
           -d '{"event_type":"new_release","client_payload":{"version":"${{ needs.build.outputs.version }}","tag":"v${{ needs.build.outputs.version }}"}}'
-
-        echo "✅ Submodule update triggers sent"

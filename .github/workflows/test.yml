@@ -1,4 +1,4 @@
-name: CI
+name: Test
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
       - 'tests/**'
       - 'pyproject.toml'
       - 'uv.lock'
-      - '.github/workflows/ci.yml'
+      - '.github/workflows/test.yml'
   pull_request:
     branches: [main, dev]
     paths:
@@ -16,7 +16,7 @@ on:
       - 'tests/**'
       - 'pyproject.toml'
       - 'uv.lock'
-      - '.github/workflows/ci.yml'
+      - '.github/workflows/test.yml'
   workflow_dispatch:
 
 concurrency:
@@ -24,14 +24,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Separate lint job that runs once for faster feedback
   lint:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Fetch all history for hatch-vcs
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -69,7 +68,6 @@ jobs:
         uv run bandit -r src/ -ll
         echo "::endgroup::"
 
-  # Test matrix depends on lint passing
   test:
     runs-on: ${{ matrix.os }}
     needs: lint
@@ -79,7 +77,6 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.11', '3.12', '3.13']
         exclude:
-          # Reduce matrix size by excluding some combinations
           - os: macos-latest
             python-version: '3.12'
           - os: windows-latest
@@ -89,7 +86,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Fetch all history for hatch-vcs
+        fetch-depth: 0
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -119,11 +116,6 @@ jobs:
   test-optional-dependencies:
     runs-on: ubuntu-latest
     needs: lint
-    strategy:
-      fail-fast: false
-      matrix:
-        extra-deps: [all]
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -141,13 +133,8 @@ jobs:
         version: "latest"
         enable-cache: true
 
-    - name: Install dependencies with extras
-      run: |
-        if [ "${{ matrix.extra-deps }}" = "all" ]; then
-          uv sync --group dev --all-extras
-        else
-          uv sync --group dev --extra ${{ matrix.extra-deps }}
-        fi
+    - name: Install dependencies with all extras
+      run: uv sync --group dev --all-extras
 
     - name: Test with optional dependencies
       run: |
@@ -157,7 +144,6 @@ jobs:
   integration-test:
     runs-on: ubuntu-latest
     needs: [lint, test]
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -208,3 +194,80 @@ jobs:
       if: always()
       run: |
         rm -rf test_project .folder2md_ignore || true
+
+  build-test:
+    runs-on: ${{ matrix.os }}
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.11', '3.13']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install UV
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+        enable-cache: true
+
+    - name: Install dependencies
+      run: uv sync --group dev
+
+    - name: Build package
+      run: |
+        echo "::group::Building package"
+        uv build
+        echo "::endgroup::"
+
+        echo "::group::Package contents"
+        ls -la dist/
+        echo "::endgroup::"
+
+    - name: Test wheel installation (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        WHEEL_NAME=$(ls dist/*.whl | head -1 | xargs basename)
+        python -m pip install --upgrade pip
+        python -m pip install "dist/$WHEEL_NAME"
+
+        folder2md --help
+        folder2md --version
+
+        mkdir -p test_dir
+        echo "# Test" > test_dir/README.md
+        folder2md test_dir --output test_output.md
+        test -f test_output.md
+        grep -q "Test" test_output.md
+
+    - name: Test wheel installation (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        $WHEEL_NAME = (Get-ChildItem dist/*.whl | Select-Object -First 1).Name
+        python -m pip install --upgrade pip
+        python -m pip install "dist/$WHEEL_NAME"
+
+        folder2md --help
+        folder2md --version
+
+        New-Item -ItemType Directory -Path "test_dir" -Force
+        Set-Content -Path "test_dir/README.md" -Value "# Test"
+        folder2md test_dir --output test_output.md
+        if (-not (Test-Path "test_output.md")) { exit 1 }
+        if (-not (Select-String -Path "test_output.md" -Pattern "Test" -Quiet)) { exit 1 }
+      shell: pwsh
+
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -rf test_dir test_output.md dist/ || true
