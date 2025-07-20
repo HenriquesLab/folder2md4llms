@@ -234,7 +234,13 @@ jobs:
         if (-not (Select-String -Path "test_output.md" -Pattern "Test" -Quiet)) { exit 1 }
       shell: pwsh
 
-    - name: Cleanup
-      if: always()
+    - name: Cleanup (Unix)
+      if: always() && runner.os != 'Windows'
       run: |
         rm -rf test_dir test_output.md dist/ || true
+
+    - name: Cleanup (Windows)
+      if: always() && runner.os == 'Windows'
+      run: |
+        Remove-Item -Path test_dir, test_output.md, dist -Recurse -Force -ErrorAction SilentlyContinue
+      shell: pwsh
