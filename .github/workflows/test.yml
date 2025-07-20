@@ -188,9 +188,20 @@ jobs:
         rye build
         echo "::endgroup::"
 
+    - name: Show package contents (Unix)
+      if: runner.os != 'Windows'
+      run: |
         echo "::group::Package contents"
         ls -la dist/
         echo "::endgroup::"
+
+    - name: Show package contents (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        echo "::group::Package contents"
+        Get-ChildItem -Path dist/ -Force
+        echo "::endgroup::"
+      shell: pwsh
 
     - name: Test wheel installation (Unix)
       if: runner.os != 'Windows'
