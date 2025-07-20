@@ -43,7 +43,7 @@ help:
 setup:
 	@echo "📦 Installing dependencies and setting up pre-commit hooks..."
 	uv sync --dev
-	uv run hatch -e dev run install-hooks
+	uv run pre-commit install
 	@echo "✅ Setup complete!"
 
 # ===========================================================================
@@ -52,17 +52,21 @@ setup:
 
 fix:
 	@echo "🔧 Formatting code and fixing lint issues..."
-	uv run hatch fmt
+	uv run ruff format src/ tests/
+	uv run ruff check --fix src/ tests/
 	@echo "✅ Fix complete."
 
 check:
 	@echo "🔍 Running all static analysis checks..."
-	uv run hatch -e dev run check
+	uv run ruff check src/ tests/
+	uv run ruff format --check src/ tests/
+	uv run mypy src/
+	uv run bandit -r src/ -ll
 	@echo "✅ All checks passed."
 
 test:
 	@echo "🧪 Running tests..."
-	uv run hatch -e dev run test $(ARGS)
+	uv run pytest tests/ --cov=folder2md4llms --cov-report=term-missing $(ARGS)
 	@echo "✅ Tests finished."
 
 run:
@@ -75,17 +79,17 @@ run:
 
 build:
 	@echo "📦 Building the sdist and wheel..."
-	uv run hatch build
+	rye build
 	@echo "✅ Build complete."
 
 publish-test: build
 	@echo "📦 Publishing to TestPyPI..."
-	uv run hatch publish --repo https://test.pypi.org/legacy/
+	uv run twine upload --repository testpypi dist/*
 	@echo "✅ Published to TestPyPI."
 
 publish: build
 	@echo "📦 Publishing to PyPI..."
-	uv run hatch publish
+	uv run twine upload dist/*
 	@echo "✅ Published to PyPI."
 
 # ===========================================================================
@@ -97,17 +101,18 @@ clean:
 	rm -rf build/ dist/ *.egg-info/ .pytest_cache/ .mypy_cache/ .ruff_cache/
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
-	uv run hatch env prune
+	# Clean UV cache
+	uv cache clean
 	@echo "✅ Clean complete."
 
 version:
 ifeq ($(BUMP),)
 	@echo "📋 Current version:"
-	@uv run hatch version
+	@rye version
 else
 	@echo "📈 Bumping $(BUMP) version..."
-	@uv run hatch version $(BUMP)
-	@echo "✅ Version bumped to: $(shell uv run hatch version)"
+	@rye version --bump $(BUMP)
+	@echo "✅ Version bumped to: $(shell rye version)"
 endif
 
 docs:

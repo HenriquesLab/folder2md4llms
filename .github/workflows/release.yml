@@ -33,6 +33,11 @@ jobs:
         version: "latest"
         enable-cache: true
 
+    - name: Install Rye
+      uses: eifinger/setup-rye@v4
+      with:
+        enable-cache: true
+
     - name: Install dependencies
       run: uv sync --group dev
 
@@ -49,7 +54,7 @@ jobs:
     - name: Build package
       run: |
         echo "::group::Building package"
-        uv build
+        rye build
         echo "::endgroup::"
 
         echo "::group::Validate package"

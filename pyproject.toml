@@ -86,9 +86,20 @@ dev = [
     "tiktoken>=0.5.0",  # For accurate token counting in tests
 ]
 
-# Keep Rye section for backwards compatibility but managed=false
 [tool.rye]
-managed = false
+managed = true
+dev-dependencies = [
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "pytest-xdist>=3.8.0",
+    "pytest-mock>=3.14.1",
+    "ruff>=0.8.4",
+    "mypy>=1.15.0",
+    "bandit>=1.8.0",
+    "build>=1.2.2.post1",
+    "twine>=6.1.0",
+    "tiktoken>=0.5.0",
+]
 
 [tool.ruff]
 line-length = 88
