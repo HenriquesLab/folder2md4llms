@@ -30,6 +30,7 @@ MANIFEST
 # PyInstaller
 *.manifest
 *.spec
+!folder2md.spec
 
 # Installer logs
 pip-log.txt
