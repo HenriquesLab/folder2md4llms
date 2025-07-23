@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "folder2md4llms"
-version = "0.4.36"
+dynamic = ["version"]
 description = "A tool to convert folder structures and file contents into markdown for LLMs"
 authors = [
     {name = "Ricardo Henriques", email = "ricardo@henriqueslab.org"}
@@ -85,6 +85,9 @@ dev = [
     "twine>=6.1.0",
     "tiktoken>=0.5.0",  # For accurate token counting in tests
 ]
+
+[tool.hatch.version]
+path = "src/folder2md4llms/__version__.py"
 
 [tool.rye]
 managed = true

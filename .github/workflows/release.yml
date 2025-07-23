@@ -44,7 +44,7 @@ jobs:
     - name: Get version
       id: version
       run: |
-        VERSION=$(uv run python -c "from folder2md4llms.__about__ import __version__; print(__version__)")
+        VERSION=$(uv run python -c "from folder2md4llms.__version__ import __version__; print(__version__)")
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Package version: $VERSION"
 
