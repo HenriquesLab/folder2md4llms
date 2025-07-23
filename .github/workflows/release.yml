@@ -176,13 +176,84 @@ jobs:
         folder2md . --output test_output.md
         test -f test_output.md
 
-  update-submodules:
+  build-binaries:
     runs-on: ubuntu-latest
     needs: [build, pypi]
+    if: github.ref_type == 'tag' && success()
+    timeout-minutes: 20
+
+    steps:
+    - name: Trigger binary builds
+      run: |
+        echo "Triggering binary builds for version ${{ needs.build.outputs.version }}"
+
+        # Trigger the build-binaries workflow
+        response=$(curl -s -w "%{http_code}" -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${{ github.repository }}/actions/workflows/build-binaries.yml/dispatches" \
+          -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"version\":\"${{ needs.build.outputs.version }}\"}}")
+
+        http_code=${response: -3}
+
+        if [ "$http_code" -eq 204 ]; then
+          echo "✅ Successfully triggered binary builds"
+        else
+          echo "❌ Failed to trigger binary builds (HTTP $http_code)"
+          echo "Response: ${response%???}"
+          exit 1
+        fi
+
+  update-submodules:
+    runs-on: ubuntu-latest
+    needs: [build, pypi, build-binaries]
     if: github.ref_type == 'tag' && success()
     timeout-minutes: 10
 
     steps:
+    - name: Wait for binary builds to complete
+      run: |
+        echo "Waiting for binary builds to complete..."
+
+        # Wait up to 10 minutes for binary builds
+        MAX_WAIT=600
+        WAIT_TIME=0
+        SLEEP_INTERVAL=30
+
+        while [ $WAIT_TIME -lt $MAX_WAIT ]; do
+          # Check the status of the build-binaries workflow
+          RUNS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/build-binaries.yml/runs?per_page=5")
+
+          # Get the most recent run that matches our tag
+          LATEST_RUN_STATUS=$(echo "$RUNS" | jq -r --arg tag "${{ github.ref_name }}" \
+            '.workflow_runs[] | select(.head_branch == $tag) | .status' | head -1)
+
+          LATEST_RUN_CONCLUSION=$(echo "$RUNS" | jq -r --arg tag "${{ github.ref_name }}" \
+            '.workflow_runs[] | select(.head_branch == $tag) | .conclusion' | head -1)
+
+          echo "Binary build status: $LATEST_RUN_STATUS, conclusion: $LATEST_RUN_CONCLUSION"
+
+          if [ "$LATEST_RUN_STATUS" = "completed" ]; then
+            if [ "$LATEST_RUN_CONCLUSION" = "success" ]; then
+              echo "✅ Binary builds completed successfully"
+              break
+            else
+              echo "❌ Binary builds failed with conclusion: $LATEST_RUN_CONCLUSION"
+              echo "Continuing with submodule updates anyway..."
+              break
+            fi
+          fi
+
+          echo "Binary builds still running, waiting ${SLEEP_INTERVAL}s..."
+          sleep $SLEEP_INTERVAL
+          WAIT_TIME=$((WAIT_TIME + SLEEP_INTERVAL))
+        done
+
+        if [ $WAIT_TIME -ge $MAX_WAIT ]; then
+          echo "⚠️ Timeout waiting for binary builds, continuing with submodule updates"
+        fi
+
     - name: Trigger submodule updates
       run: |
         echo "Triggering updates for package version ${{ needs.build.outputs.version }}"
