@@ -298,6 +298,13 @@ jobs:
 
     - name: Prepare PyInstaller spec for Linux
       run: |
+        echo "=== DEBUGGING: Checking if template exists ==="
+        ls -la folder2md-linux.spec.template
+        echo "=== Template content preview ==="
+        head -5 folder2md-linux.spec.template
+        echo "=== Template has darwin? ==="
+        grep -n "darwin" folder2md-linux.spec.template || echo "✓ Template is clean"
+
         # Use dedicated Linux spec template
         cp folder2md-linux.spec.template folder2md-linux-${{ matrix.arch }}.spec
 
@@ -306,6 +313,8 @@ jobs:
 
         echo "=== Linux spec file prepared ==="
         wc -l folder2md-linux-${{ matrix.arch }}.spec
+        echo "Checking final spec around line 166:"
+        sed -n '160,170p' folder2md-linux-${{ matrix.arch }}.spec
         echo "No darwin references should exist:"
         grep -n "darwin" folder2md-linux-${{ matrix.arch }}.spec || echo "✓ Clean Linux spec file"
 
