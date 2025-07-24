@@ -1,0 +1,27 @@
+name: Test Binary Builds
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  test-macos:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Test
+      run: echo "macOS test successful"
+
+  test-windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Test
+      run: Write-Host "Windows test successful"
+      shell: pwsh
+
