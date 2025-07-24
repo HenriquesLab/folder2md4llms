@@ -351,6 +351,20 @@ jobs:
     - name: Build binary with PyInstaller
       run: |
         echo "::group::Building Linux binary for ${{ matrix.arch }}"
+
+        echo "=== FINAL CHECK: What spec file are we actually using? ==="
+        ls -la folder2md-linux-${{ matrix.arch }}.spec
+        echo "Lines 160-170 of the spec file we're about to use:"
+        sed -n '160,170p' folder2md-linux-${{ matrix.arch }}.spec
+        echo "Darwin check on final spec:"
+        if grep -n "darwin" folder2md-linux-${{ matrix.arch }}.spec; then
+            echo "❌ CRITICAL: Spec file STILL contains darwin at build time!"
+            echo "This should not happen - something is wrong!"
+            exit 1
+        else
+            echo "✓ Final spec file is clean at build time"
+        fi
+
         uv run pyinstaller folder2md-linux-${{ matrix.arch }}.spec --clean --noconfirm
         echo "::endgroup::"
 
