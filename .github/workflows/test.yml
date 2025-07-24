@@ -116,7 +116,7 @@ jobs:
         enable-cache: true
 
     - name: Install package
-      run: uv sync --group dev --extra tiktoken
+      run: uv sync --group dev --group tiktoken
 
     - name: Test CLI functionality
       run: |

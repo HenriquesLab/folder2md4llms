@@ -57,7 +57,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv sync --group dev --extra build --extra tiktoken
+        uv sync --group dev --group build --group tiktoken
 
     - name: Install platform-specific dependencies
       run: |
@@ -172,7 +172,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv sync --group dev --extra build --extra tiktoken
+        uv sync --group dev --group build --group tiktoken
       shell: pwsh
 
     - name: Generate PyInstaller spec for Windows

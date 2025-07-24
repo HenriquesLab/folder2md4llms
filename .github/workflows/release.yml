@@ -7,8 +7,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
+  actions: write
 
 jobs:
   build:
@@ -182,48 +183,311 @@ jobs:
         folder2md . --output test_output.md
         test -f test_output.md
 
-  build-binaries:
-    runs-on: ubuntu-latest
+  build-macos:
+    runs-on: ${{ matrix.runner }}
     needs: [build, pypi]
+    if: github.ref_type == 'tag' && success()
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        include:
+          - arch: x64
+            runner: macos-13  # Intel runner
+          - arch: arm64
+            runner: macos-latest  # Apple Silicon runner
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install UV
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+        enable-cache: true
+
+    - name: Install dependencies
+      run: |
+        uv sync --group dev --group build --group tiktoken
+
+    - name: Install platform-specific dependencies
+      run: |
+        # Install libmagic for macOS
+        brew install libmagic
+
+    - name: Generate PyInstaller spec for architecture
+      run: |
+        # Generate platform-specific spec file from template
+        python scripts/generate_spec.py --platform macos --arch ${{ matrix.arch }} --output folder2md-macos-${{ matrix.arch }}.spec --validate
+
+        echo "Generated spec file for macOS ${{ matrix.arch }}"
+
+    - name: Build binary with PyInstaller
+      run: |
+        echo "::group::Building binary for ${{ matrix.arch }}"
+
+        # Build the binary (native compilation)
+        uv run pyinstaller folder2md-macos-${{ matrix.arch }}.spec --clean --noconfirm
+
+        echo "::endgroup::"
+
+    - name: Verify binary
+      run: |
+        echo "::group::Verifying binary"
+
+        BINARY_PATH="dist/folder2md-macos-${{ matrix.arch }}"
+
+        if [ ! -f "$BINARY_PATH" ]; then
+          echo "❌ Binary not found at $BINARY_PATH"
+          ls -la dist/
+          exit 1
+        fi
+
+        echo "✅ Binary found: $BINARY_PATH"
+        ls -lh "$BINARY_PATH"
+
+        # Check architecture
+        file "$BINARY_PATH"
+
+        # Test basic functionality (native build)
+        echo "Testing binary functionality..."
+        "$BINARY_PATH" --version
+        "$BINARY_PATH" --help > /dev/null
+
+        echo "::endgroup::"
+
+    - name: Generate checksums
+      run: |
+        echo "::group::Generating checksums"
+
+        cd dist
+        BINARY_NAME="folder2md-macos-${{ matrix.arch }}"
+
+        # Generate SHA256 checksum
+        shasum -a 256 "$BINARY_NAME" > "${BINARY_NAME}.sha256"
+
+        # Generate MD5 checksum for additional verification
+        md5 "$BINARY_NAME" > "${BINARY_NAME}.md5"
+
+        echo "Generated checksums:"
+        cat "${BINARY_NAME}.sha256"
+        cat "${BINARY_NAME}.md5"
+
+        echo "::endgroup::"
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: folder2md-macos-${{ matrix.arch }}
+        path: |
+          dist/folder2md-macos-${{ matrix.arch }}
+          dist/folder2md-macos-${{ matrix.arch }}.sha256
+          dist/folder2md-macos-${{ matrix.arch }}.md5
+        retention-days: 30
+
+  build-windows:
+    runs-on: windows-latest
+    needs: [build, pypi]
+    if: github.ref_type == 'tag' && success()
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        arch: [x64]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install UV
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+        enable-cache: true
+
+    - name: Install dependencies
+      run: |
+        uv sync --group dev --group build --group tiktoken
+      shell: pwsh
+
+    - name: Generate PyInstaller spec for Windows
+      run: |
+        # Generate platform-specific spec file from template
+        python scripts/generate_spec.py --platform windows --arch ${{ matrix.arch }} --output folder2md-windows-${{ matrix.arch }}.spec --validate
+
+        Write-Host "Generated spec file for Windows ${{ matrix.arch }}"
+      shell: pwsh
+
+    - name: Build binary with PyInstaller
+      run: |
+        Write-Host "::group::Building Windows binary for ${{ matrix.arch }}"
+
+        # Build the binary
+        uv run pyinstaller folder2md-windows-${{ matrix.arch }}.spec --clean --noconfirm
+
+        Write-Host "::endgroup::"
+      shell: pwsh
+
+    - name: Verify binary
+      run: |
+        Write-Host "::group::Verifying Windows binary"
+
+        $BINARY_PATH = "dist/folder2md-windows-${{ matrix.arch }}.exe"
+
+        if (-not (Test-Path $BINARY_PATH)) {
+          Write-Host "❌ Binary not found at $BINARY_PATH"
+          Get-ChildItem dist/
+          exit 1
+        }
+
+        Write-Host "✅ Binary found: $BINARY_PATH"
+        Get-ChildItem $BINARY_PATH | Format-List
+
+        # Test basic functionality
+        Write-Host "Testing binary functionality..."
+        & $BINARY_PATH --version
+        & $BINARY_PATH --help | Out-Null
+
+        Write-Host "::endgroup::"
+      shell: pwsh
+
+    - name: Generate checksums
+      run: |
+        Write-Host "::group::Generating checksums"
+
+        Set-Location dist
+        $BINARY_NAME = "folder2md-windows-${{ matrix.arch }}.exe"
+
+        # Generate SHA256 checksum
+        $sha256 = (Get-FileHash $BINARY_NAME -Algorithm SHA256).Hash.ToLower()
+        "$sha256  $BINARY_NAME" | Out-File -FilePath "${BINARY_NAME}.sha256" -Encoding ascii
+
+        # Generate MD5 checksum for additional verification
+        $md5 = (Get-FileHash $BINARY_NAME -Algorithm MD5).Hash.ToLower()
+        "$md5  $BINARY_NAME" | Out-File -FilePath "${BINARY_NAME}.md5" -Encoding ascii
+
+        Write-Host "Generated checksums:"
+        Get-Content "${BINARY_NAME}.sha256"
+        Get-Content "${BINARY_NAME}.md5"
+
+        Write-Host "::endgroup::"
+      shell: pwsh
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: folder2md-windows-${{ matrix.arch }}
+        path: |
+          dist/folder2md-windows-${{ matrix.arch }}.exe
+          dist/folder2md-windows-${{ matrix.arch }}.exe.sha256
+          dist/folder2md-windows-${{ matrix.arch }}.exe.md5
+        retention-days: 30
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [build, pypi, build-macos, build-windows]
     if: github.ref_type == 'tag' && success()
     timeout-minutes: 20
 
     steps:
-    - name: Trigger binary builds
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
+
+    - name: Prepare release assets
       run: |
-        echo "Triggering binary builds for version ${{ needs.build.outputs.version }}"
+        echo "::group::Preparing release assets"
 
-        # Trigger the build-binaries workflow
-        response=$(curl -s -w "%{http_code}" -X POST \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          "https://api.github.com/repos/${{ github.repository }}/actions/workflows/build-binaries.yml/dispatches" \
-          -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"version\":\"${{ needs.build.outputs.version }}\"}}")
+        mkdir -p release-assets
 
-        http_code=${response: -3}
+        # Copy all binaries and checksums to release assets
+        find artifacts/ -type f \( -name "folder2md-*" -o -name "*.sha256" -o -name "*.md5" \) -exec cp {} release-assets/ \;
 
-        if [ "$http_code" -eq 204 ]; then
-          echo "✅ Successfully triggered binary builds"
-        else
-          echo "❌ Failed to trigger binary builds (HTTP $http_code)"
-          echo "Response: ${response%???}"
-          exit 1
-        fi
+        echo "Release assets:"
+        ls -la release-assets/
+
+        echo "::endgroup::"
+
+    - name: Create release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: release-assets/*
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        name: "Release ${{ github.ref_name }}"
+        body: |
+          ## 🚀 Binary Release ${{ github.ref_name }}
+
+          This release includes pre-built binaries for multiple platforms:
+
+          ### macOS Binaries
+          - `folder2md-macos-x64` - Intel 64-bit macOS
+          - `folder2md-macos-arm64` - Apple Silicon (M1/M2) macOS
+
+          ### Windows Binaries
+          - `folder2md-windows-x64.exe` - Windows 64-bit
+
+          ### Linux Binaries
+          - Linux builds temporarily disabled - use Python package instead
+
+          ### Installation
+
+          **macOS (Homebrew - Binary):**
+          ```bash
+          brew install --cask henriqueslab/tap/folder2md4llms-binary
+          ```
+
+          **macOS (Homebrew - Python Package):**
+          ```bash
+          brew install henriqueslab/tap/folder2md4llms
+          ```
+
+          **Windows (Scoop):**
+          ```bash
+          scoop bucket add henriqueslab https://github.com/HenriquesLab/scoop-folder2md4llms
+          scoop install folder2md4llms-binary
+          ```
+
+          **Manual Installation:**
+          1. Download the appropriate binary for your platform
+          2. **macOS/Linux**: Make it executable: `chmod +x folder2md-*`
+          3. **All platforms**: Move to PATH:
+             - **macOS/Linux**: `sudo mv folder2md-* /usr/local/bin/folder2md`
+             - **Windows**: Place `folder2md-windows-x64.exe` in a directory in your PATH
+
+          ### Verification
+          All binaries include SHA256 and MD5 checksums for verification.
+
+          ---
+          🤖 Binaries built automatically with PyInstaller
 
   update-submodules:
     runs-on: ubuntu-latest
-    needs: [build, pypi, build-binaries]
+    needs: [build, pypi, create-release]
     if: github.ref_type == 'tag' && success()
     timeout-minutes: 10
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
-    - name: Wait for binary builds to complete
-      run: |
-        # Use intelligent polling to wait for binary builds workflow
-        ./.github/scripts/wait-for-workflow.sh build-binaries.yml ${{ github.ref_name }} ${{ secrets.GITHUB_TOKEN }}
 
     - name: Trigger submodule updates
       run: |

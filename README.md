@@ -27,11 +27,8 @@ Choose between binary (standalone) or Python package installation:
 
 **macOS (Homebrew):**
 ```bash
-# Binary version (cask)
+# Binary version (cask) - recommended
 brew install --cask henriqueslab/tap/folder2md4llms-binary
-
-# OR Python package version (formula)
-brew install henriqueslab/tap/folder2md4llms
 ```
 
 **Windows (Scoop):**
@@ -39,11 +36,8 @@ brew install henriqueslab/tap/folder2md4llms
 # Add the bucket
 scoop bucket add henriqueslab https://github.com/HenriquesLab/scoop-folder2md4llms
 
-# Binary version
+# Binary version - recommended
 scoop install folder2md4llms-binary
-
-# OR Python package version
-scoop install folder2md4llms
 ```
 
 **Manual Binary Installation:**
