@@ -1,0 +1,177 @@
+# -*- mode: python ; coding: utf-8 -*-
+"""
+PyInstaller spec file for folder2md4llms - Linux version
+Generates standalone binaries for Linux distribution
+"""
+
+import sys
+import os
+from pathlib import Path
+
+# Get the source directory
+src_path = Path("folder2md4llms")
+
+# Analysis stage - determine what files to include
+a = Analysis(
+    # Main script
+    ["folder2md4llms/__main__.py"],
+
+    # Additional Python paths
+    pathex=[],
+
+    # Binary files to include
+    binaries=[],
+
+    # Data files to include
+    datas=[
+        # Include all package data
+        (str(src_path / "folder2md4llms"), "folder2md4llms"),
+    ],
+
+    # Hidden imports that PyInstaller might miss
+    hiddenimports=[
+        # Core dependencies
+        "folder2md4llms",
+        "rich_click",
+        "rich.console",
+        "rich.progress",
+        "rich.table",
+        "rich.text",
+        "rich.markup",
+        "click",
+        "yaml",
+        "pathlib",
+        "typing_extensions",
+
+        # File processing
+        "magic",
+        "mimetypes",
+
+        # Optional document converters (graceful failure if missing)
+        "pypdf",
+        "docx",
+        "openpyxl",
+        "striprtf",
+        "nbconvert",
+        "pptx",
+
+        # Image processing
+        "PIL",
+        "PIL.Image",
+        "PIL.ExifTags",
+
+        # System monitoring
+        "psutil",
+
+        # HTTP and utilities
+        "requests",
+        "urllib3",
+        "certifi",
+        "charset_normalizer",
+        "idna",
+
+        # Async and concurrency
+        "asyncio",
+        "concurrent.futures",
+
+        # Development and testing (may be bundled)
+        "pytest",
+        "unittest",
+
+        # Network and HTTP clients
+        "httpx",
+        "pyperclip",
+
+        # Platform-specific magic imports for Linux
+        "magic.libmagic",
+    ],
+
+    # Hook directories
+    hookspath=[],
+
+    # Runtime hooks
+    hooksconfig={},
+
+    # Additional imports
+    runtime_hooks=[],
+
+    # Files to exclude
+    excludes=[
+        # Development tools
+        "pytest",
+        "setuptools",
+        "pip",
+        "wheel",
+        "distutils",
+
+        # GUI frameworks (CLI only)
+        "tkinter",
+        "PyQt5",
+        "PyQt6",
+        "PySide2",
+        "PySide6",
+
+        # Web frameworks
+        "flask",
+        "django",
+        "fastapi",
+
+        # Large scientific libraries
+        "tensorflow",
+        "torch",
+        "keras",
+
+        # Documentation tools
+        "sphinx",
+        "jinja2",
+
+        # Exclude large optional dependencies if not needed
+        "matplotlib",
+        "numpy",
+        "pandas",
+        "scipy",
+        "jupyter",
+    ],
+
+    # Don't create a zip archive
+    noarchive=False,
+
+    # Optimization level
+    optimize=0,
+)
+
+# Collect all files
+pyz = PYZ(a.pure, a.zipped_data, cipher=None)
+
+# Executable generation
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.datas,
+    [],
+
+    # Output binary name (will be updated by workflow)
+    name="BINARY_NAME_PLACEHOLDER",
+
+    # Debug options
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+
+    # Compression
+    upx=True,
+    upx_exclude=[],
+
+    # Runtime options
+    runtime_tmpdir=None,
+    console=True,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+
+    # Platform-specific options
+    target_arch=None,  # Use current architecture
+
+    # Bundle options
+    onefile=True,
+)

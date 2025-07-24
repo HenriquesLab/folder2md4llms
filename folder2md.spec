@@ -1,7 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
 PyInstaller spec file for folder2md4llms
-Generates standalone binaries for macOS distribution via Homebrew
+Generates standalone binaries for cross-platform distribution
+Supports macOS, Windows, and Linux
 """
 
 import sys
@@ -26,7 +27,10 @@ a = Analysis(
     datas=[
         # Include all package data
         (str(src_path / "folder2md4llms"), "folder2md4llms"),
-    ],
+    ] + ([
+        # Windows-specific data files (magic DLLs)
+        # Note: python-magic-bin should handle this automatically
+    ] if sys.platform == "win32" else []),
 
     # Hidden imports that PyInstaller might miss
     hiddenimports=[
@@ -75,9 +79,13 @@ a = Analysis(
         "httpx",
         "pyperclip",
 
-        # Platform-specific magic imports
-        "magic.libmagic" if sys.platform != "win32" else "magic",
-    ],
+        # Platform-specific magic imports (handle gracefully if not available)
+        # Note: magic.libmagic may not be available in all environments
+    ] + ([
+        # Windows-specific imports
+        "win32api",
+        "win32con",
+    ] if sys.platform == "win32" else []),
 
     # Hook directories
     hookspath=[],
@@ -114,7 +122,12 @@ a = Analysis(
         "pandas",
         "scipy",
         "jupyter",
-    ],
+
+    ] + ([
+        # Windows-specific excludes
+        "win32com",
+        "pythoncom",
+    ] if sys.platform == "win32" else []),
 
     # Don't create a zip archive
     noarchive=False,
@@ -135,8 +148,8 @@ exe = EXE(
     a.datas,
     [],
 
-    # Output binary name
-    name="folder2md",
+    # Output binary name (platform-specific)
+    name="folder2md" + (".exe" if sys.platform == "win32" else ""),
 
     # Debug options
     debug=False,
@@ -153,10 +166,15 @@ exe = EXE(
     disable_windowed_traceback=False,
     argv_emulation=False,
 
-    # macOS specific options - use current architecture to avoid fat binary issues
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
+    # Platform-specific options
+    target_arch=None,  # Use current architecture
+    codesign_identity=None,  # macOS code signing (if needed)
+    entitlements_file=None,  # macOS entitlements (if needed)
+
+    # Windows-specific options
+    version="0.4.37" if sys.platform == "win32" else None,
+    uac_admin=False,  # Don't require admin privileges
+    uac_uiaccess=False,  # Don't require UI access
 
     # Bundle options
     onefile=True,

@@ -1,7 +1,7 @@
-class Folder2md4llms < Formula
-  desc "Enhanced tool to concatenate folder contents into markdown for LLM consumption"
+class Folder2md4llmsBinary < Formula
+  desc "Enhanced tool to concatenate folder contents into markdown for LLM consumption (Binary)"
   homepage "https://github.com/henriqueslab/folder2md4llms"
-  version "0.4.38"
+  version "0.4.37"
   license "MIT"
 
   # Binary distribution from GitHub releases

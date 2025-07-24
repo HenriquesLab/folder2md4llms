@@ -20,6 +20,43 @@
 
 ### Installation
 
+Choose between binary (standalone) or Python package installation:
+
+#### 🚀 Binary Installation (Recommended)
+**No Python required - fastest startup, single executable**
+
+**macOS (Homebrew):**
+```bash
+# Binary version (cask)
+brew install --cask henriqueslab/tap/folder2md4llms-binary
+
+# OR Python package version (formula)
+brew install henriqueslab/tap/folder2md4llms
+```
+
+**Windows (Scoop):**
+```bash
+# Add the bucket
+scoop bucket add henriqueslab https://github.com/HenriquesLab/scoop-folder2md4llms
+
+# Binary version
+scoop install folder2md4llms-binary
+
+# OR Python package version
+scoop install folder2md4llms
+```
+
+**Manual Binary Installation:**
+1. Download the appropriate binary from [GitHub Releases](https://github.com/henriqueslab/folder2md4llms/releases/latest):
+   - **macOS**: `folder2md-macos-x64` (Intel) or `folder2md-macos-arm64` (Apple Silicon)
+   - **Windows**: `folder2md-windows-x64.exe`
+   - **Linux**: `folder2md-linux-x64`
+2. Make executable (macOS/Linux): `chmod +x folder2md-*`
+3. Move to PATH: `sudo mv folder2md-* /usr/local/bin/folder2md`
+
+#### 🐍 Python Package Installation
+**Requires Python 3.11+ - integrates with Python environment**
+
 ```bash
 # Using uv (recommended)
 uv add folder2md4llms
@@ -27,6 +64,17 @@ uv add folder2md4llms
 # Using pip
 pip install folder2md4llms
 ```
+
+#### Binary vs Python Package
+
+| Feature | Binary | Python Package |
+|---------|---------|----------------|
+| **Python Required** | ❌ No | ✅ Yes (3.11+) |
+| **Startup Time** | ⚡ Fast | 🐌 Slower |
+| **File Size** | 📦 ~50MB | 📦 ~10MB |
+| **Dependencies** | ✅ Self-contained | ⚠️ May conflict |
+| **Updates** | 🔄 Manual/Package Manager | 🔄 pip/uv |
+| **Use Case** | General users, CI/CD | Python developers |
 
 ### Basic Usage
 
