@@ -282,7 +282,7 @@ class TestPyInstallerSpecCompatibility:
     def test_executable_creation_compatibility(self):
         """Test compatibility with PyInstaller executable creation."""
         # Test that entry point script exists and is valid
-        entry_point = Path("pyinstaller_entry.py")
+        entry_point = Path("src/folder2md4llms/pyinstaller_entry.py")
         assert entry_point.exists(), "PyInstaller entry point must exist"
 
         # Test that it has valid Python syntax

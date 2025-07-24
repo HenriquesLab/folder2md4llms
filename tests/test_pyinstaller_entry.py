@@ -13,12 +13,12 @@ class TestPyInstallerEntry:
 
     def test_entry_point_exists(self):
         """Test that the PyInstaller entry point file exists."""
-        entry_point = Path("pyinstaller_entry.py")
+        entry_point = Path("src/folder2md4llms/pyinstaller_entry.py")
         assert entry_point.exists(), "PyInstaller entry point script should exist"
 
     def test_entry_point_content(self):
         """Test that the entry point has correct content."""
-        entry_point = Path("pyinstaller_entry.py")
+        entry_point = Path("src/folder2md4llms/pyinstaller_entry.py")
         content = entry_point.read_text()
 
         # Check for required imports
@@ -42,7 +42,7 @@ class TestPyInstallerEntry:
 
         try:
             # Read the entry point content but modify the execution context
-            entry_point = Path("pyinstaller_entry.py")
+            entry_point = Path("src/folder2md4llms/pyinstaller_entry.py")
             content = entry_point.read_text()
 
             # Create a modified version that we can control
@@ -66,11 +66,11 @@ class TestPyInstallerEntry:
 
         try:
             # Execute the path setup as it would work in the entry point
-            entry_point = Path("pyinstaller_entry.py")
+            entry_point = Path("src/folder2md4llms/pyinstaller_entry.py")
 
             # Simulate what the entry point does
-            entry_dir = str(entry_point.parent.absolute())
-            expected_path = os.path.join(entry_dir, "folder2md4llms")
+            entry_dir = str(entry_point.parent.parent.absolute())
+            expected_path = entry_dir
 
             # Execute similar to what's in the entry point
             sys.path.insert(0, expected_path)
@@ -102,7 +102,7 @@ class TestPyInstallerEntry:
     def test_entry_point_main_guard(self):
         """Test that the entry point only executes when run as main."""
         # Read the entry point content
-        entry_point = Path("pyinstaller_entry.py")
+        entry_point = Path("src/folder2md4llms/pyinstaller_entry.py")
         content = entry_point.read_text()
 
         # Verify main guard pattern

@@ -28,7 +28,9 @@ def get_platform_config(platform: str, arch: str) -> dict[str, str]:
         raise ValueError(f"Unsupported platform: {platform}")
 
     # Common entry point
-    entry_point = 'str(project_root / "pyinstaller_entry.py")'
+    entry_point = (
+        'str(project_root / "src" / "folder2md4llms" / "pyinstaller_entry.py")'
+    )
 
     # Source path configuration
     src_path = 'src_path = project_root / "src"'
