@@ -171,8 +171,8 @@ exe = EXE(
     codesign_identity=None,  # macOS code signing (if needed)
     entitlements_file=None,  # macOS entitlements (if needed)
 
-    # Windows-specific options
-    version="0.4.37" if sys.platform == "win32" else None,
+    # Windows-specific options (version should be None for cross-platform compatibility)
+    version=None,
     uac_admin=False,  # Don't require admin privileges
     uac_uiaccess=False,  # Don't require UI access
 
