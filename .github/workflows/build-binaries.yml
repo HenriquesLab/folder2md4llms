@@ -76,7 +76,7 @@ jobs:
         echo "::group::Building binary for ${{ matrix.arch }}"
 
         # Build the binary (native compilation)
-        uv run pyinstaller folder2md-${{ matrix.arch }}.spec --clean --noconfirm
+        uv run pyinstaller folder2md-macos-${{ matrix.arch }}.spec --clean --noconfirm
 
         echo "::endgroup::"
 
@@ -290,7 +290,7 @@ jobs:
         generate_release_notes: true
         name: "Release ${{ github.ref_name }}"
         body: |
-          ## 🚀 Binary Release ${{ github.ref_name }}
+          ## Binary Release ${{ github.ref_name }}
 
           This release includes pre-built binaries for multiple platforms:
 
@@ -333,4 +333,4 @@ jobs:
           All binaries include SHA256 and MD5 checksums for verification.
 
           ---
-          🤖 Binaries built automatically with PyInstaller
+          Binaries built automatically with PyInstaller

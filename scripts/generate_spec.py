@@ -124,7 +124,7 @@ def generate_spec_file(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(spec_content, encoding="utf-8")
 
-    print(f"✅ Generated {platform}-{arch} spec file: {output_path}")
+    print(f"Generated {platform}-{arch} spec file: {output_path}")
 
 
 def main():
@@ -181,15 +181,15 @@ Examples:
                 # Try to compile the spec file to check for syntax errors
                 with open(args.output) as f:
                     compile(f.read(), str(args.output), "exec")
-                print(f"✅ Spec file validation passed: {args.output}")
+                print(f"Spec file validation passed: {args.output}")
             except SyntaxError as e:
-                print(f"❌ Spec file validation failed: {e}")
+                print(f"Spec file validation failed: {e}")
                 sys.exit(1)
 
-        print(f"🎉 Successfully generated spec file for {args.platform}-{args.arch}")
+        print(f"Successfully generated spec file for {args.platform}-{args.arch}")
 
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         sys.exit(1)
 
 

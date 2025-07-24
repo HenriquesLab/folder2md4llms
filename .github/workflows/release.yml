@@ -434,7 +434,7 @@ jobs:
         generate_release_notes: true
         name: "Release ${{ github.ref_name }}"
         body: |
-          ## 🚀 Binary Release ${{ github.ref_name }}
+          ## Binary Release ${{ github.ref_name }}
 
           This release includes pre-built binaries for multiple platforms:
 
@@ -477,7 +477,7 @@ jobs:
           All binaries include SHA256 and MD5 checksums for verification.
 
           ---
-          🤖 Binaries built automatically with PyInstaller
+          Binaries built automatically with PyInstaller
 
   update-submodules:
     runs-on: ubuntu-latest
@@ -503,14 +503,14 @@ jobs:
             -H "Authorization: token ${{ secrets.DISPATCH_PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/$repo/dispatches" \
-            -d "{\"event_type\":\"new_release\",\"client_payload\":{\"version\":\"${{ needs.build.outputs.version }}\",\"tag\":\"v${{ needs.build.outputs.version }}\"}}")
+            -d "{\"event_type\":\"new_binary_release\",\"client_payload\":{\"version\":\"${{ needs.build.outputs.version }}\",\"tag\":\"v${{ needs.build.outputs.version }}\"}}")
 
           http_code=${response: -3}
 
           if [ "$http_code" -eq 204 ]; then
-            echo "✅ Successfully triggered update for $repo_name"
+            echo "Successfully triggered update for $repo_name"
           else
-            echo "❌ Failed to trigger update for $repo_name (HTTP $http_code)"
+            echo "Failed to trigger update for $repo_name (HTTP $http_code)"
             echo "Response: ${response%???}"
             return 1
           fi

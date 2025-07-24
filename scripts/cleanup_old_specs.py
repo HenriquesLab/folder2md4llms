@@ -18,7 +18,7 @@ def main():
         "folder2md-linux.spec.template",  # Old template (superseded by new template)
     ]
 
-    print("🧹 Cleaning up old PyInstaller spec files...")
+    print("Cleaning up old PyInstaller spec files...")
 
     removed_files = []
     for spec_file in old_spec_files:
@@ -31,19 +31,19 @@ def main():
             print(f"  Not found: {spec_file}")
 
     if removed_files:
-        print(f"\n✅ Removed {len(removed_files)} old spec files:")
+        print(f"\nRemoved {len(removed_files)} old spec files:")
         for file in removed_files:
             print(f"  - {file}")
 
-        print("\n📝 The new consolidated system uses:")
+        print("\nThe new consolidated system uses:")
         print("  - folder2md.spec.template (unified template)")
         print("  - scripts/generate_spec.py (spec generator)")
         print("  - Generated specs are created dynamically by CI/CD")
 
     else:
-        print("\n✅ No old spec files found to remove")
+        print("\nNo old spec files found to remove")
 
-    print("\n🎉 Cleanup complete!")
+    print("\nCleanup complete!")
 
 
 if __name__ == "__main__":

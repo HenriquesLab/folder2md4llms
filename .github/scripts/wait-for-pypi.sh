@@ -15,7 +15,7 @@ INITIAL_WAIT=10    # Start with 10 second intervals
 MAX_INTERVAL=60    # Cap at 60 second intervals
 BACKOFF_FACTOR=1.5 # Exponential backoff multiplier
 
-echo "🔍 Waiting for ${PACKAGE_NAME} v${VERSION} to be available on ${REPOSITORY_URL}"
+echo "Waiting for ${PACKAGE_NAME} v${VERSION} to be available on ${REPOSITORY_URL}"
 
 start_time=$(date +%s)
 wait_interval=$INITIAL_WAIT
@@ -58,20 +58,20 @@ while true; do
     elapsed_time=$((current_time - start_time))
 
     if [[ $elapsed_time -ge $MAX_WAIT_TIME ]]; then
-        echo "❌ Timeout: Package not available after ${MAX_WAIT_TIME} seconds"
-        echo "🔄 Proceeding with installation attempt anyway..."
+        echo "Timeout: Package not available after ${MAX_WAIT_TIME} seconds"
+        echo "Proceeding with installation attempt anyway..."
         break
     fi
 
-    echo "📦 Attempt $attempt: Checking package availability..."
+    echo "Attempt $attempt: Checking package availability..."
 
     if check_package_availability "$PACKAGE_NAME" "$VERSION" "$REPOSITORY_URL"; then
-        echo "✅ Package ${PACKAGE_NAME} v${VERSION} is now available!"
-        echo "⏱️  Total wait time: ${elapsed_time} seconds"
+        echo "Package ${PACKAGE_NAME} v${VERSION} is now available!"
+        echo "Total wait time: ${elapsed_time} seconds"
         exit 0
     fi
 
-    echo "⏳ Package not yet available. Waiting ${wait_interval} seconds..."
+    echo "Package not yet available. Waiting ${wait_interval} seconds..."
     sleep "$wait_interval"
 
     # Exponential backoff with jitter
@@ -87,5 +87,5 @@ while true; do
     attempt=$((attempt + 1))
 done
 
-echo "⚠️  Proceeding without confirmation of package availability"
+echo "Proceeding without confirmation of package availability"
 exit 0
