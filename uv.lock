@@ -414,27 +414,11 @@ dependencies = [
     { name = "tqdm" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 build = [
     { name = "pyinstaller" },
     { name = "pyinstaller-hooks-contrib" },
 ]
-dev = [
-    { name = "build" },
-    { name = "mypy" },
-    { name = "pyperclip" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-mock" },
-    { name = "ruff" },
-    { name = "twine" },
-]
-tiktoken = [
-    { name = "tiktoken" },
-]
-
-[package.dev-dependencies]
 dev = [
     { name = "bandit" },
     { name = "build" },
@@ -453,28 +437,22 @@ dev = [
     { name = "twine" },
     { name = "types-pyyaml" },
 ]
+tiktoken = [
+    { name = "tiktoken" },
+]
 
 [package.metadata]
 requires-dist = [
-    { name = "build", marker = "extra == 'dev'", specifier = ">=1.0.3" },
     { name = "click", specifier = ">=8.0.0" },
     { name = "httpx", specifier = ">=0.24.0" },
     { name = "markdown", specifier = ">=3.4.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "nbconvert", specifier = ">=7.0.0" },
     { name = "openpyxl", specifier = ">=3.1.0" },
     { name = "pillow", specifier = ">=9.0.0" },
     { name = "psutil", specifier = ">=5.9.0" },
     { name = "pygments", specifier = ">=2.10.0" },
-    { name = "pyinstaller", marker = "extra == 'build'", specifier = ">=6.0.0" },
-    { name = "pyinstaller-hooks-contrib", marker = "extra == 'build'", specifier = ">=2024.0" },
     { name = "pypdf", specifier = ">=4.0.0" },
     { name = "pyperclip", specifier = ">=1.9.0" },
-    { name = "pyperclip", marker = "extra == 'dev'", specifier = ">=1.8.2" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
-    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14.0" },
     { name = "python-docx", specifier = ">=0.8.11" },
     { name = "python-magic", marker = "sys_platform != 'win32'" },
     { name = "python-magic-bin", marker = "sys_platform == 'win32'" },
@@ -482,15 +460,15 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "rich", specifier = ">=13.0.0" },
     { name = "rich-click", specifier = ">=1.6.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "striprtf", specifier = ">=0.0.26" },
-    { name = "tiktoken", marker = "extra == 'tiktoken'", specifier = ">=0.5.0" },
     { name = "tqdm", specifier = ">=4.64.0" },
-    { name = "twine", marker = "extra == 'dev'", specifier = ">=5.0.0" },
 ]
-provides-extras = ["build", "dev", "tiktoken"]
 
 [package.metadata.requires-dev]
+build = [
+    { name = "pyinstaller", specifier = ">=6.0.0" },
+    { name = "pyinstaller-hooks-contrib", specifier = ">=2024.0" },
+]
 dev = [
     { name = "bandit", specifier = ">=1.8.6" },
     { name = "build", specifier = ">=1.2.2.post1" },
@@ -509,6 +487,7 @@ dev = [
     { name = "twine", specifier = ">=6.1.0" },
     { name = "types-pyyaml" },
 ]
+tiktoken = [{ name = "tiktoken", specifier = ">=0.5.0" }]
 
 [[package]]
 name = "h11"

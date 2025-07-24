@@ -64,15 +64,12 @@ jobs:
         # Install libmagic for macOS
         brew install libmagic
 
-    - name: Prepare PyInstaller spec for architecture
+    - name: Generate PyInstaller spec for architecture
       run: |
-        # Create architecture-specific spec file
-        cp folder2md.spec folder2md-${{ matrix.arch }}.spec
+        # Generate platform-specific spec file from template
+        python scripts/generate_spec.py --platform macos --arch ${{ matrix.arch }} --output folder2md-macos-${{ matrix.arch }}.spec --validate
 
-        # Target architecture is already set to None in the base spec
-
-        # Update binary name to include architecture
-        sed -i '' 's/name="folder2md"/name="folder2md-macos-${{ matrix.arch }}"/' folder2md-${{ matrix.arch }}.spec
+        echo "Generated spec file for macOS ${{ matrix.arch }}"
 
     - name: Build binary with PyInstaller
       run: |
@@ -178,13 +175,12 @@ jobs:
         uv sync --group dev --extra build --extra tiktoken
       shell: pwsh
 
-    - name: Prepare PyInstaller spec for Windows
+    - name: Generate PyInstaller spec for Windows
       run: |
-        # Create Windows-specific spec file
-        Copy-Item folder2md.spec folder2md-windows-${{ matrix.arch }}.spec
+        # Generate platform-specific spec file from template
+        python scripts/generate_spec.py --platform windows --arch ${{ matrix.arch }} --output folder2md-windows-${{ matrix.arch }}.spec --validate
 
-        # Update binary name to include platform and architecture
-        (Get-Content folder2md-windows-${{ matrix.arch }}.spec) -replace 'name="folder2md"', 'name="folder2md-windows-${{ matrix.arch }}"' | Set-Content folder2md-windows-${{ matrix.arch }}.spec
+        Write-Host "Generated spec file for Windows ${{ matrix.arch }}"
       shell: pwsh
 
     - name: Build binary with PyInstaller

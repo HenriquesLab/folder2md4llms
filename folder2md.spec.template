@@ -1,8 +1,17 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PyInstaller spec file for folder2md4llms
-Generates standalone binaries for cross-platform distribution
+PyInstaller spec template for folder2md4llms
+Unified template for generating platform-specific binaries
 Supports macOS, Windows, and Linux
+
+Template variables:
+- {{BINARY_NAME}}: Platform-specific binary name (e.g., folder2md-windows-x64.exe)
+- {{ENTRY_POINT}}: Main entry point script
+- {{SRC_PATH}}: Source path configuration
+- {{PLATFORM_HIDDENIMPORTS}}: Platform-specific hidden imports
+- {{PLATFORM_EXCLUDES}}: Platform-specific excludes
+- {{PLATFORM_DATAS}}: Platform-specific data files
+- {{PLATFORM_BINARIES}}: Platform-specific binary files
 """
 
 import sys
@@ -10,7 +19,7 @@ from pathlib import Path
 
 # Define the project root and source paths
 project_root = Path(SPECPATH)
-src_path = project_root / "src"
+{{SRC_PATH}}
 
 # Get the version dynamically
 version_path = src_path / "folder2md4llms" / "__version__.py"
@@ -20,27 +29,25 @@ app_version = version_vars["__version__"]
 
 # Analysis configuration
 a = Analysis(
-    # Entry point script - use the existing pyinstaller_entry.py
-    [str(project_root / "pyinstaller_entry.py")],
+    # Entry point script
+    [{{ENTRY_POINT}}],
 
     # Additional paths for module discovery
     pathex=[str(src_path)],
 
-    # Binary dependencies (will be auto-detected for most cases)
-    binaries=[],
+    # Binary dependencies
+    binaries=[{{PLATFORM_BINARIES}}],
 
     # Data files to include
     datas=[
         # Include all package data
         (str(src_path / "folder2md4llms"), "folder2md4llms"),
-    ] + ([
-        # Windows-specific data files (magic DLLs)
-        # Note: python-magic-bin should handle this automatically
-    ] if sys.platform == "win32" else []),
+        {{PLATFORM_DATAS}}
+    ],
 
     # Hidden imports that PyInstaller might miss
     hiddenimports=[
-        # Core dependencies
+        # Core dependencies - common to all platforms
         "folder2md4llms",
         "folder2md4llms.cli",
         "folder2md4llms.processor",
@@ -50,9 +57,27 @@ a = Analysis(
         "folder2md4llms.formatters",
         "folder2md4llms.utils",
 
-        # External dependencies that might be missed
-        "tiktoken_ext.openai_public",
-        "tiktoken_ext",
+        # Rich and CLI dependencies
+        "rich",
+        "rich.console",
+        "rich.progress",
+        "rich.table",
+        "rich.text",
+        "rich.panel",
+        "rich.markup",
+        "rich_click",
+        "click",
+        "click.core",
+
+        # File processing and utilities
+        "magic",
+        "mimetypes",
+        "pathlib",
+        "yaml",
+        "pyyaml",
+        "typing_extensions",
+
+        # Document converters
         "pypdf",
         "pypdf._reader",
         "pypdf._writer",
@@ -60,38 +85,46 @@ a = Analysis(
         "docx.shared",
         "openpyxl",
         "openpyxl.workbook",
+        "striprtf",
+        "striprtf.striprtf",
+        "nbconvert",
+        "nbconvert.exporters",
+        "pptx",
+
+        # Image processing
         "PIL",
         "PIL.Image",
-        "magic",
-        "yaml",
-        "rich",
-        "rich.console",
-        "rich.progress",
-        "rich.table",
-        "rich.text",
-        "rich.panel",
-        "click",
-        "click.core",
+        "PIL.ExifTags",
+
+        # Text processing and highlighting
         "markdown",
         "pygments",
         "pygments.lexers",
         "pygments.formatters",
-        "nbconvert",
-        "nbconvert.exporters",
-        "striprtf",
-        "striprtf.striprtf",
-        "pptx",
+
+        # System and networking
         "psutil",
         "httpx",
         "pyperclip",
+        "tqdm",
 
-        # Platform-specific magic imports (handle gracefully if not available)
-        # Note: magic.libmagic may not be available in all environments
-    ] + ([
-        # Windows-specific imports
-        "win32api",
-        "win32con",
-    ] if sys.platform == "win32" else []),
+        # Token counting (optional)
+        "tiktoken",
+        "tiktoken_ext",
+        "tiktoken_ext.openai_public",
+
+        # HTTP utilities
+        "urllib3",
+        "certifi",
+        "charset_normalizer",
+        "idna",
+
+        # Async and concurrency
+        "asyncio",
+        "concurrent.futures",
+
+        {{PLATFORM_HIDDENIMPORTS}}
+    ],
 
     # Hook directories
     hookspath=[],
@@ -104,41 +137,53 @@ a = Analysis(
 
     # Modules to exclude
     excludes=[
-        # Exclude test modules
+        # Test modules
         "tests",
         "test",
         "pytest",
+        "unittest",
 
-        # Exclude development tools
+        # Development tools
         "mypy",
         "ruff",
         "black",
         "isort",
+        "setuptools",
+        "pip",
+        "wheel",
+        "distutils",
 
-        # Exclude unnecessary GUI libraries
+        # GUI frameworks (CLI only)
         "tkinter",
         "PySide2",
         "PySide6",
         "PyQt5",
         "PyQt6",
 
-        # Exclude large optional dependencies if not needed
+        # Web frameworks
+        "flask",
+        "django",
+        "fastapi",
+        "jinja2",
+
+        # Large optional dependencies
         "matplotlib",
         "numpy",
         "pandas",
         "scipy",
         "jupyter",
+        "tensorflow",
+        "torch",
+        "keras",
 
-    ] + ([
-        # Windows-specific excludes
-        "win32com",
-        "pythoncom",
-    ] if sys.platform == "win32" else []),
+        # Documentation tools
+        "sphinx",
 
-    # Don't create a zip archive
+        {{PLATFORM_EXCLUDES}}
+    ],
+
+    # Archive configuration
     noarchive=False,
-
-    # Optimization level
     optimize=0,
 )
 
@@ -155,7 +200,7 @@ exe = EXE(
     [],
 
     # Output binary name (platform-specific)
-    name="folder2md" + (".exe" if sys.platform == "win32" else ""),
+    name="{{BINARY_NAME}}",
 
     # Debug options
     debug=False,
@@ -177,7 +222,7 @@ exe = EXE(
     codesign_identity=None,  # macOS code signing (if needed)
     entitlements_file=None,  # macOS entitlements (if needed)
 
-    # Windows-specific options (version should be None for cross-platform compatibility)
+    # Windows-specific options
     version=None,
     uac_admin=False,  # Don't require admin privileges
     uac_uiaccess=False,  # Don't require UI access

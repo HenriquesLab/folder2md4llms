@@ -3,6 +3,11 @@
 from pathlib import Path
 from typing import Any
 
+from ..utils.file_strategy import (
+    FileProcessingStrategy,
+    FileStrategyDeterminer,
+    ProcessingAction,
+)
 from .base import BaseConverter
 from .code_converter import CodeConverter
 from .docx_converter import DOCXConverter
@@ -15,11 +20,12 @@ from .xlsx_converter import XLSXConverter
 
 
 class ConverterFactory:
-    """Factory for creating appropriate document converters."""
+    """Factory for creating appropriate document converters with processing strategy."""
 
     def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
         self._converters: list[BaseConverter] | None = None
+        self.strategy_determiner = FileStrategyDeterminer(self.config)
 
     def _get_converters(self) -> list[BaseConverter]:
         """Get all available converters."""
@@ -55,6 +61,20 @@ class ConverterFactory:
         if converter:
             return converter.convert(file_path)
         return None
+
+    def get_processing_strategy(self, file_path: Path) -> FileProcessingStrategy:
+        """Get the complete processing strategy for a file."""
+        return self.strategy_determiner.get_strategy(file_path)
+
+    def should_process_file(self, file_path: Path) -> bool:
+        """Determine if a file should be processed based on strategy."""
+        strategy = self.get_processing_strategy(file_path)
+        return self.strategy_determiner.should_process_file(strategy)
+
+    def get_file_processing_action(self, file_path: Path) -> ProcessingAction:
+        """Get the processing action for a file."""
+        strategy = self.get_processing_strategy(file_path)
+        return strategy.action
 
     def get_supported_extensions(self) -> set:
         """Get all supported file extensions."""

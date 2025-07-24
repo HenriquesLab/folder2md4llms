@@ -1,6 +1,16 @@
 """File utility functions."""
 
+import logging
 from pathlib import Path
+
+try:
+    import magic
+
+    HAS_MAGIC = True
+except ImportError:
+    HAS_MAGIC = False
+
+logger = logging.getLogger(__name__)
 
 # Language mapping for syntax highlighting
 LANGUAGE_EXTENSIONS = {
@@ -88,11 +98,186 @@ def get_language_from_extension(extension: str) -> str | None:
 
 
 def is_binary_file(file_path: Path) -> bool:
-    """Check if a file is binary by looking for null bytes."""
+    """Check if a file is binary using python-magic if available, fallback to null byte detection."""
+    if HAS_MAGIC:
+        return _is_binary_file_magic(file_path)
+    else:
+        return _is_binary_file_fallback(file_path)
+
+
+def _is_binary_file_magic(file_path: Path) -> bool:
+    """Check if a file is binary using python-magic."""
+    try:
+        # Get MIME type
+        mime = magic.from_file(str(file_path), mime=True)
+
+        # Text MIME types
+        text_mimes = {
+            "text/",
+            "application/json",
+            "application/xml",
+            "application/javascript",
+            "application/x-javascript",
+            "application/x-sh",
+            "application/x-shellscript",
+            "application/x-python",
+            "application/x-perl",
+            "application/x-ruby",
+            "application/x-php",
+            "application/x-httpd-php",
+            "application/x-yaml",
+            "application/yaml",
+            "application/toml",
+            "application/x-toml",
+        }
+
+        # Check if MIME type indicates text
+        for text_mime in text_mimes:
+            if mime.startswith(text_mime):
+                return False
+
+        # Additional check for files with text extensions that might be misidentified
+        text_extensions = {
+            ".txt",
+            ".md",
+            ".rst",
+            ".py",
+            ".js",
+            ".ts",
+            ".jsx",
+            ".tsx",
+            ".html",
+            ".htm",
+            ".css",
+            ".scss",
+            ".sass",
+            ".less",
+            ".xml",
+            ".json",
+            ".yaml",
+            ".yml",
+            ".toml",
+            ".ini",
+            ".cfg",
+            ".conf",
+            ".sh",
+            ".bash",
+            ".zsh",
+            ".fish",
+            ".ps1",
+            ".bat",
+            ".cmd",
+            ".c",
+            ".h",
+            ".cpp",
+            ".hpp",
+            ".cc",
+            ".cxx",
+            ".java",
+            ".cs",
+            ".php",
+            ".rb",
+            ".go",
+            ".rs",
+            ".swift",
+            ".kt",
+            ".scala",
+            ".r",
+            ".m",
+            ".sql",
+            ".dockerfile",
+            ".makefile",
+            ".cmake",
+            ".vim",
+            ".lua",
+            ".pl",
+            ".pm",
+            ".clj",
+            ".cljs",
+            ".elm",
+            ".ex",
+            ".exs",
+            ".erl",
+            ".hrl",
+            ".hs",
+            ".lhs",
+            ".ml",
+            ".mli",
+            ".fs",
+            ".fsi",
+            ".fsx",
+            ".dart",
+            ".proto",
+            ".thrift",
+            ".graphql",
+            ".gql",
+            ".log",
+            ".gitignore",
+            ".gitattributes",
+            ".editorconfig",
+            ".flake8",
+            ".pylintrc",
+            ".travis",
+            ".github",
+        }
+
+        if file_path.suffix.lower() in text_extensions:
+            return False
+
+        # Check if filename suggests text (no extension files)
+        text_filenames = {
+            "readme",
+            "license",
+            "changelog",
+            "authors",
+            "contributors",
+            "install",
+            "news",
+            "todo",
+            "makefile",
+            "dockerfile",
+            "jenkinsfile",
+            "vagrantfile",
+            "gemfile",
+            "rakefile",
+            "procfile",
+            ".gitignore",
+            ".gitattributes",
+            ".editorconfig",
+            ".dockerignore",
+        }
+
+        if file_path.name.lower() in text_filenames:
+            return False
+
+        # If magic says it's binary, it probably is
+        return True
+
+    except Exception as e:
+        logger.debug(f"python-magic failed for {file_path}: {e}")
+        # Fallback to null byte detection
+        return _is_binary_file_fallback(file_path)
+
+
+def _is_binary_file_fallback(file_path: Path) -> bool:
+    """Fallback method to check if a file is binary by looking for null bytes."""
     try:
         with open(file_path, "rb") as f:
-            chunk = f.read(1024)
-            return b"\0" in chunk
+            chunk = f.read(8192)  # Read larger chunk for better detection
+            # Check for null bytes (common in binary files)
+            if b"\0" in chunk:
+                return True
+
+            # Check for high ratio of non-printable characters
+            if len(chunk) > 0:
+                printable_chars = sum(
+                    1 for byte in chunk if 32 <= byte <= 126 or byte in (9, 10, 13)
+                )
+                ratio = printable_chars / len(chunk)
+                # If less than 95% printable characters, likely binary
+                return ratio < 0.95
+
+        return False
     except (OSError, PermissionError, UnicodeError):
         return True
     except Exception:

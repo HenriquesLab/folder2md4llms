@@ -13,6 +13,7 @@ from .converters.smart_python_converter import SmartPythonConverter
 from .engine.smart_engine import SmartAntiTruncationEngine
 from .formatters.markdown import MarkdownFormatter
 from .utils.config import Config
+from .utils.file_strategy import ProcessingAction
 from .utils.file_utils import (
     get_language_from_extension,
     is_data_file,
@@ -328,30 +329,26 @@ class RepositoryProcessor:
         # Optimize file processing order
         optimized_files = optimize_file_processing_order(file_list)
 
-        # Separate text files for streaming processing
+        # Use centralized strategy to categorize files for processing
         text_files = []
         other_files = []
+        file_strategies = []
 
         for file_path in optimized_files:
-            # Check for convertible documents first, before checking if it's a text file
-            # This prevents PDFs and other documents from being misclassified as text files
-            if should_convert_file(file_path):
-                other_files.append(file_path)
-            # Check for Python files that should be condensed via converter
-            elif should_condense_python_file(file_path, self.config.condense_python):
-                other_files.append(file_path)
-            # Check for code files that should be condensed via converter
-            elif should_condense_code_file(
-                file_path, self.config.condense_code, self.config.condense_languages
-            ):
-                other_files.append(file_path)
-            # Check for data files (pickle, db, etc.) to prevent them from being treated as text
-            elif is_data_file(file_path):
-                other_files.append(file_path)
-            elif is_text_file(file_path):
+            strategy = self.converter_factory.get_processing_strategy(file_path)
+            file_strategies.append((file_path, strategy))
+
+            # Categorize based on processing strategy
+            if strategy.action == ProcessingAction.READ_TEXT:
                 text_files.append(file_path)
-            else:
+            elif strategy.action in {
+                ProcessingAction.CONVERT,
+                ProcessingAction.CONDENSE_PYTHON,
+                ProcessingAction.CONDENSE_CODE,
+                ProcessingAction.ANALYZE_BINARY,
+            }:
                 other_files.append(file_path)
+            # ProcessingAction.SKIP files are not added to either list
 
         # Process text files with streaming processor
         if text_files:
@@ -406,17 +403,23 @@ class RepositoryProcessor:
                 except OSError:
                     continue
 
-                # Process document files, Python files, and code files for condensing
-                if (
-                    (should_convert_file(file_path) and self.config.convert_docs)
-                    or should_condense_python_file(
-                        file_path, self.config.condense_python
+                # Use centralized strategy for processing decisions
+                strategy = self.converter_factory.get_processing_strategy(file_path)
+
+                if strategy.action in {
+                    ProcessingAction.CONVERT,
+                    ProcessingAction.CONDENSE_PYTHON,
+                    ProcessingAction.CONDENSE_CODE,
+                } and (
+                    (
+                        strategy.action == ProcessingAction.CONVERT
+                        and self.config.convert_docs
                     )
-                    or should_condense_code_file(
-                        file_path,
-                        self.config.condense_code,
-                        self.config.condense_languages,
-                    )
+                    or strategy.action
+                    in {
+                        ProcessingAction.CONDENSE_PYTHON,
+                        ProcessingAction.CONDENSE_CODE,
+                    }
                 ):
                     # Try to convert document or condense code
                     converted_content = self.converter_factory.convert_file(file_path)
@@ -424,7 +427,10 @@ class RepositoryProcessor:
                         results["converted_docs"][rel_path] = converted_content
                         stats["converted_docs"] += 1
 
-                elif self.config.describe_binaries:
+                elif (
+                    strategy.action == ProcessingAction.ANALYZE_BINARY
+                    and self.config.describe_binaries
+                ):
                     # Analyze binary file
                     description = self.binary_analyzer.analyze_file(file_path)
                     if description:
@@ -621,17 +627,23 @@ class RepositoryProcessor:
                         stats["converted_docs"] += 1
                         continue
 
-                # Process document files and code files for condensing
-                if (
-                    (should_convert_file(file_path) and self.config.convert_docs)
-                    or should_condense_python_file(
-                        file_path, self.config.condense_python
+                # Use centralized strategy for processing decisions
+                strategy = self.converter_factory.get_processing_strategy(file_path)
+
+                if strategy.action in {
+                    ProcessingAction.CONVERT,
+                    ProcessingAction.CONDENSE_PYTHON,
+                    ProcessingAction.CONDENSE_CODE,
+                } and (
+                    (
+                        strategy.action == ProcessingAction.CONVERT
+                        and self.config.convert_docs
                     )
-                    or should_condense_code_file(
-                        file_path,
-                        self.config.condense_code,
-                        self.config.condense_languages,
-                    )
+                    or strategy.action
+                    in {
+                        ProcessingAction.CONDENSE_PYTHON,
+                        ProcessingAction.CONDENSE_CODE,
+                    }
                 ):
                     # Try to convert document or condense code
                     converted_content = self.converter_factory.convert_file(file_path)

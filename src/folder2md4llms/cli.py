@@ -53,6 +53,50 @@ click.rich_click.OPTION_GROUPS = {
 console = Console()
 
 
+def _get_template_content() -> str:
+    """Load the .folder2md_ignore template content from the package."""
+    try:
+        # Try to get template from package data
+        import importlib.resources as resources
+
+        try:
+            # For Python 3.9+
+            template_files = resources.files("folder2md4llms") / "templates"
+            template_file = template_files / "folder2md_ignore.template"
+            return template_file.read_text(encoding="utf-8")
+        except AttributeError:
+            # Fallback for older Python versions
+            with resources.open_text(
+                "folder2md4llms.templates", "folder2md_ignore.template"
+            ) as f:
+                return f.read()
+
+    except (ImportError, FileNotFoundError):
+        # Fallback: try to read from file system (development environment)
+        try:
+            template_path = (
+                Path(__file__).parent / "templates" / "folder2md_ignore.template"
+            )
+            return template_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            # Last resort: return a minimal template
+            return """# folder2md4llms ignore patterns
+# Add your ignore patterns below (gitignore-style syntax)
+
+# Common patterns
+.git/
+__pycache__/
+*.pyc
+node_modules/
+.vscode/
+.idea/
+*.log
+*.tmp
+
+# Add your custom patterns here:
+"""
+
+
 def _generate_ignore_template(target_path: Path, force: bool = False) -> None:
     """Generate a .folder2md_ignore template file."""
     ignore_file = target_path / ".folder2md_ignore"
@@ -74,302 +118,8 @@ def _generate_ignore_template(target_path: Path, force: bool = False) -> None:
                 console.print("[ERROR] Operation cancelled", style="red")
                 return
 
-    template_content = """# folder2md4llms ignore patterns
-# This file specifies patterns for files and directories to ignore
-# during repository processing. Uses gitignore-style patterns.
-
-# ============================================================================
-# VERSION CONTROL
-# ============================================================================
-.git/
-.svn/
-.hg/
-.bzr/
-CVS/
-
-# ============================================================================
-# BUILD ARTIFACTS & DEPENDENCIES
-# ============================================================================
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Python development tools
-.mypy_cache/
-.ruff_cache/
-.tox/
-.nox/
-.black/
-.isort.cfg
-htmlcov/
-.benchmarks/
-
-# Virtual environments
-venv/
-env/
-.venv/
-.env/
-virtualenv/
-
-# UV package manager
-uv.lock
-
-# Testing & Coverage
-.pytest_cache/
-.coverage
-coverage.xml
-.nyc_output/
-htmlcov/
-cov_html/
-coverage_html/
-.benchmarks/
-
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.npm
-.eslintcache
-
-# Java
-*.class
-*.war
-*.ear
-*.jar
-target/
-
-# C/C++
-*.obj
-*.o
-*.a
-*.lib
-*.dll
-*.exe
-
-# Rust
-target/
-Cargo.lock
-
-# Go
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
-go.sum
-
-# .NET
-bin/
-obj/
-*.dll
-*.exe
-*.pdb
-
-# ============================================================================
-# IDE & EDITOR FILES
-# ============================================================================
-.vscode/
-.idea/
-.claude/
-.cursor/
-
-# ============================================================================
-# AI ASSISTANT FILES
-# ============================================================================
-.claude/
-Claude.md
-CLAUDE.md
-claude.md
-
-# ============================================================================
-# BUILD & OUTPUT DIRECTORIES
-# ============================================================================
-build/
-output/
-outputs/
-out/
-results/
-reports/
-
-# ============================================================================
-# CACHE DIRECTORIES
-# ============================================================================
-.cache/
-cache/
-.tmp/
-tmp/
-*.swp
-*.swo
-*~
-.project
-.classpath
-.c9revisions/
-*.sublime-project
-*.sublime-workspace
-.history/
-
-# ============================================================================
-# OS GENERATED FILES
-# ============================================================================
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# ============================================================================
-# LOGS & TEMPORARY FILES
-# ============================================================================
-*.log
-*.tmp
-*.temp
-*.cache
-*.pid
-*.seed
-*.pid.lock
-.nyc_output
-.grunt
-.sass-cache
-.node_repl_history
-
-# ============================================================================
-# DOCUMENTATION & MEDIA
-# ============================================================================
-# Large media files
-*.mp4
-*.avi
-*.mov
-*.wmv
-*.flv
-*.webm
-*.mkv
-*.m4v
-*.3gp
-*.3g2
-*.rm
-*.swf
-*.vob
-
-# Large images (keep smaller ones for analysis)
-*.psd
-*.ai
-*.tiff
-*.tif
-*.bmp
-*.ico
-*.raw
-*.cr2
-*.nef
-*.arw
-*.dng
-*.orf
-*.sr2
-
-# ============================================================================
-# ARCHIVES & PACKAGES
-# ============================================================================
-*.zip
-*.tar.gz
-*.tgz
-*.rar
-*.7z
-*.bz2
-*.xz
-*.Z
-*.lz
-*.lzma
-*.cab
-*.iso
-*.dmg
-*.pkg
-*.deb
-*.rpm
-*.msi
-
-# ============================================================================
-# SECURITY & SECRETS
-# ============================================================================
-*.key
-*.pem
-*.p12
-*.p7b
-*.crt
-*.der
-*.cer
-*.pfx
-*.p7c
-*.p7r
-*.spc
-.env
-.env.*
-*.secret
-secrets/
-.secrets/
-.aws/
-.ssh/
-
-# ============================================================================
-# DATABASES & DATA FILES
-# ============================================================================
-*.db
-*.sqlite
-*.sqlite3
-*.db3
-*.s3db
-*.sl3
-*.mdb
-*.accdb
-
-# ============================================================================
-# FOLDER2MD4LLMS OUTPUT FILES
-# ============================================================================
-# Default output files generated by folder2md4llms
-output.md
-*.output.md
-folder_output.md
-repository_output.md
-
-# ============================================================================
-# CUSTOM PATTERNS
-# ============================================================================
-# Add your custom ignore patterns below:
-
-# Example: Ignore specific directories
-# my_private_dir/
-# temp/
-# cache/
-
-# Example: Ignore specific file types
-# *.backup
-# *.old
-# *.orig
-"""
-
     try:
+        template_content = _get_template_content()
         ignore_file.write_text(template_content, encoding="utf-8")
         console.print(
             f"[SUCCESS] Generated .folder2md_ignore template at {ignore_file}",

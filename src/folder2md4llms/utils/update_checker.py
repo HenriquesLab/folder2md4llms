@@ -2,8 +2,11 @@
 
 import asyncio
 import json
+import threading
+from collections.abc import Coroutine
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import httpx
 from rich.console import Console
@@ -239,10 +242,57 @@ class UpdateChecker:
 
         return None
 
+    def _run_async_in_thread(self, coro: Coroutine[Any, Any, str | None]) -> str | None:
+        """Run an async coroutine in a separate thread with its own event loop.
+
+        This method prevents RuntimeError: This event loop is already running
+        by isolating the async operation in a dedicated thread.
+
+        Args:
+            coro: The coroutine to execute
+
+        Returns:
+            Result from the coroutine, or None if execution failed
+        """
+        result = None
+        exception = None
+
+        def run_in_thread():
+            nonlocal result, exception
+            try:
+                # Create a new event loop for this thread
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    result = loop.run_until_complete(coro)
+                finally:
+                    loop.close()
+            except Exception as e:
+                exception = e
+
+        # Run the coroutine in a separate thread
+        thread = threading.Thread(target=run_in_thread, daemon=True)
+        thread.start()
+        thread.join(timeout=30)  # 30 second timeout
+
+        if thread.is_alive():
+            # Thread is still running after timeout
+            return None
+
+        if exception is not None:
+            # Re-raise the exception from the thread
+            raise exception
+
+        return result
+
     def check_for_updates_sync(
         self, force: bool = False, show_notification: bool = True
     ) -> str | None:
         """Synchronous wrapper for update checking.
+
+        This method safely handles async operations by running them in a separate
+        thread with their own event loop, preventing conflicts with existing
+        event loops.
 
         Args:
             force: Force check even if within check interval
@@ -252,16 +302,13 @@ class UpdateChecker:
             Latest version if update available, None otherwise
         """
         try:
-            # Try to get the current event loop if one exists
+            # Check if we can use asyncio.run directly (no running loop)
             try:
                 asyncio.get_running_loop()
-                # If we have a running loop, we can't use run_until_complete
-                # Instead, create a new task and handle it properly
-                import concurrent.futures
-
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(asyncio.run, self.check_for_updates(force))
-                    latest_version = future.result(timeout=30)
+                # We have a running loop, so use thread-based approach
+                latest_version = self._run_async_in_thread(
+                    self.check_for_updates(force)
+                )
             except RuntimeError:
                 # No running loop, safe to use asyncio.run
                 latest_version = asyncio.run(self.check_for_updates(force))
@@ -270,7 +317,7 @@ class UpdateChecker:
                 self._display_update_notification(latest_version)
             return latest_version
         except Exception:
-            # Silently fail on any errors
+            # Silently fail on any errors to avoid disrupting the main application
             return None
 
 

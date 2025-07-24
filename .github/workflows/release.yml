@@ -77,6 +77,9 @@ jobs:
     environment: test-pypi
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
@@ -91,8 +94,8 @@ jobs:
 
     - name: Test installation from TestPyPI
       run: |
-        echo "Waiting for package to be available on TestPyPI..."
-        sleep 60
+        # Wait for package to be available on TestPyPI using intelligent polling
+        ./.github/scripts/wait-for-pypi.sh folder2md4llms ${{ needs.build.outputs.version }} https://test.pypi.org/simple/
 
         python -m pip install --upgrade pip
 
@@ -111,8 +114,8 @@ jobs:
               echo "All attempts failed, exiting"
               exit 1
             fi
-            echo "Waiting 30 seconds before retry..."
-            sleep 30
+            echo "Waiting 15 seconds before retry..."
+            sleep 15
             ATTEMPT=$((ATTEMPT + 1))
           fi
         done
@@ -131,6 +134,9 @@ jobs:
     if: github.ref_type == 'tag'
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
@@ -144,8 +150,8 @@ jobs:
 
     - name: Test installation from PyPI
       run: |
-        echo "Waiting for package to be available on PyPI..."
-        sleep 120
+        # Wait for package to be available on PyPI using intelligent polling
+        ./.github/scripts/wait-for-pypi.sh folder2md4llms ${{ needs.build.outputs.version }} https://pypi.org/simple/
 
         python -m pip install --upgrade pip
 
@@ -164,8 +170,8 @@ jobs:
               echo "All attempts failed, exiting"
               exit 1
             fi
-            echo "Waiting 60 seconds before retry..."
-            sleep 60
+            echo "Waiting 30 seconds before retry..."
+            sleep 30
             ATTEMPT=$((ATTEMPT + 1))
           fi
         done
@@ -211,48 +217,13 @@ jobs:
     timeout-minutes: 10
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Wait for binary builds to complete
       run: |
-        echo "Waiting for binary builds to complete..."
-
-        # Wait up to 10 minutes for binary builds
-        MAX_WAIT=600
-        WAIT_TIME=0
-        SLEEP_INTERVAL=30
-
-        while [ $WAIT_TIME -lt $MAX_WAIT ]; do
-          # Check the status of the build-binaries workflow
-          RUNS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/build-binaries.yml/runs?per_page=5")
-
-          # Get the most recent run that matches our tag
-          LATEST_RUN_STATUS=$(echo "$RUNS" | jq -r --arg tag "${{ github.ref_name }}" \
-            '.workflow_runs[] | select(.head_branch == $tag) | .status' | head -1)
-
-          LATEST_RUN_CONCLUSION=$(echo "$RUNS" | jq -r --arg tag "${{ github.ref_name }}" \
-            '.workflow_runs[] | select(.head_branch == $tag) | .conclusion' | head -1)
-
-          echo "Binary build status: $LATEST_RUN_STATUS, conclusion: $LATEST_RUN_CONCLUSION"
-
-          if [ "$LATEST_RUN_STATUS" = "completed" ]; then
-            if [ "$LATEST_RUN_CONCLUSION" = "success" ]; then
-              echo "✅ Binary builds completed successfully"
-              break
-            else
-              echo "❌ Binary builds failed with conclusion: $LATEST_RUN_CONCLUSION"
-              echo "Continuing with submodule updates anyway..."
-              break
-            fi
-          fi
-
-          echo "Binary builds still running, waiting ${SLEEP_INTERVAL}s..."
-          sleep $SLEEP_INTERVAL
-          WAIT_TIME=$((WAIT_TIME + SLEEP_INTERVAL))
-        done
-
-        if [ $WAIT_TIME -ge $MAX_WAIT ]; then
-          echo "⚠️ Timeout waiting for binary builds, continuing with submodule updates"
-        fi
+        # Use intelligent polling to wait for binary builds workflow
+        ./.github/scripts/wait-for-workflow.sh build-binaries.yml ${{ github.ref_name }} ${{ secrets.GITHUB_TOKEN }}
 
     - name: Trigger submodule updates
       run: |

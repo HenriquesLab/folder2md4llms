@@ -42,25 +42,6 @@ dependencies = [
     "pyperclip>=1.9.0",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "pytest-asyncio>=0.21.0",
-    "ruff>=0.1.0",
-    "mypy>=1.0.0",
-    "pytest-mock>=3.14.0",
-    "pyperclip>=1.8.2",
-    "build>=1.0.3",
-    "twine>=5.0.0",
-]
-tiktoken = [
-    "tiktoken>=0.5.0",
-]
-build = [
-    "pyinstaller>=6.0.0",
-    "pyinstaller-hooks-contrib>=2024.0",
-]
 
 [project.urls]
 Homepage = "https://github.com/henriqueslab/folder2md4llms"
@@ -70,7 +51,6 @@ Issues = "https://github.com/henriqueslab/folder2md4llms/issues"
 [project.scripts]
 folder2md = "folder2md4llms.cli:main"
 
-# UV dependency groups configuration
 [dependency-groups]
 dev = [
     "pytest>=8.4.1",
@@ -90,26 +70,25 @@ dev = [
     "pyinstaller>=6.0.0",  # For binary builds
     "pyinstaller-hooks-contrib>=2024.0",  # Additional PyInstaller hooks
 ]
+build = [
+    "pyinstaller>=6.0.0",
+    "pyinstaller-hooks-contrib>=2024.0",
+]
+tiktoken = [
+    "tiktoken>=0.5.0",
+]
 
 [tool.hatch.version]
 path = "src/folder2md4llms/__version__.py"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/folder2md4llms"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"src/folder2md4llms/templates" = "folder2md4llms/templates"
+
 [tool.rye]
 managed = true
-dev-dependencies = [
-    "pytest>=8.4.1",
-    "pytest-cov>=6.2.1",
-    "pytest-xdist>=3.8.0",
-    "pytest-mock>=3.14.1",
-    "ruff>=0.8.4",
-    "mypy>=1.15.0",
-    "bandit>=1.8.0",
-    "build>=1.2.2.post1",
-    "twine>=6.1.0",
-    "tiktoken>=0.5.0",
-    "pyinstaller>=6.0.0",  # For binary builds
-    "pyinstaller-hooks-contrib>=2024.0",  # Additional PyInstaller hooks
-]
 
 [tool.ruff]
 line-length = 88

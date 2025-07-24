@@ -279,7 +279,6 @@ class TestUpdateChecker:
         result = await update_checker.check_for_updates(force=False)
         assert result == "1.0.0"
 
-    @pytest.mark.skip(reason="Event loop conflicts with pytest-asyncio environment")
     def test_check_for_updates_sync(self, update_checker):
         """Test synchronous wrapper for update checking."""
 
@@ -297,7 +296,6 @@ class TestUpdateChecker:
                 )
                 assert result == "99.0.0"
 
-    @pytest.mark.skip(reason="Event loop conflicts with pytest-asyncio environment")
     def test_check_for_updates_sync_with_notification(self, update_checker):
         """Test synchronous wrapper with notification display."""
 
@@ -319,7 +317,6 @@ class TestUpdateChecker:
                     assert result == "99.0.0"
                     mock_display.assert_called_once_with("99.0.0")
 
-    @pytest.mark.skip(reason="Event loop conflicts with pytest-asyncio environment")
     def test_check_for_updates_sync_no_update(self, update_checker):
         """Test synchronous wrapper when no update available."""
 
@@ -369,7 +366,6 @@ class TestConvenienceFunction:
 class TestIntegration:
     """Integration tests for update checking."""
 
-    @pytest.mark.skip(reason="Event loop issue in sync wrapper - needs investigation")
     def test_full_update_check_cycle(self):
         """Test a complete update check cycle."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -379,6 +375,7 @@ class TestIntegration:
             checker = UpdateChecker(check_interval=60)  # 60 seconds for testing
             checker.cache_dir = cache_dir
             checker.cache_file = cache_file
+            checker.current_version = "0.5.0"  # Set a known version for testing
 
             # Mock network call to return newer version
             async def mock_fetch():
@@ -430,3 +427,91 @@ class TestIntegration:
                 assert result is None
             finally:
                 cache_dir.chmod(0o755)  # Restore permissions
+
+    def test_thread_safe_async_wrapper(self):
+        """Test the thread-safe async wrapper function."""
+        import asyncio
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            cache_dir = Path(temp_dir)
+            checker = UpdateChecker()
+            checker.cache_dir = cache_dir
+            checker.cache_file = cache_dir / "update_check.json"
+            checker.current_version = "0.5.0"
+
+            # Create a mock coroutine that returns a result
+            async def mock_coro():
+                await asyncio.sleep(0.1)  # Simulate some async work
+                return "1.0.0"
+
+            # Test the thread-safe wrapper
+            result = checker._run_async_in_thread(mock_coro())
+            assert result == "1.0.0"
+
+    def test_thread_safe_async_wrapper_with_exception(self):
+        """Test the thread-safe async wrapper handles exceptions properly."""
+        import asyncio
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            cache_dir = Path(temp_dir)
+            checker = UpdateChecker()
+            checker.cache_dir = cache_dir
+            checker.cache_file = cache_dir / "update_check.json"
+
+            # Create a mock coroutine that raises an exception
+            async def mock_coro_error():
+                await asyncio.sleep(0.1)
+                raise ValueError("Test error")
+
+            # Test that exceptions are properly handled
+            with pytest.raises(ValueError, match="Test error"):
+                checker._run_async_in_thread(mock_coro_error())
+
+    def test_thread_safe_async_wrapper_timeout(self):
+        """Test the thread-safe async wrapper handles timeouts."""
+        import asyncio
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            cache_dir = Path(temp_dir)
+            checker = UpdateChecker()
+            checker.cache_dir = cache_dir
+            checker.cache_file = cache_dir / "update_check.json"
+
+            # Create a mock coroutine that takes too long
+            async def mock_coro_slow():
+                await asyncio.sleep(35)  # Longer than the 30-second timeout
+                return "1.0.0"
+
+            # Test that timeouts return None
+            result = checker._run_async_in_thread(mock_coro_slow())
+            assert result is None
+
+    def test_sync_wrapper_with_running_event_loop(self):
+        """Test sync wrapper behavior when called from within an event loop."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            cache_dir = Path(temp_dir)
+            checker = UpdateChecker()
+            checker.cache_dir = cache_dir
+            checker.cache_file = cache_dir / "update_check.json"
+            checker.current_version = "0.5.0"
+
+            # Mock the network call
+            async def mock_fetch():
+                return "1.0.0"
+
+            # Test that the sync wrapper works even when called from an async context
+            async def test_in_async_context():
+                with patch.object(
+                    checker, "_fetch_latest_version", side_effect=mock_fetch
+                ):
+                    with patch.object(checker, "_is_newer_version", return_value=True):
+                        result = checker.check_for_updates_sync(
+                            force=True, show_notification=False
+                        )
+                        return result
+
+            # Run the test in an async context to simulate a running event loop
+            import asyncio
+
+            result = asyncio.run(test_in_async_context())
+            assert result == "1.0.0"
