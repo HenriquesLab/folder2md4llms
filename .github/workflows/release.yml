@@ -517,7 +517,7 @@ jobs:
         }
 
         # Dispatch updates with error handling
-        dispatch_update "HenriquesLab/homebrew-folder2md4llms" || echo "Warning: Homebrew update failed"
-        dispatch_update "HenriquesLab/scoop-folder2md4llms" || echo "Warning: Scoop update failed"
+        dispatch_update "HenriquesLab/homebrew-folder2md4llms"
+        dispatch_update "HenriquesLab/scoop-folder2md4llms"
 
         echo "Repository dispatch completed"
