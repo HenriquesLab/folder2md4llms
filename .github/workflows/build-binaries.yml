@@ -1,5 +1,8 @@
 name: Build Binaries
 
+# Note: This workflow runs alongside release.yml on tag pushes to provide
+# a focused binary building workflow for development/testing purposes.
+# The release.yml workflow handles the complete release pipeline.
 on:
   push:
     tags:

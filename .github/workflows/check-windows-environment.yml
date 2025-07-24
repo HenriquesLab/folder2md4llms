@@ -1,4 +1,4 @@
-name: Test Windows Only
+name: Check Windows Environment
 
 on:
   workflow_dispatch:
@@ -7,11 +7,11 @@ jobs:
   test-windows:
     runs-on: windows-latest
     timeout-minutes: 10
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Test Windows Environment
       run: |
         Write-Host "Windows test successful"
