@@ -299,24 +299,47 @@ jobs:
     - name: Prepare PyInstaller spec for Linux
       run: |
         echo "=== DEBUGGING: Checking if template exists ==="
+        if [ ! -f folder2md-linux.spec.template ]; then
+            echo "❌ ERROR: Template file not found!"
+            ls -la folder2md*.spec*
+            exit 1
+        fi
         ls -la folder2md-linux.spec.template
+
         echo "=== Template content preview ==="
         head -5 folder2md-linux.spec.template
         echo "=== Template has darwin? ==="
-        grep -n "darwin" folder2md-linux.spec.template || echo "✓ Template is clean"
+        if grep -n "darwin" folder2md-linux.spec.template; then
+            echo "❌ ERROR: Template contains darwin references!"
+            exit 1
+        else
+            echo "✓ Template is clean"
+        fi
 
         # Use dedicated Linux spec template
+        echo "Copying template..."
         cp folder2md-linux.spec.template folder2md-linux-${{ matrix.arch }}.spec
 
+        if [ ! -f folder2md-linux-${{ matrix.arch }}.spec ]; then
+            echo "❌ ERROR: Failed to create spec file!"
+            exit 1
+        fi
+
         # Update binary name placeholder
+        echo "Updating binary name..."
         sed -i 's/BINARY_NAME_PLACEHOLDER/folder2md-linux-${{ matrix.arch }}/' folder2md-linux-${{ matrix.arch }}.spec
 
         echo "=== Linux spec file prepared ==="
         wc -l folder2md-linux-${{ matrix.arch }}.spec
         echo "Checking final spec around line 166:"
         sed -n '160,170p' folder2md-linux-${{ matrix.arch }}.spec
-        echo "No darwin references should exist:"
-        grep -n "darwin" folder2md-linux-${{ matrix.arch }}.spec || echo "✓ Clean Linux spec file"
+        echo "Final darwin check:"
+        if grep -n "darwin" folder2md-linux-${{ matrix.arch }}.spec; then
+            echo "❌ ERROR: Final spec still contains darwin!"
+            exit 1
+        else
+            echo "✓ Final spec is clean"
+        fi
 
     - name: Set up cross-compilation (ARM64)
       if: matrix.arch == 'arm64'
@@ -326,22 +349,12 @@ jobs:
         echo "ARM64 cross-compilation setup would go here"
 
     - name: Build binary with PyInstaller
-      if: matrix.arch == 'x64'
       run: |
         echo "::group::Building Linux binary for ${{ matrix.arch }}"
         uv run pyinstaller folder2md-linux-${{ matrix.arch }}.spec --clean --noconfirm
         echo "::endgroup::"
 
-    - name: Skip ARM64 build for now
-      if: matrix.arch == 'arm64'
-      run: |
-        echo "ARM64 Linux builds are not yet implemented"
-        echo "Creating placeholder for future implementation"
-        mkdir -p dist
-        echo "ARM64 Linux build placeholder" > dist/folder2md-linux-arm64
-
     - name: Verify binary
-      if: matrix.arch == 'x64'
       run: |
         echo "::group::Verifying Linux binary"
 
@@ -366,7 +379,6 @@ jobs:
         echo "::endgroup::"
 
     - name: Generate checksums
-      if: matrix.arch == 'x64'
       run: |
         echo "::group::Generating checksums"
 
