@@ -226,10 +226,12 @@ class TestPyInstallerCompatibility:
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".txt", delete=False) as tmp:
             tmp.write(b"hello world")
             tmp.flush()
+            temp_path = tmp.name
 
-            try:
-                result = analyzer.analyze_file(Path(tmp.name))
-                assert isinstance(result, str)
-                assert len(result) > 0
-            finally:
-                Path(tmp.name).unlink(missing_ok=True)
+        # File is now closed, safe to analyze and delete on Windows
+        try:
+            result = analyzer.analyze_file(Path(temp_path))
+            assert isinstance(result, str)
+            assert len(result) > 0
+        finally:
+            Path(temp_path).unlink(missing_ok=True)

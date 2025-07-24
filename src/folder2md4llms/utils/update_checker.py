@@ -2,15 +2,10 @@
 
 import asyncio
 import json
-import os
-import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
 
 import httpx
-import rich
-from packaging.version import Version
 from rich.console import Console
 
 from ..__version__ import __version__
@@ -257,23 +252,26 @@ class UpdateChecker:
             Latest version if update available, None otherwise
         """
         try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            # Try to get the current event loop if one exists
+            try:
+                asyncio.get_running_loop()
+                # If we have a running loop, we can't use run_until_complete
+                # Instead, create a new task and handle it properly
+                import concurrent.futures
 
-        try:
-            latest_version = loop.run_until_complete(self.check_for_updates(force))
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(asyncio.run, self.check_for_updates(force))
+                    latest_version = future.result(timeout=30)
+            except RuntimeError:
+                # No running loop, safe to use asyncio.run
+                latest_version = asyncio.run(self.check_for_updates(force))
+
             if latest_version and show_notification:
                 self._display_update_notification(latest_version)
             return latest_version
         except Exception:
             # Silently fail on any errors
             return None
-        finally:
-            # Don't close the loop if it was already running
-            if not loop.is_running():
-                loop.close()
 
 
 def check_for_updates(

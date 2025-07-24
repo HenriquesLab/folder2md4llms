@@ -12,6 +12,12 @@ from pathlib import Path
 project_root = Path(SPECPATH)
 src_path = project_root / "src"
 
+# Get the version dynamically
+version_path = src_path / "folder2md4llms" / "__version__.py"
+version_vars = {}
+exec(version_path.read_text(), version_vars)
+app_version = version_vars["__version__"]
+
 # Analysis configuration
 a = Analysis(
     # Entry point script - use the existing pyinstaller_entry.py
@@ -187,12 +193,12 @@ if sys.platform == "darwin":
         name="folder2md.app",
         icon=None,
         bundle_identifier="org.henriqueslab.folder2md4llms",
-        version="0.4.37",
+        version=app_version,
         info_plist={
             "CFBundleName": "folder2md4llms",
             "CFBundleDisplayName": "Folder to Markdown for LLMs",
-            "CFBundleVersion": "0.4.37",
-            "CFBundleShortVersionString": "0.4.37",
+            "CFBundleVersion": app_version,
+            "CFBundleShortVersionString": app_version,
             "CFBundleIdentifier": "org.henriqueslab.folder2md4llms",
             "NSHighResolutionCapable": True,
             "LSBackgroundOnly": False,

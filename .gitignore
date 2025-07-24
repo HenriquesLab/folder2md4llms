@@ -150,6 +150,7 @@ Thumbs.db
 # Claude
 .claude/
 Claude.md
+CLAUDE.md
 
 # Ruff
 .ruff_cache/
