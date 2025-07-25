@@ -39,11 +39,11 @@ pip install folder2md4llms
 # Using pipx (isolated installation)
 pipx install folder2md4llms
 
-# One-time usage without installation
+# One-time usage without installation (may have issues on Windows)
 pipx run folder2md4llms
 ```
 
-**Common Installation Error:**
+**Common Installation Errors:**
 ```bash
 # ❌ WRONG - This will fail
 pipx run folder2md  # Error: No matching distribution found
@@ -51,6 +51,8 @@ pipx run folder2md  # Error: No matching distribution found
 # ✅ CORRECT - Use the full package name
 pipx run folder2md4llms
 ```
+
+> **⚠️ Windows Users**: `pipx run` has known issues on Windows. Use `python -m folder2md4llms` or install via scoop/pip instead. See [Windows pipx troubleshooting](#windows-pipx-filenotfounderror-or-system-cannot-find-the-file-specified) below.
 
 #### 🚀 Binary Installation (Alternative)
 **No Python required - standalone executable**
@@ -196,6 +198,35 @@ refreshenv  # If using chocolatey
 python -m folder2md4llms .
 ```
 
+#### Windows pipx "FileNotFoundError" or "System cannot find the file specified"
+
+**Problem**: `pipx run folder2md4llms` works but fails with `FileNotFoundError: [WinError 2] The system cannot find the file specified` when trying to execute.
+
+**Root Cause**: Windows pipx has known issues with console script entry points where it can't properly create or find the executable wrapper.
+
+**Solutions**:
+```powershell
+# ✅ BEST: Use scoop instead (no Python required)
+scoop bucket add folder2md4llms https://github.com/HenriquesLab/scoop-folder2md4llms
+scoop install folder2md4llms-binary
+folder2md --help
+
+# ✅ ALTERNATIVE 1: Install with pip and use directly
+pip install folder2md4llms
+folder2md --help
+
+# ✅ ALTERNATIVE 2: Use Python module syntax (always works)
+python -m folder2md4llms --help
+python -m folder2md4llms .
+
+# ✅ ALTERNATIVE 3: Install with pipx (permanent)
+pipx install folder2md4llms
+folder2md --help
+
+# ❌ AVOID: pipx run on Windows (known to have issues)
+# pipx run folder2md4llms  # Don't use this on Windows
+```
+
 #### Installation with uv fails in existing project
 
 **Problem**: uv tries to resolve project dependencies instead of installing the tool globally.
@@ -233,8 +264,9 @@ sudo mv folder2md-linux-* /usr/local/bin/folder2md
 
 ### Getting Help
 
-- **Command help**: `folder2md --help`
+- **Command help**: `folder2md --help` (or `python -m folder2md4llms --help` if command not found)
 - **Version check**: `folder2md --version`
+- **Quick test**: `python -m folder2md4llms --help` (works without installation)
 - **Report issues**: [GitHub Issues](https://github.com/henriqueslab/folder2md4llms/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/henriqueslab/folder2md4llms/discussions)
 
