@@ -396,19 +396,33 @@ jobs:
 
           ### Installation
 
-          **macOS (Homebrew - Binary):**
+          **🐍 Python Package (Recommended):**
           ```bash
-          brew install --cask henriqueslab/tap/folder2md4llms-binary
+          # Install uv if you don't have it
+          curl -LsSf https://astral.sh/uv/install.sh | sh  # macOS/Linux
+          # OR: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"  # Windows
+
+          # Install folder2md4llms
+          uv tool install folder2md4llms
           ```
 
-          **macOS (Homebrew - Python Package):**
+          **🚀 Binary Installation (Alternative):**
+
+          **macOS (Homebrew - Binary):**
           ```bash
-          brew install henriqueslab/tap/folder2md4llms
+          brew tap henriqueslab/homebrew-folder2md4llms
+          brew install --cask folder2md4llms-binary
+          ```
+
+          **macOS (Homebrew):**
+          ```bash
+          brew tap henriqueslab/homebrew-folder2md4llms
+          brew install folder2md4llms
           ```
 
           **Windows (Scoop):**
           ```bash
-          scoop bucket add henriqueslab https://github.com/HenriquesLab/scoop-folder2md4llms
+          scoop bucket add folder2md4llms https://github.com/HenriquesLab/scoop-folder2md4llms
           scoop install folder2md4llms-binary
           ```
 

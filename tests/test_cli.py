@@ -3,6 +3,8 @@
 This module tests the command-line interface functionality.
 """
 
+import subprocess
+import sys
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -116,3 +118,61 @@ class TestSimplifiedCLI:
         result = runner.invoke(main, ["/nonexistent/path"])
         assert result.exit_code != 0
         assert "Directory '/nonexistent/path' does not exist" in result.output
+
+
+class TestMainModule:
+    """Test the __main__.py module entry point."""
+
+    def test_main_module_help(self):
+        """Test running the module with --help."""
+        result = subprocess.run(
+            [sys.executable, "-m", "folder2md4llms", "--help"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert result.returncode == 0
+        assert "Usage:" in result.stdout
+        assert "folder2md" in result.stdout
+
+    def test_main_module_version(self):
+        """Test running the module with --version."""
+        result = subprocess.run(
+            [sys.executable, "-m", "folder2md4llms", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert result.returncode == 0
+        assert "folder2md4llms, version" in result.stdout
+
+    def test_main_module_basic_functionality(self, tmp_path):
+        """Test running the module with basic functionality."""
+        # Create a simple test directory
+        test_dir = tmp_path / "test_project"
+        test_dir.mkdir()
+        (test_dir / "test.py").write_text("print('hello world')")
+        (test_dir / "README.md").write_text("# Test Project")
+
+        # Run the module
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "folder2md4llms",
+                str(test_dir),
+                "--output",
+                str(tmp_path / "output.md"),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+        assert (tmp_path / "output.md").exists()
+
+        # Check that the output contains our test content
+        output_content = (tmp_path / "output.md").read_text()
+        assert "hello world" in output_content
+        assert "Test Project" in output_content
