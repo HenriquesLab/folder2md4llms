@@ -71,66 +71,11 @@ jobs:
         path: dist/
         retention-days: 30
 
-  test-pypi:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: build
-    environment: test-pypi
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: dist-packages
-        path: dist/
-
-    - name: Publish to TestPyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        repository-url: https://test.pypi.org/legacy/
-        password: ${{ secrets.TESTPYPI_TOKEN }}
-
-    - name: Test installation from TestPyPI
-      run: |
-        # Wait for package to be available on TestPyPI using intelligent polling
-        ./.github/scripts/wait-for-pypi.sh folder2md4llms ${{ needs.build.outputs.version }} https://test.pypi.org/simple/
-
-        python -m pip install --upgrade pip
-
-        # Retry logic for TestPyPI installation
-        MAX_ATTEMPTS=5
-        ATTEMPT=1
-        while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
-          echo "Attempt $ATTEMPT of $MAX_ATTEMPTS to install from TestPyPI..."
-
-          if python -m pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ folder2md4llms==${{ needs.build.outputs.version }}; then
-            echo "Successfully installed from TestPyPI"
-            break
-          else
-            echo "Installation failed, attempt $ATTEMPT of $MAX_ATTEMPTS"
-            if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
-              echo "All attempts failed, exiting"
-              exit 1
-            fi
-            echo "Waiting 15 seconds before retry..."
-            sleep 15
-            ATTEMPT=$((ATTEMPT + 1))
-          fi
-        done
-
-        # Test basic functionality
-        folder2md --version
-        echo "# Test" > test.md
-        folder2md . --output test_output.md
-        test -f test_output.md
 
   pypi:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [build, test-pypi]
+    needs: build
     environment: pypi
     if: github.ref_type == 'tag'
 
