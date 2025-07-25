@@ -25,34 +25,48 @@
 Choose between Python package (recommended) or standalone binary installation:
 
 #### 🐍 Python Package Installation (Recommended)
-**Easiest installation - no security warnings, automatic updates**
+**Modern, fast, and reliable - works on all platforms**
 
 > **⚠️ Important:** The package name is `folder2md4llms` but the command is `folder2md`
 
+**Step 1: Install uv (if you don't have it):**
 ```bash
-# Using uv (fastest and most reliable)
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Alternative: If you already have Python/pip
+pip install uv
+```
+
+**Step 2: Install folder2md4llms:**
+```bash
+# ✅ RECOMMENDED: Using uv (fastest and most reliable)
 uv tool install folder2md4llms
 
-# Using pip (traditional method)
+# Alternative: Using pip (traditional method)
 pip install folder2md4llms
-
-# Using pipx (isolated installation)
-pipx install folder2md4llms
-
-# One-time usage without installation (may have issues on Windows)
-pipx run folder2md4llms
 ```
 
-**Common Installation Errors:**
+**After installation, verify it works:**
+```bash
+# Check if folder2md is in PATH
+folder2md --help
+
+# If command not found, use uv tool run instead:
+uv tool run --from folder2md4llms folder2md --help
+```
+
+**Common Installation Error:**
 ```bash
 # ❌ WRONG - This will fail
-pipx run folder2md  # Error: No matching distribution found
+pip install folder2md  # Error: No matching distribution found
 
 # ✅ CORRECT - Use the full package name
-pipx run folder2md4llms
+uv tool install folder2md4llms
 ```
-
-> **⚠️ Windows Users**: `pipx run` has known issues on Windows. Use `python -m folder2md4llms` or install via scoop/pip instead. See [Windows pipx troubleshooting](#windows-pipx-filenotfounderror-or-system-cannot-find-the-file-specified) below.
 
 #### 🚀 Binary Installation (Alternative)
 **No Python required - standalone executable**
@@ -171,11 +185,26 @@ For a full list of commands and options, see the [CLI Reference](docs/api.md) or
 ```bash
 # ❌ Wrong
 pip install folder2md
-pipx run folder2md
+uv tool install folder2md
 
 # ✅ Correct
+uv tool install folder2md4llms
 pip install folder2md4llms
-pipx run folder2md4llms
+```
+
+#### "Command 'folder2md' not found" after uv tool install
+
+**Problem**: After `uv tool install folder2md4llms`, the `folder2md` command isn't available in your PATH.
+
+**Solution**: Use `uv tool run` instead:
+```bash
+# Use uv tool run (works immediately after install)
+uv tool run --from folder2md4llms folder2md --help
+uv tool run --from folder2md4llms folder2md .
+
+# Or add uv's tool directory to your PATH
+# On Windows: Add %USERPROFILE%\.local\bin to your PATH
+# On macOS/Linux: Add ~/.local/bin to your PATH
 ```
 
 #### "Command 'folder2md' not found" (Windows)
@@ -184,48 +213,23 @@ pipx run folder2md4llms
 
 **Solutions**:
 ```powershell
-# Option 1: Use scoop (recommended for Windows)
+# Option 1: Use uv tool run (works immediately)
+uv tool run --from folder2md4llms folder2md .
+
+# Option 2: Use scoop (no Python required)
 scoop bucket add folder2md4llms https://github.com/HenriquesLab/scoop-folder2md4llms
 scoop install folder2md4llms-binary
 
-# Option 2: Refresh PATH after pip installation
+# Option 3: Refresh PATH after pip installation
 pip install folder2md4llms
 # Restart your terminal or run:
 refreshenv  # If using chocolatey
 # OR close and reopen PowerShell
 
-# Option 3: Use full path
+# Option 4: Use full path (always works)
 python -m folder2md4llms .
 ```
 
-#### Windows pipx "FileNotFoundError" or "System cannot find the file specified"
-
-**Problem**: `pipx run folder2md4llms` works but fails with `FileNotFoundError: [WinError 2] The system cannot find the file specified` when trying to execute.
-
-**Root Cause**: Windows pipx has known issues with console script entry points where it can't properly create or find the executable wrapper.
-
-**Solutions**:
-```powershell
-# ✅ BEST: Use scoop instead (no Python required)
-scoop bucket add folder2md4llms https://github.com/HenriquesLab/scoop-folder2md4llms
-scoop install folder2md4llms-binary
-folder2md --help
-
-# ✅ ALTERNATIVE 1: Install with pip and use directly
-pip install folder2md4llms
-folder2md --help
-
-# ✅ ALTERNATIVE 2: Use Python module syntax (always works)
-python -m folder2md4llms --help
-python -m folder2md4llms .
-
-# ✅ ALTERNATIVE 3: Install with pipx (permanent)
-pipx install folder2md4llms
-folder2md --help
-
-# ❌ AVOID: pipx run on Windows (known to have issues)
-# pipx run folder2md4llms  # Don't use this on Windows
-```
 
 #### Installation with uv fails in existing project
 
@@ -264,9 +268,10 @@ sudo mv folder2md-linux-* /usr/local/bin/folder2md
 
 ### Getting Help
 
-- **Command help**: `folder2md --help` (or `python -m folder2md4llms --help` if command not found)
+- **Command help**: `folder2md --help` (or `uv tool run --from folder2md4llms folder2md --help` if command not found)
 - **Version check**: `folder2md --version`
-- **Quick test**: `python -m folder2md4llms --help` (works without installation)
+- **Quick test**: `uv tool run --from folder2md4llms folder2md --help` (works after uv tool install)
+- **Alternative**: `python -m folder2md4llms --help` (works without installation)
 - **Report issues**: [GitHub Issues](https://github.com/henriqueslab/folder2md4llms/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/henriqueslab/folder2md4llms/discussions)
 
