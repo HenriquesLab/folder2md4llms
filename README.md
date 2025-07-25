@@ -27,12 +27,29 @@ Choose between Python package (recommended) or standalone binary installation:
 #### 🐍 Python Package Installation (Recommended)
 **Easiest installation - no security warnings, automatic updates**
 
+> **⚠️ Important:** The package name is `folder2md4llms` but the command is `folder2md`
+
 ```bash
 # Using uv (fastest and most reliable)
-uv add folder2md4llms
+uv tool install folder2md4llms
 
 # Using pip (traditional method)
 pip install folder2md4llms
+
+# Using pipx (isolated installation)
+pipx install folder2md4llms
+
+# One-time usage without installation
+pipx run folder2md4llms
+```
+
+**Common Installation Error:**
+```bash
+# ❌ WRONG - This will fail
+pipx run folder2md  # Error: No matching distribution found
+
+# ✅ CORRECT - Use the full package name
+pipx run folder2md4llms
 ```
 
 #### 🚀 Binary Installation (Alternative)
@@ -47,13 +64,20 @@ brew tap henriqueslab/homebrew-folder2md4llms
 brew install --cask folder2md4llms-binary
 ```
 
-**Windows (Scoop):**
-```bash
+**Windows (Scoop - Recommended for Windows):**
+```powershell
+# Install Scoop first (if not already installed)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+
 # Add the bucket
 scoop bucket add folder2md4llms https://github.com/HenriquesLab/scoop-folder2md4llms
 
-# Binary version
+# Binary version (no Python required)
 scoop install folder2md4llms-binary
+
+# Verify installation
+folder2md --help
 ```
 
 **Manual Binary Installation:**
@@ -64,14 +88,25 @@ scoop install folder2md4llms-binary
 2. Make executable (macOS/Linux): `chmod +x folder2md-*`
 3. Move to PATH:
    - **macOS/Linux**: `sudo mv folder2md-* /usr/local/bin/folder2md`
-   - **Windows**: Place `folder2md-windows-x64.exe` in a directory in your PATH
+   - **Windows**:
+     ```powershell
+     # Option 1: Move to a directory already in PATH
+     Move-Item folder2md-windows-x64.exe $env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\folder2md.exe
+
+     # Option 2: Create a dedicated folder and add to PATH
+     New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\bin"
+     Move-Item folder2md-windows-x64.exe "$env:USERPROFILE\bin\folder2md.exe"
+     # Then add $env:USERPROFILE\bin to your PATH in System Environment Variables
+     ```
 
 ##### ⚠️ macOS Security Note (Binary Only)
 
-When you first run the binary on macOS, you may see a security warning. This is normal for unsigned binaries. Here's how to fix it:
+When you first run the binary on macOS, you may see a security warning. This is normal for unsigned binaries. **Note:** Python package installation (pip/uv) avoids this entirely.
 
-**Method 1: Right-click to open (Easiest)**
-1. Right-click on the `folder2md-macos-*` binary
+**Method 1: Right-click to open (Recommended)**
+1. Right-click on the binary:
+   - **Homebrew users**: `/opt/homebrew/bin/folder2md`
+   - **Manual download**: `folder2md-macos-*` (wherever you placed it)
 2. Select "Open" from the menu
 3. Click "Open" in the security dialog
 4. The binary will run normally from then on
@@ -121,6 +156,87 @@ folder2md --init-ignore
 For a full list of commands and options, see the [CLI Reference](docs/api.md) or run `folder2md --help`.
 
 > **Note**: The package name is `folder2md4llms` but the command is `folder2md` for convenience.
+
+## 🚨 Troubleshooting
+
+### Common Installation Issues
+
+#### "No matching distribution found for folder2md"
+
+**Problem**: You're trying to install `folder2md` instead of the correct package name.
+
+**Solution**: Use the full package name `folder2md4llms`:
+```bash
+# ❌ Wrong
+pip install folder2md
+pipx run folder2md
+
+# ✅ Correct
+pip install folder2md4llms
+pipx run folder2md4llms
+```
+
+#### "Command 'folder2md' not found" (Windows)
+
+**Problem**: The command isn't available in your PATH after installation.
+
+**Solutions**:
+```powershell
+# Option 1: Use scoop (recommended for Windows)
+scoop bucket add folder2md4llms https://github.com/HenriquesLab/scoop-folder2md4llms
+scoop install folder2md4llms-binary
+
+# Option 2: Refresh PATH after pip installation
+pip install folder2md4llms
+# Restart your terminal or run:
+refreshenv  # If using chocolatey
+# OR close and reopen PowerShell
+
+# Option 3: Use full path
+python -m folder2md4llms .
+```
+
+#### Installation with uv fails in existing project
+
+**Problem**: uv tries to resolve project dependencies instead of installing the tool globally.
+
+**Solution**: Use `uv tool install` instead of `uv add`:
+```bash
+# ❌ Wrong - tries to add to current project
+uv add folder2md4llms
+
+# ✅ Correct - installs as global tool
+uv tool install folder2md4llms
+```
+
+### Platform-Specific Issues
+
+#### Windows: PowerShell Execution Policy
+
+```powershell
+# If you get execution policy errors:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+#### macOS: Security Warnings for Binary
+
+See the [macOS Security Note](#️-macos-security-note-binary-only) above for detailed solutions.
+
+#### Linux: Permission Denied
+
+```bash
+# Make binary executable
+chmod +x folder2md-linux-*
+# Move to PATH with proper permissions
+sudo mv folder2md-linux-* /usr/local/bin/folder2md
+```
+
+### Getting Help
+
+- **Command help**: `folder2md --help`
+- **Version check**: `folder2md --version`
+- **Report issues**: [GitHub Issues](https://github.com/henriqueslab/folder2md4llms/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/henriqueslab/folder2md4llms/discussions)
 
 ## 🔧 Configuration
 
