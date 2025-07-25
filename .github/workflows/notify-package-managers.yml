@@ -1,0 +1,155 @@
+name: Notify Package Managers
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to notify package managers about (e.g., 0.5.0)'
+        required: true
+        type: string
+
+jobs:
+  notify-homebrew:
+    runs-on: ubuntu-latest
+    if: github.event.release.prerelease == false || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Extract version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION=${VERSION#v}  # Remove 'v' prefix if present
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version to notify: $VERSION"
+
+    - name: Check if binaries exist
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+
+        # Check if macOS binaries exist
+        INTEL_URL="https://github.com/HenriquesLab/folder2md4llms/releases/download/v$VERSION/folder2md-macos-x64"
+        ARM_URL="https://github.com/HenriquesLab/folder2md4llms/releases/download/v$VERSION/folder2md-macos-arm64"
+
+        echo "Checking Intel binary: $INTEL_URL"
+        if curl --output /dev/null --silent --head --fail "$INTEL_URL"; then
+          echo "✅ Intel binary exists"
+        else
+          echo "❌ Intel binary not found"
+          exit 1
+        fi
+
+        echo "Checking ARM binary: $ARM_URL"
+        if curl --output /dev/null --silent --head --fail "$ARM_URL"; then
+          echo "✅ ARM binary exists"
+        else
+          echo "❌ ARM binary not found"
+          exit 1
+        fi
+
+    - name: Trigger Homebrew update
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+
+        echo "Triggering Homebrew update for version $VERSION"
+
+        # Send repository dispatch to homebrew tap
+        curl -X POST \
+          -H "Authorization: token $GH_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/HenriquesLab/homebrew-folder2md4llms/dispatches \
+          -d "{\"event_type\":\"new_binary_release\",\"client_payload\":{\"version\":\"$VERSION\"}}"
+
+        echo "✅ Homebrew notification sent"
+
+  notify-scoop:
+    runs-on: ubuntu-latest
+    if: github.event.release.prerelease == false || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Extract version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION=${VERSION#v}  # Remove 'v' prefix if present
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version to notify: $VERSION"
+
+    - name: Check if Windows binary exists
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+
+        # Check if Windows binary exists
+        WINDOWS_URL="https://github.com/HenriquesLab/folder2md4llms/releases/download/v$VERSION/folder2md-windows-x64.exe"
+
+        echo "Checking Windows binary: $WINDOWS_URL"
+        if curl --output /dev/null --silent --head --fail "$WINDOWS_URL"; then
+          echo "✅ Windows binary exists"
+        else
+          echo "❌ Windows binary not found"
+          exit 1
+        fi
+
+    - name: Trigger Scoop update
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+
+        echo "Triggering Scoop update for version $VERSION"
+
+        # Send repository dispatch to scoop bucket
+        curl -X POST \
+          -H "Authorization: token $GH_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/HenriquesLab/scoop-folder2md4llms/dispatches \
+          -d "{\"event_type\":\"new_binary_release\",\"client_payload\":{\"version\":\"$VERSION\"}}"
+
+        echo "✅ Scoop notification sent"
+
+  summary:
+    needs: [notify-homebrew, notify-scoop]
+    runs-on: ubuntu-latest
+    if: always() && (github.event.release.prerelease == false || github.event_name == 'workflow_dispatch')
+
+    steps:
+    - name: Package Manager Notification Summary
+      run: |
+        echo "::group::Package Manager Notification Results"
+
+        homebrew_result="${{ needs.notify-homebrew.result }}"
+        scoop_result="${{ needs.notify-scoop.result }}"
+
+        echo "### Package Manager Update Notifications"
+        echo ""
+
+        if [ "$homebrew_result" = "success" ]; then
+          echo "✅ **Homebrew**: Update notification sent successfully"
+        else
+          echo "❌ **Homebrew**: Notification failed"
+        fi
+
+        if [ "$scoop_result" = "success" ]; then
+          echo "✅ **Scoop**: Update notification sent successfully"
+        else
+          echo "❌ **Scoop**: Notification failed"
+        fi
+
+        echo ""
+        echo "The package managers should automatically update their formulas/manifests within a few hours."
+        echo "Monitor the respective repositories for automatic update PRs:"
+        echo "- Homebrew: https://github.com/HenriquesLab/homebrew-folder2md4llms/pulls"
+        echo "- Scoop: https://github.com/HenriquesLab/scoop-folder2md4llms/pulls"
+
+        echo "::endgroup::"

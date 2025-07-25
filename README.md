@@ -30,7 +30,7 @@ Choose between binary (standalone) or Python package installation:
 **macOS (Homebrew):**
 ```bash
 # Add the tap first
-brew tap henriqueslab/tap
+brew tap henriqueslab/homebrew-folder2md4llms
 
 # Binary version (cask) - recommended
 brew install --cask folder2md4llms-binary
