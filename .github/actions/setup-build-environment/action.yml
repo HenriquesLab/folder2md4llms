@@ -1,0 +1,30 @@
+name: 'Setup Build Environment'
+description: 'Sets up Python, UV, and project dependencies for building'
+
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.11'
+  install-groups:
+    description: 'UV dependency groups to install'
+    required: false
+    default: '--group dev --group build --group tiktoken'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install UV
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+        enable-cache: true
+
+    - name: Install dependencies
+      shell: bash
+      run: uv sync ${{ inputs.install-groups }}

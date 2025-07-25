@@ -33,8 +33,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.11', '3.12', '3.13']
         exclude:
-          # Exclude Python 3.12 on macOS/Windows due to PyInstaller compatibility issues
-          # with some dependencies. Can be re-enabled once PyInstaller fully supports 3.12
+          # Reduce matrix size by excluding 3.12 on some platforms (can be re-enabled if needed)
           - os: macos-latest
             python-version: '3.12'
           - os: windows-latest
@@ -46,19 +45,11 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    - name: Setup build environment
+      uses: ./.github/actions/setup-build-environment
       with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-        enable-cache: true
-
-    - name: Install dependencies
-      run: uv sync --group dev
+        install-groups: '--group dev'
 
     - name: Run tests
       run: uv run pytest tests/ --cov=folder2md4llms --cov-report=xml --cov-report=term-missing -n auto --maxfail=10 --tb=short -v
@@ -80,19 +71,10 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Setup build environment
+      uses: ./.github/actions/setup-build-environment
       with:
-        python-version: '3.11'
-
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-        enable-cache: true
-
-    - name: Install dependencies with all extras
-      run: uv sync --group dev --all-extras
+        install-groups: '--group dev --all-extras'
 
     - name: Test with optional dependencies
       run: |
@@ -109,19 +91,10 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Setup build environment
+      uses: ./.github/actions/setup-build-environment
       with:
-        python-version: '3.11'
-
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-        enable-cache: true
-
-    - name: Install package
-      run: uv sync --group dev --group tiktoken
+        install-groups: '--group dev --group tiktoken'
 
     - name: Test CLI functionality
       run: |
@@ -169,29 +142,16 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    - name: Setup build environment
+      uses: ./.github/actions/setup-build-environment
       with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-        enable-cache: true
-
-    - name: Install Rye
-      uses: eifinger/setup-rye@v4
-      with:
-        enable-cache: true
-
-    - name: Install dependencies
-      run: uv sync --group dev
+        install-groups: '--group dev'
 
     - name: Build package
       run: |
         echo "::group::Building package"
-        rye build
+        uv build
         echo "::endgroup::"
 
     - name: Show package contents (Unix)

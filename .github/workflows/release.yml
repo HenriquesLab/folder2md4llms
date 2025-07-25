@@ -24,24 +24,10 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Setup build environment
+      uses: ./.github/actions/setup-build-environment
       with:
-        python-version: '3.11'
-
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-        enable-cache: true
-
-    - name: Install Rye
-      uses: eifinger/setup-rye@v4
-      with:
-        enable-cache: true
-
-    - name: Install dependencies
-      run: uv sync --group dev
+        install-groups: '--group dev'
 
     - name: Get version
       id: version
@@ -56,12 +42,12 @@ jobs:
     - name: Build package
       run: |
         echo "::group::Building package"
-        rye build
+        uv build
         echo "::endgroup::"
 
         echo "::group::Validate package"
-        uv pip install twine
-        uv run python -m twine check dist/*
+        uv tool install twine
+        uv tool run twine check dist/*
         echo "::endgroup::"
 
     - name: Upload build artifacts
@@ -148,20 +134,8 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-        enable-cache: true
-
-    - name: Install dependencies
-      run: |
-        uv sync --group dev --group build --group tiktoken
+    - name: Setup build environment
+      uses: ./.github/actions/setup-build-environment
 
     - name: Install platform-specific dependencies
       run: |
@@ -253,21 +227,8 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-        enable-cache: true
-
-    - name: Install dependencies
-      run: |
-        uv sync --group dev --group build --group tiktoken
-      shell: pwsh
+    - name: Setup build environment
+      uses: ./.github/actions/setup-build-environment
 
     - name: Generate PyInstaller spec for Windows
       run: |
