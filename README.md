@@ -22,17 +22,28 @@
 
 ### Installation
 
-Choose between binary (standalone) or Python package installation:
+Choose between Python package (recommended) or standalone binary installation:
 
-#### 🚀 Binary Installation (Recommended)
-**No Python required - fastest startup, single executable**
+#### 🐍 Python Package Installation (Recommended)
+**Easiest installation - no security warnings, automatic updates**
+
+```bash
+# Using uv (fastest and most reliable)
+uv add folder2md4llms
+
+# Using pip (traditional method)
+pip install folder2md4llms
+```
+
+#### 🚀 Binary Installation (Alternative)
+**No Python required - standalone executable**
 
 **macOS (Homebrew):**
 ```bash
 # Add the tap first
 brew tap henriqueslab/homebrew-folder2md4llms
 
-# Binary version (cask) - recommended
+# Binary version (cask)
 brew install --cask folder2md4llms-binary
 ```
 
@@ -41,7 +52,7 @@ brew install --cask folder2md4llms-binary
 # Add the bucket
 scoop bucket add folder2md4llms https://github.com/HenriquesLab/scoop-folder2md4llms
 
-# Binary version - recommended
+# Binary version
 scoop install folder2md4llms-binary
 ```
 
@@ -55,27 +66,41 @@ scoop install folder2md4llms-binary
    - **macOS/Linux**: `sudo mv folder2md-* /usr/local/bin/folder2md`
    - **Windows**: Place `folder2md-windows-x64.exe` in a directory in your PATH
 
-#### 🐍 Python Package Installation
-**Requires Python 3.11+ - integrates with Python environment**
+##### ⚠️ macOS Security Note (Binary Only)
 
+When you first run the binary on macOS, you may see a security warning. This is normal for unsigned binaries. Here's how to fix it:
+
+**Method 1: Right-click to open (Easiest)**
+1. Right-click on the `folder2md-macos-*` binary
+2. Select "Open" from the menu
+3. Click "Open" in the security dialog
+4. The binary will run normally from then on
+
+**Method 2: System Settings**
+1. Try to run the binary (it will be blocked)
+2. Go to System Settings → Privacy & Security
+3. Look for "folder2md-macos-* was blocked..."
+4. Click "Allow Anyway"
+5. Try running again and click "Open"
+
+**Method 3: Command line (for advanced users)**
 ```bash
-# Using uv (recommended)
-uv add folder2md4llms
-
-# Using pip
-pip install folder2md4llms
+xattr -c folder2md-macos-*
 ```
 
-#### Binary vs Python Package
+**Why this happens:** macOS Gatekeeper blocks unsigned binaries by default. This is normal for open-source tools distributed as binaries.
 
-| Feature | Binary | Python Package |
-|---------|---------|----------------|
-| **Python Required** | ❌ No | ✅ Yes (3.11+) |
-| **Startup Time** | ⚡ Fast | 🐌 Slower |
-| **File Size** | 📦 ~50MB | 📦 ~10MB |
-| **Dependencies** | ✅ Self-contained | ⚠️ May conflict |
-| **Updates** | 🔄 Manual/Package Manager | 🔄 pip/uv |
-| **Use Case** | General users, CI/CD | Python developers |
+#### Python Package vs Binary Comparison
+
+| Feature | Python Package | Binary |
+|---------|----------------|---------|
+| **Installation** | ✅ Easy (pip/uv) | ⚠️ Security warnings on macOS |
+| **Updates** | ✅ Automatic (pip/uv) | 🔄 Manual/Package Manager |
+| **Python Required** | ✅ Yes (3.11+) | ❌ No |
+| **Startup Time** | 🐌 Slower | ⚡ Fast |
+| **File Size** | 📦 ~10MB | 📦 ~50MB |
+| **Dependencies** | ✅ Managed by pip/uv | ✅ Self-contained |
+| **Use Case** | ✅ Most users, developers | Environments without Python |
 
 ### Basic Usage
 
