@@ -1,5 +1,6 @@
 """Token counting and streaming utilities for LLM workflows."""
 
+import hashlib
 import logging
 import re
 from collections.abc import Generator
@@ -490,3 +491,115 @@ def calculate_processing_stats(
             continue
 
     return stats
+
+
+class CachedTokenCounter:
+    """Token counter with caching for improved performance."""
+
+    def __init__(self, method: str = "tiktoken", model: str = "gpt-4"):
+        """Initialize the cached token counter.
+
+        Args:
+            method: Token counting method ('tiktoken', 'average', 'conservative', 'optimistic')
+            model: Model name for tiktoken encoding
+        """
+        self.method = method
+        self.model = model
+        self._cache: dict[str, int] = {}
+        self._encoding = None
+
+        # Initialize tiktoken encoding if available and method is tiktoken
+        if self.method == "tiktoken" and TIKTOKEN_AVAILABLE:
+            self._encoding = get_tiktoken_encoding(model)
+
+    def _count_tokens_cached(self, text_hash: str, text_len: int) -> int:
+        """Count tokens with caching based on text hash.
+
+        Args:
+            text_hash: MD5 hash of the text
+            text_len: Length of the text (for cache key)
+
+        Returns:
+            Number of tokens
+        """
+        # This is called with the actual text from the wrapper
+        # The actual counting logic is in count_tokens
+        return 0  # Placeholder, actual counting done in count_tokens
+
+    def count_tokens(self, text: str) -> int:
+        """Count tokens with caching.
+
+        Args:
+            text: Text to count tokens for
+
+        Returns:
+            Number of tokens
+        """
+        # Create a hash of the text for caching (not for security purposes)
+        text_hash = hashlib.md5(text.encode(), usedforsecurity=False).hexdigest()
+
+        # Check cache first
+        cache_key = f"{text_hash}:{len(text)}"
+        if cache_key in self._cache:
+            return int(self._cache[cache_key])
+
+        # Count tokens based on method
+        if self.method == "tiktoken" and self._encoding:
+            try:
+                token_count = len(self._encoding.encode(text))
+            except Exception as e:
+                logger.warning(
+                    f"Tiktoken encoding failed: {e}, falling back to average method"
+                )
+                token_count = self._estimate_tokens_average(text)
+        elif self.method == "conservative":
+            token_count = self._estimate_tokens_conservative(text)
+        elif self.method == "optimistic":
+            token_count = self._estimate_tokens_optimistic(text)
+        else:  # average or fallback
+            token_count = self._estimate_tokens_average(text)
+
+        # Cache the result
+        self._cache[cache_key] = token_count
+
+        # Limit cache size
+        if len(self._cache) > 10000:
+            # Remove oldest entries (simple FIFO)
+            keys_to_remove = list(self._cache.keys())[:1000]
+            for key in keys_to_remove:
+                del self._cache[key]
+
+        return token_count
+
+    def _estimate_tokens_average(self, text: str) -> int:
+        """Estimate tokens using average method."""
+        # Check if content looks like code
+        is_code = _is_likely_code(text)
+
+        if is_code:
+            # Code typically has more tokens per character
+            return int(len(text) / 3.5)
+        else:
+            # Regular text
+            return int(len(text) / 4.0)
+
+    def _estimate_tokens_conservative(self, text: str) -> int:
+        """Estimate tokens using conservative method."""
+        return int(len(text) / 3.0)
+
+    def _estimate_tokens_optimistic(self, text: str) -> int:
+        """Estimate tokens using optimistic method."""
+        return int(len(text) / 5.0)
+
+    def clear_cache(self):
+        """Clear the token cache."""
+        self._cache.clear()
+
+    def get_cache_stats(self) -> dict:
+        """Get cache statistics."""
+        return {
+            "cache_size": len(self._cache),
+            "method": self.method,
+            "model": self.model,
+            "tiktoken_available": TIKTOKEN_AVAILABLE and self._encoding is not None,
+        }

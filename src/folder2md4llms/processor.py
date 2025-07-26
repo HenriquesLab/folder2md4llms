@@ -24,6 +24,7 @@ from .utils.file_utils import (
 )
 from .utils.ignore_patterns import IgnorePatterns
 from .utils.ignore_suggestions import IgnoreSuggester
+from .utils.resource_manager import ResourceManager
 from .utils.smart_budget_manager import BudgetStrategy
 from .utils.streaming_processor import (
     MemoryMonitor,
@@ -33,6 +34,12 @@ from .utils.streaming_processor import (
 from .utils.tree_generator import TreeGenerator
 
 logger = logging.getLogger(__name__)
+
+
+class ProcessingError(Exception):
+    """Custom exception for processing errors."""
+
+    pass
 
 
 class RepositoryProcessor:
@@ -65,7 +72,9 @@ class RepositoryProcessor:
                 total_token_limit = char_limit // 4
             else:
                 # Use a reasonable default if no limit is specified
-                total_token_limit = 100000  # ~25k words
+                total_token_limit = getattr(
+                    config, "default_token_limit", 100000
+                )  # ~25k words
 
             strategy_name = getattr(config, "token_budget_strategy", "balanced")
             try:
@@ -125,6 +134,12 @@ class RepositoryProcessor:
             max_memory_mb=getattr(config, "max_memory_mb", 1024)
         )
 
+        # Initialize resource manager
+        self.resource_manager = ResourceManager(
+            max_memory_mb=getattr(config, "max_memory_mb", 1024),
+            max_file_handles=getattr(config, "max_file_handles", 1000),
+        )
+
         # Initialize ignore suggester (will be updated with ignore patterns in process method)
         self.ignore_suggester = None
 
@@ -154,6 +169,9 @@ class RepositoryProcessor:
         """Process a repository and return markdown output."""
         if not repo_path.exists() or not repo_path.is_dir():
             raise ValueError(f"Invalid repository path: {repo_path}")
+
+        # Resolve the path to handle symlinks and relative paths consistently
+        repo_path = repo_path.resolve()
 
         # Load ignore patterns and initialize tree generator
         self.ignore_patterns = self._load_ignore_patterns(repo_path)
@@ -263,10 +281,33 @@ class RepositoryProcessor:
     ) -> list[Path]:
         """Scan repository and return list of files to process."""
         files = []
+        errors = []
+
+        # Validate repo_path to prevent path traversal
+        try:
+            resolved_repo_path = repo_path.resolve()
+            if not resolved_repo_path.exists():
+                raise ProcessingError(f"Repository path does not exist: {repo_path}")
+            if not resolved_repo_path.is_dir():
+                raise ProcessingError(f"Path is not a directory: {repo_path}")
+            # Use resolved path for processing
+            repo_path = resolved_repo_path
+        except (OSError, RuntimeError) as e:
+            raise ProcessingError(f"Invalid repository path: {e}") from e
 
         def scan_directory(path: Path):
             try:
+                # Ensure we're not escaping the repo root
+                path.relative_to(repo_path)
+
                 for item in path.iterdir():
+                    # Additional safety check
+                    try:
+                        item.relative_to(repo_path)
+                    except ValueError:
+                        logger.warning(f"Skipping file outside repo: {item}")
+                        continue
+
                     if self.ignore_patterns and self.ignore_patterns.should_ignore(
                         item, repo_path
                     ):
@@ -286,12 +327,26 @@ class RepositoryProcessor:
                         scan_directory(item)
 
             except (OSError, PermissionError) as e:
-                logger.warning(f"Error scanning directory {path}: {e}")
+                error_msg = f"Error scanning directory {path}: {e}"
+                logger.warning(error_msg)
+                errors.append(error_msg)
             except Exception as e:
                 # Catch any other platform-specific errors
-                logger.warning(f"Unexpected error scanning directory {path}: {e}")
+                error_msg = f"Unexpected error scanning directory {path}: {e}"
+                logger.warning(error_msg)
+                errors.append(error_msg)
 
         scan_directory(repo_path)
+
+        if errors and self.config.verbose:
+            from rich.console import Console
+
+            console = Console()
+            console.print(
+                f"[WARNING] Encountered {len(errors)} errors during scan",
+                style="yellow",
+            )
+
         return files
 
     def _process_files(

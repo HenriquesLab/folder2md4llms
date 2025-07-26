@@ -9,6 +9,7 @@ from rich.console import Console
 from .__version__ import __version__
 from .processor import RepositoryProcessor
 from .utils.config import Config
+from .utils.logging_config import setup_logging
 from .utils.update_checker import check_for_updates
 
 # Configure rich-click for better help formatting
@@ -234,9 +235,35 @@ def main(
     ```
     """
     try:
+        # Validate path argument
+        try:
+            path = path.resolve()
+            if not path.exists():
+                console.print(f"[ERROR] Path does not exist: {path}", style="red")
+                sys.exit(1)
+            if not path.is_dir():
+                console.print(f"[ERROR] Path is not a directory: {path}", style="red")
+                sys.exit(1)
+        except (OSError, RuntimeError) as e:
+            console.print(f"[ERROR] Invalid path: {e}", style="red")
+            sys.exit(1)
+
         if init_ignore:
             _generate_ignore_template(path, force=force)
             return
+
+        # Setup logging
+        log_file = None
+        if verbose:
+            # Create a log file in the output directory
+            log_dir = Path.cwd() / ".folder2md_logs"
+            log_dir.mkdir(exist_ok=True)
+            from datetime import datetime
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            log_file = log_dir / f"folder2md_{timestamp}.log"
+
+        setup_logging(verbose=verbose, log_file=log_file)
 
         config_obj = Config.load(config_path=config, repo_path=path)
 
@@ -262,6 +289,15 @@ def main(
 
         if limit:
             config_obj.smart_condensing = True
+
+            # Validate limit format
+            if not limit or len(limit) < 2:
+                console.print(
+                    "[ERROR] Invalid limit format. Use <number>t for tokens or <number>c for characters.",
+                    style="red",
+                )
+                sys.exit(1)
+
             limit_val_str = limit[:-1]
             limit_unit = limit[-1].lower()
 
@@ -275,6 +311,19 @@ def main(
             limit_value = int(limit_val_str)
             if limit_value <= 0:
                 console.print("[ERROR] Limit must be a positive number.", style="red")
+                sys.exit(1)
+
+            # Add reasonable upper bounds
+            if limit_unit == "t" and limit_value > 10000000:
+                console.print(
+                    "[ERROR] Token limit too large (maximum: 10,000,000).", style="red"
+                )
+                sys.exit(1)
+            elif limit_unit == "c" and limit_value > 50000000:
+                console.print(
+                    "[ERROR] Character limit too large (maximum: 50,000,000).",
+                    style="red",
+                )
                 sys.exit(1)
 
             if limit_unit == "t":

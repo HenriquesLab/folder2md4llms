@@ -10,6 +10,12 @@ from .file_utils import (
     should_convert_file,
 )
 from .ignore_patterns import IgnorePatterns
+from .security import (
+    safe_path_join,
+    sanitize_filename,
+    secure_file_read,
+    validate_path_within_repo,
+)
 from .tree_generator import TreeGenerator
 
 __all__ = [
@@ -22,4 +28,8 @@ __all__ = [
     "should_convert_file",
     "get_file_category",
     "read_file_safely",
+    "safe_path_join",
+    "sanitize_filename",
+    "secure_file_read",
+    "validate_path_within_repo",
 ]

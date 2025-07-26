@@ -1,12 +1,37 @@
 """Configuration management for folder2md4llms."""
 
 from pathlib import Path
+from typing import Any
 
 import yaml
 
 
+class ConfigValidationError(Exception):
+    """Exception raised for configuration validation errors."""
+
+    pass
+
+
 class Config:
     """Configuration management for folder2md4llms."""
+
+    # Configuration constraints
+    CONSTRAINTS = {
+        "token_limit": {"min": 100, "max": 10000000},
+        "char_limit": {"min": 100, "max": 50000000},
+        "max_file_size": {"min": 1024, "max": 1073741824},  # 1KB to 1GB
+        "max_workers": {"min": 1, "max": 32},
+        "max_memory_mb": {"min": 128, "max": 65536},
+        "pdf_max_pages": {"min": 1, "max": 10000},
+        "xlsx_max_sheets": {"min": 1, "max": 1000},
+        "notebook_max_cells": {"min": 1, "max": 10000},
+        "pptx_max_slides": {"min": 1, "max": 1000},
+        "update_check_interval": {"min": 3600, "max": 2592000},  # 1 hour to 30 days
+    }
+
+    VALID_STRATEGIES = ["conservative", "balanced", "aggressive"]
+    VALID_TOKEN_METHODS = ["tiktoken", "average", "conservative", "optimistic"]
+    VALID_OUTPUT_FORMATS = ["markdown", "html", "plain"]
 
     def __init__(self):
         # Default configuration
@@ -56,6 +81,7 @@ class Config:
         self.max_memory_mb = 1024  # Memory limit in MB
         self.token_limit = None  # Optional token limit for LLM workflows
         self.char_limit = None  # Optional character limit for LLM workflows
+        self.default_token_limit = 100000  # Default token limit when none specified
         self.use_gitignore = True  # Use .gitignore files for filtering
 
         # Smart condensing settings
@@ -111,14 +137,86 @@ class Config:
             if not isinstance(data, dict):
                 return
 
+            # Validate configuration before applying
+            self._validate_config(data)
+
             # Load configuration values
             for key, value in data.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
 
+        except ConfigValidationError:
+            raise  # Re-raise validation errors
         except (OSError, yaml.YAMLError):
             # If config file can't be loaded, use defaults
             pass
+
+    def _validate_config(self, config_dict: dict[str, Any]) -> None:
+        """Validate configuration values.
+
+        Args:
+            config_dict: Configuration dictionary to validate
+
+        Raises:
+            ConfigValidationError: If validation fails
+        """
+        for key, value in config_dict.items():
+            # Check numeric constraints
+            if key in self.CONSTRAINTS and isinstance(value, int | float):
+                constraints = self.CONSTRAINTS[key]
+                if value < constraints["min"] or value > constraints["max"]:
+                    raise ConfigValidationError(
+                        f"{key} must be between {constraints['min']} and {constraints['max']}, got {value}"
+                    )
+
+            # Check string enums
+            elif key == "token_budget_strategy" and value not in self.VALID_STRATEGIES:
+                raise ConfigValidationError(
+                    f"token_budget_strategy must be one of {self.VALID_STRATEGIES}, got '{value}'"
+                )
+            elif (
+                key == "token_counting_method" and value not in self.VALID_TOKEN_METHODS
+            ):
+                raise ConfigValidationError(
+                    f"token_counting_method must be one of {self.VALID_TOKEN_METHODS}, got '{value}'"
+                )
+            elif key == "output_format" and value not in self.VALID_OUTPUT_FORMATS:
+                raise ConfigValidationError(
+                    f"output_format must be one of {self.VALID_OUTPUT_FORMATS}, got '{value}'"
+                )
+
+            # Check boolean values
+            elif key in [
+                "include_tree",
+                "include_stats",
+                "convert_docs",
+                "describe_binaries",
+                "condense_python",
+                "condense_code",
+                "verbose",
+                "smart_condensing",
+                "priority_analysis",
+                "progressive_condensing",
+                "update_check_enabled",
+            ]:
+                if not isinstance(value, bool):
+                    raise ConfigValidationError(
+                        f"{key} must be a boolean value, got {type(value).__name__}"
+                    )
+
+            # Check list values
+            elif key in ["condense_languages", "critical_files"]:
+                if not isinstance(value, list):
+                    raise ConfigValidationError(
+                        f"{key} must be a list, got {type(value).__name__}"
+                    )
+
+            # Check path values
+            elif key in ["ignore_file", "output_file"] and value is not None:
+                if not isinstance(value, str | Path):
+                    raise ConfigValidationError(
+                        f"{key} must be a string or Path, got {type(value).__name__}"
+                    )
 
     def save(self, config_path: Path) -> None:
         """Save configuration to YAML file."""
