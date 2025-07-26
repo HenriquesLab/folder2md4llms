@@ -57,7 +57,7 @@ class TestConfig:
         repo_dir.mkdir()
 
         config_file = repo_dir / "folder2md.yaml"
-        config_data = {"output_format": "plain", "max_file_size": 512}
+        config_data = {"output_format": "plain", "max_file_size": 2048}
 
         with open(config_file, "w") as f:
             yaml.dump(config_data, f)
@@ -65,7 +65,7 @@ class TestConfig:
         config = Config.load(repo_path=repo_dir)
 
         assert config.output_format == "plain"
-        assert config.max_file_size == 512
+        assert config.max_file_size == 2048
 
     def test_save_config(self, temp_dir):
         """Test saving configuration to file."""
