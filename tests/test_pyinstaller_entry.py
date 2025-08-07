@@ -120,9 +120,9 @@ class TestPyInstallerEntry:
                 for j in range(i + 1, len(lines)):
                     next_line = lines[j].strip()
                     if next_line:
-                        assert lines[j].startswith(
-                            "    "
-                        ), "main() call should be indented"
+                        assert lines[j].startswith("    "), (
+                            "main() call should be indented"
+                        )
                         assert "main()" in next_line, "Should call main() function"
                         main_call_found = True
                         break

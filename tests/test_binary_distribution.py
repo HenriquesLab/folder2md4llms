@@ -196,23 +196,23 @@ class TestCrossPlatformBinaryCompatibility:
         for pattern in test_patterns:
             # Test that patterns have expected characteristics
             if "windows" in pattern:
-                assert pattern.endswith(
-                    ".exe"
-                ), f"Windows binary {pattern} should have .exe extension"
+                assert pattern.endswith(".exe"), (
+                    f"Windows binary {pattern} should have .exe extension"
+                )
             elif "macos" in pattern:
-                assert (
-                    "macos" in pattern
-                ), f"macOS binary {pattern} should contain 'macos'"
-                assert not pattern.endswith(
-                    ".exe"
-                ), f"macOS binary {pattern} should not have .exe extension"
+                assert "macos" in pattern, (
+                    f"macOS binary {pattern} should contain 'macos'"
+                )
+                assert not pattern.endswith(".exe"), (
+                    f"macOS binary {pattern} should not have .exe extension"
+                )
             elif "linux" in pattern:
-                assert (
-                    "linux" in pattern
-                ), f"Linux binary {pattern} should contain 'linux'"
-                assert not pattern.endswith(
-                    ".exe"
-                ), f"Linux binary {pattern} should not have .exe extension"
+                assert "linux" in pattern, (
+                    f"Linux binary {pattern} should contain 'linux'"
+                )
+                assert not pattern.endswith(".exe"), (
+                    f"Linux binary {pattern} should not have .exe extension"
+                )
 
     def test_dependency_availability_checking(self):
         """Test that we can check for optional dependencies gracefully."""
@@ -270,12 +270,13 @@ class TestPyInstallerSpecCompatibility:
         # Test that we can access package data
 
         # Should be able to get package path
-        import pkg_resources
+        from importlib import metadata
 
         try:
-            pkg_path = pkg_resources.get_distribution("folder2md4llms").location
-            assert pkg_path is not None
-        except pkg_resources.DistributionNotFound:
+            distribution = metadata.distribution("folder2md4llms")
+            # Test that we can access the distribution
+            assert distribution.name == "folder2md4llms"
+        except metadata.PackageNotFoundError:
             # This is OK in development environment
             pass
 

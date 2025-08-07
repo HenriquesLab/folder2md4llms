@@ -69,6 +69,7 @@ dev = [
     "tiktoken>=0.5.0",  # For accurate token counting in tests
     "pyinstaller>=6.0.0",  # For binary builds
     "pyinstaller-hooks-contrib>=2024.0",  # Additional PyInstaller hooks
+    "nox>=2024.4.15",  # Task runner for multi-environment testing
 ]
 build = [
     "pyinstaller>=6.0.0",
@@ -87,8 +88,6 @@ packages = ["src/folder2md4llms"]
 [tool.hatch.build.targets.wheel.shared-data]
 "src/folder2md4llms/templates" = "folder2md4llms/templates"
 
-[tool.rye]
-managed = true
 
 [tool.ruff]
 line-length = 88
@@ -116,7 +115,6 @@ extend-ignore = [
 "__init__.py" = ["F401"]
 "tests/**/*.py" = ["S101", "D103", "PLR2004"]  # Allow asserts, missing docstrings, magic values in tests
 "src/folder2md4llms/cli.py" = ["T201"]  # Allow print statements in CLI
-"src/folder2md4llms/__about__.py" = ["UP035", "UP006", "UP007", "I001"]  # Generated file - ignore type annotation updates
 
 [tool.ruff.lint.isort]
 known-first-party = ["folder2md4llms"]
@@ -126,7 +124,6 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
-exclude = ["src/folder2md4llms/__about__.py"]
 
 [tool.mypy]
 python_version = "3.11"

@@ -79,7 +79,7 @@ run:
 
 build:
 	@echo "📦 Building the sdist and wheel..."
-	rye build
+	uv build
 	@echo "✅ Build complete."
 
 publish-test: build
@@ -108,11 +108,9 @@ clean:
 version:
 ifeq ($(BUMP),)
 	@echo "📋 Current version:"
-	@rye version
+	@uv run python -c "from folder2md4llms.__version__ import __version__; print(__version__)"
 else
-	@echo "📈 Bumping $(BUMP) version..."
-	@rye version --bump $(BUMP)
-	@echo "✅ Version bumped to: $(shell rye version)"
+	@echo "📈 Version bumping not supported with current setup. Please update src/folder2md4llms/__version__.py manually."
 endif
 
 docs:
