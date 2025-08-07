@@ -152,6 +152,11 @@ Thumbs.db
 Claude.md
 CLAUDE.md
 
+# Deprecated version management files
+src/*/__about__.py
+*/__about__.py
+__about__.py
+
 # Ruff
 .ruff_cache/
 
