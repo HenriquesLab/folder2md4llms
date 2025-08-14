@@ -1,6 +1,0 @@
-[submodule "submodules/homebrew-folder2md4llms"]
-	path = submodules/homebrew-folder2md4llms
-	url = https://github.com/HenriquesLab/homebrew-folder2md4llms.git
-[submodule "submodules/scoop-folder2md4llms"]
-	path = submodules/scoop-folder2md4llms
-	url = https://github.com/HenriquesLab/scoop-folder2md4llms.git
