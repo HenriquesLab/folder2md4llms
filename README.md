@@ -1,5 +1,7 @@
 # folder2md4llms
 
+<img src="src/logo/logo-folder2md4llms.svg" align="right" width="200" style="margin-left: 20px;"/>
+
 [![Tests](https://github.com/henriqueslab/folder2md4llms/actions/workflows/test.yml/badge.svg)](https://github.com/henriqueslab/folder2md4llms/actions/workflows/test.yml)
 [![Release](https://github.com/henriqueslab/folder2md4llms/actions/workflows/release.yml/badge.svg)](https://github.com/henriqueslab/folder2md4llms/actions/workflows/release.yml)
 [![PyPI version](https://img.shields.io/pypi/v/folder2md4llms.svg)](https://pypi.org/project/folder2md4llms/)
@@ -18,83 +20,24 @@
 - **Fast and Efficient**: Leverages multi-threading and efficient file processing to handle large repositories quickly.
 - **Advanced Filtering**: Uses `.gitignore`-style patterns to exclude files and directories.
 
-## 🚀 Quick Start
+## 🚀 Installation
 
-### Installation
+**Quick Installation (All Platforms):**
 
-Choose between Python package (recommended) or standalone binary installation:
-
-#### 🐍 Python Package Installation (Recommended)
-**Modern, fast, and reliable - works on all platforms**
-
-> **⚠️ Important:** The package name is `folder2md4llms` but the command is `folder2md`
-
-**Step 1: Install uv (if you don't have it):**
 ```bash
-# Windows (PowerShell)
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Alternative: If you already have Python/pip
-pip install uv
-```
-
-**Step 2: Install folder2md4llms:**
-```bash
-# ✅ RECOMMENDED: Using uv (fastest and most reliable)
-uv tool install folder2md4llms
-
-# Alternative: Using pip (traditional method)
-pip install folder2md4llms
-```
-
-**After installation, verify it works:**
-```bash
-# Check if folder2md is in PATH
-folder2md --help
-
-# If command not found, use uv tool run instead:
-uv tool run --from folder2md4llms folder2md --help
-```
-
-**Common Installation Error:**
-```bash
-# ❌ WRONG - This will fail
-pip install folder2md  # Error: No matching distribution found
-
-# ✅ CORRECT - Use the full package name
-uv tool install folder2md4llms
-```
-
-#### 🚀 Binary Installation (Alternative)
-**No Python required - standalone executable**
-
-**macOS (Homebrew):**
-```bash
-# Add the tap first
-brew tap henriqueslab/homebrew-folder2md4llms
-
-# Binary version (cask)
-brew install --cask folder2md4llms-binary
-```
-
-**Windows (Scoop - Recommended for Windows):**
-```powershell
-# Install Scoop first (if not already installed)
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
-
-# Add the bucket
-scoop bucket add folder2md4llms https://github.com/HenriquesLab/scoop-folder2md4llms
-
-# Binary version (no Python required)
-scoop install folder2md4llms-binary
+# Using pipx (recommended)
+pipx install folder2md4llms
 
 # Verify installation
 folder2md --help
 ```
+
+**Need platform-specific setup?** 📖 **[Complete Installation Guide →](docs/installation.md)**
+
+> **⚠️ Important:** The package name is `folder2md4llms` but the command is `folder2md`
+
+#### 🚀 Binary Installation (Alternative)
+**No Python required - standalone executable**
 
 **Manual Binary Installation:**
 1. Download the appropriate binary from [GitHub Releases](https://github.com/henriqueslab/folder2md4llms/releases/latest):
@@ -117,41 +60,21 @@ folder2md --help
 
 ##### ⚠️ macOS Security Note (Binary Only)
 
-When you first run the binary on macOS, you may see a security warning. This is normal for unsigned binaries. **Note:** Python package installation (pip/uv) avoids this entirely.
+When you first run the binary on macOS, you may see a security warning. This is normal for unsigned binaries. **Note:** Python package installation avoids this entirely.
 
-**Method 1: Right-click to open (Recommended)**
-1. Right-click on the binary:
-   - **Homebrew users**: `/opt/homebrew/bin/folder2md`
-   - **Manual download**: `folder2md-macos-*` (wherever you placed it)
-2. Select "Open" from the menu
-3. Click "Open" in the security dialog
-4. The binary will run normally from then on
-
-**Method 2: System Settings**
+**Method 1: System Settings**
 1. Try to run the binary (it will be blocked)
 2. Go to System Settings → Privacy & Security
 3. Look for "folder2md-macos-* was blocked..."
 4. Click "Allow Anyway"
 5. Try running again and click "Open"
 
-**Method 3: Command line (for advanced users)**
+**Method 2: Command line (for advanced users)**
 ```bash
 xattr -c folder2md-macos-*
 ```
 
 **Why this happens:** macOS Gatekeeper blocks unsigned binaries by default. This is normal for open-source tools distributed as binaries.
-
-#### Python Package vs Binary Comparison
-
-| Feature | Python Package | Binary |
-|---------|----------------|---------|
-| **Installation** | ✅ Easy (pip/uv) | ⚠️ Security warnings on macOS |
-| **Updates** | ✅ Automatic (pip/uv) | 🔄 Manual/Package Manager |
-| **Python Required** | ✅ Yes (3.11+) | ❌ No |
-| **Startup Time** | 🐌 Slower | ⚡ Fast |
-| **File Size** | 📦 ~10MB | 📦 ~50MB |
-| **Dependencies** | ✅ Managed by pip/uv | ✅ Self-contained |
-| **Use Case** | ✅ Most users, developers | Environments without Python |
 
 ### Basic Usage
 
@@ -185,63 +108,46 @@ For a full list of commands and options, see the [CLI Reference](docs/api.md) or
 ```bash
 # ❌ Wrong
 pip install folder2md
-uv tool install folder2md
+pipx install folder2md
 
 # ✅ Correct
-uv tool install folder2md4llms
+pipx install folder2md4llms
 pip install folder2md4llms
 ```
 
-#### "Command 'folder2md' not found" after uv tool install
+#### "Command 'folder2md' not found" after installation
 
-**Problem**: After `uv tool install folder2md4llms`, the `folder2md` command isn't available in your PATH.
+**Problem**: After installation, the `folder2md` command isn't available in your PATH.
 
-**Solution**: Use `uv tool run` instead:
+**Solution**: Check your installation method:
 ```bash
-# Use uv tool run (works immediately after install)
-uv tool run --from folder2md4llms folder2md --help
-uv tool run --from folder2md4llms folder2md .
+# Using pipx (recommended)
+pipx install folder2md4llms
+pipx list  # Verify installation
 
-# Or add uv's tool directory to your PATH
-# On Windows: Add %USERPROFILE%\.local\bin to your PATH
-# On macOS/Linux: Add ~/.local/bin to your PATH
-```
+# If pipx isn't in PATH, try:
+python -m pipx install folder2md4llms
 
-#### "Command 'folder2md' not found" (Windows)
+# Alternative: Use pip with --user
+pip install --user folder2md4llms
 
-**Problem**: The command isn't available in your PATH after installation.
-
-**Solutions**:
-```powershell
-# Option 1: Use uv tool run (works immediately)
-uv tool run --from folder2md4llms folder2md .
-
-# Option 2: Use scoop (no Python required)
-scoop bucket add folder2md4llms https://github.com/HenriquesLab/scoop-folder2md4llms
-scoop install folder2md4llms-binary
-
-# Option 3: Refresh PATH after pip installation
-pip install folder2md4llms
-# Restart your terminal or run:
-refreshenv  # If using chocolatey
-# OR close and reopen PowerShell
-
-# Option 4: Use full path (always works)
+# If still not found, use full path:
 python -m folder2md4llms .
 ```
 
+#### "pipx not found"
 
-#### Installation with uv fails in existing project
+**Problem**: pipx is not installed on your system.
 
-**Problem**: uv tries to resolve project dependencies instead of installing the tool globally.
-
-**Solution**: Use `uv tool install` instead of `uv add`:
+**Solution**: Install pipx first:
 ```bash
-# ❌ Wrong - tries to add to current project
-uv add folder2md4llms
+# Using pip
+pip install pipx
 
-# ✅ Correct - installs as global tool
-uv tool install folder2md4llms
+# Or using your system package manager:
+# Ubuntu/Debian: sudo apt install pipx
+# macOS: brew install pipx
+# Windows: Use pip method above
 ```
 
 ### Platform-Specific Issues
@@ -268,9 +174,8 @@ sudo mv folder2md-linux-* /usr/local/bin/folder2md
 
 ### Getting Help
 
-- **Command help**: `folder2md --help` (or `uv tool run --from folder2md4llms folder2md --help` if command not found)
+- **Command help**: `folder2md --help`
 - **Version check**: `folder2md --version`
-- **Quick test**: `uv tool run --from folder2md4llms folder2md --help` (works after uv tool install)
 - **Alternative**: `python -m folder2md4llms --help` (works without installation)
 - **Report issues**: [GitHub Issues](https://github.com/henriqueslab/folder2md4llms/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/henriqueslab/folder2md4llms/discussions)
@@ -310,8 +215,7 @@ Contributions are welcome! Please feel free to submit a Pull Request. For more i
 ## 📦 Distribution Channels
 
 - **PyPI**: [folder2md4llms](https://pypi.org/project/folder2md4llms/) - Python package
-- **Homebrew**: [henriqueslab/tap](https://github.com/HenriquesLab/homebrew-folder2md4llms) - macOS binary
-- **Scoop**: [HenriquesLab bucket](https://github.com/HenriquesLab/scoop-folder2md4llms) - Windows binary
+- **GitHub Releases**: [Binary downloads](https://github.com/henriqueslab/folder2md4llms/releases) - Standalone executables
 
 ## 📄 License
 
