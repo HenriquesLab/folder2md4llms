@@ -35,45 +35,6 @@ folder2md --help
 
 > **Note:** Package name is `folder2md4llms`, command is `folder2md`
 
-#### 🚀 Binary Installation (Alternative)
-**No Python required - standalone executable**
-
-**Manual Binary Installation:**
-1. Download the appropriate binary from [GitHub Releases](https://github.com/henriqueslab/folder2md4llms/releases/latest):
-   - **macOS**: `folder2md-macos-x64` (Intel) or `folder2md-macos-arm64` (Apple Silicon)
-   - **Windows**: `folder2md-windows-x64.exe`
-   - **Linux**: Coming soon
-2. Make executable (macOS/Linux): `chmod +x folder2md-*`
-3. Move to PATH:
-   - **macOS/Linux**: `sudo mv folder2md-* /usr/local/bin/folder2md`
-   - **Windows**:
-     ```powershell
-     # Option 1: Move to a directory already in PATH
-     Move-Item folder2md-windows-x64.exe $env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\folder2md.exe
-
-     # Option 2: Create a dedicated folder and add to PATH
-     New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\bin"
-     Move-Item folder2md-windows-x64.exe "$env:USERPROFILE\bin\folder2md.exe"
-     # Then add $env:USERPROFILE\bin to your PATH in System Environment Variables
-     ```
-
-##### ⚠️ macOS Security Note (Binary Only)
-
-When you first run the binary on macOS, you may see a security warning. This is normal for unsigned binaries. **Note:** Python package installation avoids this entirely.
-
-**Method 1: System Settings**
-1. Try to run the binary (it will be blocked)
-2. Go to System Settings → Privacy & Security
-3. Look for "folder2md-macos-* was blocked..."
-4. Click "Allow Anyway"
-5. Try running again and click "Open"
-
-**Method 2: Command line (for advanced users)**
-```bash
-xattr -c folder2md-macos-*
-```
-
-**Why this happens:** macOS Gatekeeper blocks unsigned binaries by default. This is normal for open-source tools distributed as binaries.
 
 ### Basic Usage
 
@@ -113,18 +74,6 @@ For a full list of commands and options, see the [CLI Reference](docs/api.md) or
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-#### macOS: Security Warnings for Binary
-
-See the [macOS Security Note](#️-macos-security-note-binary-only) above for detailed solutions.
-
-#### Linux: Permission Denied
-
-```bash
-# Make binary executable
-chmod +x folder2md-linux-*
-# Move to PATH with proper permissions
-sudo mv folder2md-linux-* /usr/local/bin/folder2md
-```
 
 ### Getting Help
 
@@ -169,7 +118,6 @@ Contributions are welcome! Please feel free to submit a Pull Request. For more i
 ## 📦 Distribution Channels
 
 - **PyPI**: [folder2md4llms](https://pypi.org/project/folder2md4llms/) - Python package
-- **GitHub Releases**: [Binary downloads](https://github.com/henriqueslab/folder2md4llms/releases) - Standalone executables
 
 ## 📄 License
 

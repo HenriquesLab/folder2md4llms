@@ -278,13 +278,6 @@ pip install -e .
 folder2md --help
 ```
 
-### Binary Installation
-
-For systems without Python or where you prefer standalone executables:
-
-1. Download from [GitHub Releases](https://github.com/henriqueslab/folder2md4llms/releases/latest)
-2. Extract and move to PATH
-3. See main README for detailed binary installation instructions
 
 ---
 
