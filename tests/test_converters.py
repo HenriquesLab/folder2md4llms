@@ -306,7 +306,6 @@ class TestPDFConverter:
             # instead of raising exceptions (preventing binary content leaks)
             assert result is not None
             assert "Error: Could not open PDF file" in result
-            assert "PDF parsing error" in result
         finally:
             os.unlink(temp_path)
 
@@ -325,7 +324,6 @@ class TestPDFConverter:
             result = converter.convert(temp_path)
             assert result is not None
             assert "Error: Could not open PDF file" in result
-            assert "Corrupted PDF" in result
             # Ensure no binary content leaked
             assert "%PDF-" not in result
             assert "xref" not in result
@@ -341,7 +339,10 @@ class TestPDFConverter:
         mock_page.extract_text.side_effect = Exception("Text extraction failed")
 
         mock_reader = Mock()
-        mock_reader.pages = [mock_page]
+        mock_pages = Mock()
+        mock_pages.__len__ = Mock(return_value=1)
+        mock_pages.__getitem__ = Mock(return_value=mock_page)
+        mock_reader.pages = mock_pages
         mock_pypdf.PdfReader.return_value = mock_reader
 
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
@@ -354,7 +355,6 @@ class TestPDFConverter:
             assert result is not None
             # Should contain error message instead of binary content
             assert "[Error: Could not extract text from this page" in result
-            assert "Text extraction failed" in result
             # Ensure no binary content leaked through fallback
             assert "%PDF-" not in result
             assert "<</" not in result

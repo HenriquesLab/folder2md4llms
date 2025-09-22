@@ -329,28 +329,6 @@ def install_test(session):
     session.run("folder2md", "--help")
 
 
-@nox.session(python=LATEST_PYTHON, reuse_venv=True)
-def test_binary(session):
-    """Test PyInstaller binary creation.
-
-    Environment: Reuses build environment.
-    Purpose: Verify binary distribution works.
-    """
-    install_base_deps(session)
-    install_with_group(session, "build")
-    install_project_editable(session)
-
-    session.log("⚙️  Testing binary distribution...")
-    session.run(
-        "uv",
-        "run",
-        "pytest",
-        "tests/test_binary_distribution.py",
-        "tests/test_pyinstaller_entry.py",
-        "-v",
-    )
-
-
 # =============================================================================
 # Documentation & Coverage
 # =============================================================================

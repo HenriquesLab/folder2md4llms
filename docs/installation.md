@@ -100,9 +100,6 @@ folder2md --help
 ### macOS
 
 ```bash
-# Install Homebrew (if needed)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
 # Install pipx
 brew install pipx
 
@@ -127,25 +124,7 @@ pipx install folder2md4llms
 
 ### Windows
 
-#### Windows 10/11
-
-```powershell
-# Install Python from python.org or Microsoft Store if not already installed
-
-# Install pipx
-pip install pipx
-
-# Add pipx to PATH (if not already there)
-# pipx will typically install to %USERPROFILE%\.local\bin
-
-# Install folder2md4llms
-pipx install folder2md4llms
-
-# Verify installation
-folder2md --help
-```
-
-#### Windows WSL2 (Recommended for Windows developers)
+#### Windows WSL2 (Recommended)
 
 ```bash
 # Install WSL2 (PowerShell as Administrator)
@@ -254,8 +233,7 @@ folder2md --help
    # Ubuntu/Debian
    sudo apt install python3.11
 
-   # macOS (using Homebrew)
-   brew install python@3.11
+   # macOS: Download from python.org or use system package manager
 
    # Windows: Download from python.org
    ```

@@ -21,7 +21,9 @@ class RTFConverter(BaseConverter):
 
     def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config)
-        self.max_size = 10 * 1024 * 1024  # Fixed 10MB limit
+        # Default to 10MB if not configured
+        max_size_mb = self.config.get("rtf_max_size_mb", 10)
+        self.max_size = max_size_mb * 1024 * 1024
 
     def can_convert(self, file_path: Path) -> bool:
         """Check if this converter can handle the given file."""

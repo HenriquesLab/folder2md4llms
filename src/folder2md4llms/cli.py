@@ -16,6 +16,9 @@ from .utils.update_checker import check_for_updates
 click.rich_click.USE_RICH_MARKUP = True
 click.rich_click.SHOW_ARGUMENTS = True
 click.rich_click.GROUP_ARGUMENTS_OPTIONS = True
+click.rich_click.STYLE_OPTION = "bold green"
+click.rich_click.STYLE_ARGUMENT = "bold cyan"
+click.rich_click.STYLE_COMMAND = "bold blue"
 
 console = Console()
 
@@ -166,14 +169,20 @@ def main(
     Convert a folder's structure and file contents into a single Markdown file,
     optimized for consumption by Large Language Models (LLMs).
 
-    PATH: The directory to process. Defaults to the current directory.
+    [bold cyan]PATH[/bold cyan]: The directory to process. Defaults to the current directory.
 
-    Examples:
-      folder2md                          # Process current directory
-      folder2md ./my-project -o out.md   # Custom output file
-      folder2md . --limit 80000t         # Set token limit
-      folder2md . --clipboard            # Copy to clipboard
-      folder2md --init-ignore            # Generate ignore template
+    [bold blue]Common Usage Examples:[/bold blue]
+      [green]folder2md[/green]                          # Process current directory
+      [green]folder2md ./my-project -o out.md[/green]   # Custom output file
+      [green]folder2md . --limit 80000t[/green]         # Set token limit with smart condensing
+      [green]folder2md . --clipboard[/green]            # Copy result to clipboard
+      [green]folder2md --init-ignore[/green]            # Generate ignore template
+
+    [bold blue]Advanced Features:[/bold blue]
+      • Smart code condensing for large repositories
+      • Configurable file filtering and processing
+      • Multiple document format support (PDF, DOCX, etc.)
+      • Automatic token/character counting
     """
     try:
         # Validate path argument

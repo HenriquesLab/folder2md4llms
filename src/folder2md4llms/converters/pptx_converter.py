@@ -22,9 +22,9 @@ class PPTXConverter(BaseConverter):
 
     def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config)
-        self.max_slides = 100  # Fixed limit for simplicity
-        self.include_notes = True  # Always include notes
-        self.include_slide_numbers = True  # Always include slide numbers
+        self.max_slides = self.config.get("pptx_max_slides", 100)
+        self.include_notes = self.config.get("pptx_include_notes", True)
+        self.include_slide_numbers = self.config.get("pptx_include_slide_numbers", True)
 
     def can_convert(self, file_path: Path) -> bool:
         """Check if this converter can handle the given file."""

@@ -67,12 +67,18 @@ For a full list of commands and options, see the [CLI Reference](docs/api.md) or
 
 ### Platform-Specific Issues
 
-#### Windows: PowerShell Execution Policy
+#### Windows: Use WSL2 (Recommended)
 
-```powershell
-# If you get execution policy errors:
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+For Windows users, we recommend using WSL2 (Windows Subsystem for Linux) for the best experience:
+
+```bash
+# Install WSL2 (run in PowerShell as Administrator)
+wsl --install -d Ubuntu-22.04
+
+# Then follow the Linux installation instructions in WSL2
 ```
+
+This provides better compatibility and performance compared to native Windows installation.
 
 
 ### Getting Help
@@ -87,7 +93,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 You can configure `folder2md4llms` by creating a `folder2md.yaml` file in your repository's root directory. This allows you to set advanced options and define custom behavior.
 
-For more details, see the [Configuration Guide](docs/api.md#configuration).
+For more details, see the [CLI Reference](docs/api.md).
 
 ## 🛠️ Development
 
