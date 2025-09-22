@@ -21,7 +21,7 @@ class DOCXConverter(BaseConverter):
 
     def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config)
-        self.extract_images = self.config.get("docx_extract_images", False)
+        self.extract_images = False  # Image extraction disabled for simplicity
 
     def can_convert(self, file_path: Path) -> bool:
         """Check if this converter can handle the given file."""
@@ -67,7 +67,9 @@ class DOCXConverter(BaseConverter):
 
                     text_parts.append("")
 
-            return "\n".join(text_parts)
+            result = "\n".join(text_parts)
+            # Validate output to ensure no binary content leaked through
+            return self._validate_text_output(result, file_path)
 
         except Exception as e:
             logger.error(f"Error converting DOCX {file_path}: {e}")

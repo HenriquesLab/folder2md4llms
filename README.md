@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Downloads](https://img.shields.io/pypi/dm/folder2md4llms.svg)](https://pypi.org/project/folder2md4llms/)
 
-`folder2md4llms` is a powerful and flexible tool that converts a repository's contents into a single, LLM-friendly Markdown file. It's designed to be fast, configurable, and easy to use, with a focus on producing high-quality, structured output.
+`folder2md4llms` is a configurable tool that converts a repository's contents into a single, LLM-friendly Markdown file. It supports various file formats and provides options for content condensing and filtering.
 
 ## ✨ Key Features
 
@@ -17,24 +17,23 @@
 - **Document Conversion**: Converts PDF, DOCX, XLSX, and other document formats into text.
 - **Binary File Analysis**: Provides intelligent descriptions for images, archives, and other binary files.
 - **Highly Configurable**: Use a `folder2md.yaml` file or command-line options to customize the output.
-- **Fast and Efficient**: Leverages multi-threading and efficient file processing to handle large repositories quickly.
+- **Parallel Processing**: Uses multi-threading for processing multiple files concurrently.
 - **Advanced Filtering**: Uses `.gitignore`-style patterns to exclude files and directories.
 
 ## 🚀 Installation
-
-**Quick Installation (All Platforms):**
 
 ```bash
 # Using pipx (recommended)
 pipx install folder2md4llms
 
+# Or using pip
+pip install folder2md4llms
+
 # Verify installation
 folder2md --help
 ```
 
-**Need platform-specific setup?** 📖 **[Complete Installation Guide →](docs/installation.md)**
-
-> **⚠️ Important:** The package name is `folder2md4llms` but the command is `folder2md`
+> **Note:** Package name is `folder2md4llms`, command is `folder2md`
 
 #### 🚀 Binary Installation (Alternative)
 **No Python required - standalone executable**
@@ -94,61 +93,16 @@ folder2md --init-ignore
 
 For a full list of commands and options, see the [CLI Reference](docs/api.md) or run `folder2md --help`.
 
-> **Note**: The package name is `folder2md4llms` but the command is `folder2md` for convenience.
-
 ## 🚨 Troubleshooting
 
-### Common Installation Issues
+### Common Issues
 
-#### "No matching distribution found for folder2md"
+**"No matching distribution found for folder2md"**
+- Use the correct package name: `folder2md4llms` (not `folder2md`)
 
-**Problem**: You're trying to install `folder2md` instead of the correct package name.
-
-**Solution**: Use the full package name `folder2md4llms`:
-```bash
-# ❌ Wrong
-pip install folder2md
-pipx install folder2md
-
-# ✅ Correct
-pipx install folder2md4llms
-pip install folder2md4llms
-```
-
-#### "Command 'folder2md' not found" after installation
-
-**Problem**: After installation, the `folder2md` command isn't available in your PATH.
-
-**Solution**: Check your installation method:
-```bash
-# Using pipx (recommended)
-pipx install folder2md4llms
-pipx list  # Verify installation
-
-# If pipx isn't in PATH, try:
-python -m pipx install folder2md4llms
-
-# Alternative: Use pip with --user
-pip install --user folder2md4llms
-
-# If still not found, use full path:
-python -m folder2md4llms .
-```
-
-#### "pipx not found"
-
-**Problem**: pipx is not installed on your system.
-
-**Solution**: Install pipx first:
-```bash
-# Using pip
-pip install pipx
-
-# Or using your system package manager:
-# Ubuntu/Debian: sudo apt install pipx
-# macOS: brew install pipx
-# Windows: Use pip method above
-```
+**"Command 'folder2md' not found"**
+- Ensure pipx is installed: `pip install pipx`
+- Try: `python -m folder2md4llms .`
 
 ### Platform-Specific Issues
 

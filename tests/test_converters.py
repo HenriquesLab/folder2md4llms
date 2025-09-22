@@ -5,8 +5,6 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import pytest
-
 from folder2md4llms.converters.base import BaseConverter, ConversionError
 from folder2md4llms.converters.code_converter import CodeConverter
 from folder2md4llms.converters.converter_factory import ConverterFactory
@@ -47,6 +45,66 @@ class TestBaseConverter:
         config = {"key": "value"}
         converter = ConcreteConverter(config)
         assert converter.config == config
+
+    def test_validate_text_output_clean_text(self):
+        """Test that clean text passes validation."""
+        converter = ConcreteConverter()
+        test_path = Path("test.txt")
+        clean_text = "This is normal text content."
+        result = converter._validate_text_output(clean_text, test_path)
+        assert result == clean_text
+
+    def test_validate_text_output_empty_text(self):
+        """Test that empty text passes validation."""
+        converter = ConcreteConverter()
+        test_path = Path("test.txt")
+        result = converter._validate_text_output("", test_path)
+        assert result == ""
+
+    def test_validate_text_output_detects_pdf_binary(self):
+        """Test that PDF binary content is detected and sanitized."""
+        converter = ConcreteConverter()
+        test_path = Path("test.pdf")
+
+        # Simulate binary PDF content leak
+        binary_content = "%PDF-1.4\n%âãÏÓ\n96 0 obj\n<</Linearized 1>>"
+        result = converter._validate_text_output(binary_content, test_path)
+
+        assert "Binary content detected" in result
+        assert "%PDF-" not in result
+
+    def test_validate_text_output_detects_xref_tables(self):
+        """Test that PDF xref tables are detected."""
+        converter = ConcreteConverter()
+        test_path = Path("test.pdf")
+
+        binary_content = "Some text\nxref\n96 173\n0000000016 00000 n"
+        result = converter._validate_text_output(binary_content, test_path)
+
+        assert "Binary content detected" in result
+
+    def test_validate_text_output_detects_null_bytes(self):
+        """Test that null bytes are detected."""
+        converter = ConcreteConverter()
+        test_path = Path("test.bin")
+
+        binary_content = "Normal text\x00Binary data"
+        result = converter._validate_text_output(binary_content, test_path)
+
+        assert "Binary content detected" in result
+
+    def test_validate_text_output_detects_high_nonprintable(self):
+        """Test that high percentage of non-printable characters is detected."""
+        converter = ConcreteConverter()
+        test_path = Path("test.bin")
+
+        # Create text with >5% non-printable characters
+        bad_text = (
+            "a" * 50 + "\x01\x02\x03\x04\x05\x06\x07\x08" * 10
+        )  # 50 good + 80 bad = 130 total, 80/130 ≈ 62% bad
+        result = converter._validate_text_output(bad_text, test_path)
+
+        assert "significant non-text content" in result
 
     def test_get_file_info_success(self):
         """Test getting file info for existing file."""
@@ -243,8 +301,92 @@ class TestPDFConverter:
 
         try:
             converter = PDFConverter({})
-            with pytest.raises(ConversionError):
-                converter.convert(temp_path)
+            result = converter.convert(temp_path)
+            # With our improved error handling, PDF reader failures now return error messages
+            # instead of raising exceptions (preventing binary content leaks)
+            assert result is not None
+            assert "Error: Could not open PDF file" in result
+            assert "PDF parsing error" in result
+        finally:
+            os.unlink(temp_path)
+
+    @patch("folder2md4llms.converters.pdf_converter.PDF_AVAILABLE", True)
+    @patch("folder2md4llms.converters.pdf_converter.pypdf")
+    def test_convert_pdf_reader_failure(self, mock_pypdf):
+        """Test PDF conversion when PdfReader creation fails."""
+        mock_pypdf.PdfReader.side_effect = Exception("Corrupted PDF")
+
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+            f.write(b"mock pdf content")
+            temp_path = Path(f.name)
+
+        try:
+            converter = PDFConverter({})
+            result = converter.convert(temp_path)
+            assert result is not None
+            assert "Error: Could not open PDF file" in result
+            assert "Corrupted PDF" in result
+            # Ensure no binary content leaked
+            assert "%PDF-" not in result
+            assert "xref" not in result
+        finally:
+            os.unlink(temp_path)
+
+    @patch("folder2md4llms.converters.pdf_converter.PDF_AVAILABLE", True)
+    @patch("folder2md4llms.converters.pdf_converter.pypdf")
+    def test_convert_page_extraction_failure(self, mock_pypdf):
+        """Test PDF conversion when page text extraction fails."""
+        # Mock page that fails text extraction
+        mock_page = Mock()
+        mock_page.extract_text.side_effect = Exception("Text extraction failed")
+
+        mock_reader = Mock()
+        mock_reader.pages = [mock_page]
+        mock_pypdf.PdfReader.return_value = mock_reader
+
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+            f.write(b"mock pdf content")
+            temp_path = Path(f.name)
+
+        try:
+            converter = PDFConverter({})
+            result = converter.convert(temp_path)
+            assert result is not None
+            # Should contain error message instead of binary content
+            assert "[Error: Could not extract text from this page" in result
+            assert "Text extraction failed" in result
+            # Ensure no binary content leaked through fallback
+            assert "%PDF-" not in result
+            assert "<</" not in result
+            assert "endobj" not in result
+        finally:
+            os.unlink(temp_path)
+
+    @patch("folder2md4llms.converters.pdf_converter.PDF_AVAILABLE", True)
+    @patch("folder2md4llms.converters.pdf_converter.pypdf")
+    def test_convert_with_binary_content_validation(self, mock_pypdf):
+        """Test that PDF converter validates output for binary content."""
+        # Mock page that would return binary-like content (simulated)
+        mock_page = Mock()
+        mock_page.extract_text.return_value = "Normal text"
+
+        mock_reader = Mock()
+        mock_reader.pages = [mock_page]
+        mock_pypdf.PdfReader.return_value = mock_reader
+
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+            f.write(b"mock pdf content")
+            temp_path = Path(f.name)
+
+        try:
+            converter = PDFConverter({})
+            result = converter.convert(temp_path)
+            assert result is not None
+            assert "Normal text" in result
+            # Validate that binary indicators are not present
+            binary_indicators = ["%PDF-", "xref", "<</", "endobj", "endstream"]
+            for indicator in binary_indicators:
+                assert indicator not in result
         finally:
             os.unlink(temp_path)
 
@@ -260,10 +402,10 @@ class TestDOCXConverter:
 
     def test_init_with_config(self):
         """Test DOCX converter initialization with config."""
-        config = {"docx_extract_images": True}
+        config = {"some_setting": True}
         converter = DOCXConverter(config)
         assert converter.config == config
-        assert converter.extract_images is True
+        assert converter.extract_images is False  # Always disabled for simplicity
 
     def test_get_supported_extensions(self):
         """Test getting supported extensions."""
@@ -329,7 +471,7 @@ class TestDOCXConverter:
         """Test DOCX conversion when python-docx not available."""
         converter = DOCXConverter({})
         result = converter.convert(Path("test.docx"))
-        assert "DOCX conversion not available" in result
+        assert result is not None and "DOCX conversion not available" in result
 
 
 class TestXLSXConverter:
@@ -394,10 +536,10 @@ class TestRTFConverter:
 
     def test_init_with_config(self):
         """Test RTF converter initialization with config."""
-        config = {"rtf_max_size": 5000000}
+        config = {"some_setting": True}
         converter = RTFConverter(config)
         assert converter.config == config
-        assert converter.max_size == 5000000
+        assert converter.max_size == 10 * 1024 * 1024  # Fixed value
 
     def test_get_supported_extensions(self):
         """Test getting supported extensions."""
@@ -496,10 +638,12 @@ class TestPPTXConverter:
 
     def test_init_with_config(self):
         """Test PPTX converter initialization with config."""
-        config = {"pptx_max_slides": 20}
+        config = {"some_setting": True}
         converter = PPTXConverter(config)
         assert converter.config == config
-        assert converter.max_slides == 20
+        assert converter.max_slides == 100  # Fixed value
+        assert converter.include_notes is True  # Always enabled
+        assert converter.include_slide_numbers is True  # Always enabled
 
     def test_get_supported_extensions(self):
         """Test getting supported extensions."""

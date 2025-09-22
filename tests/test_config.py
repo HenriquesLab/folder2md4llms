@@ -2,7 +2,7 @@
 
 import yaml
 
-from folder2md4llms.utils.config import Config
+from folder2md4llms.utils.config import Config, ConfigValidationError
 
 
 class TestConfig:
@@ -97,3 +97,34 @@ class TestConfig:
         assert "output_format: markdown" in content
         assert "include_tree: true" in content
         assert "# folder2md4llms configuration file" in content
+
+    def test_config_validation_errors(self):
+        """Test configuration validation with invalid values."""
+        import pytest
+
+        config = Config()
+
+        # Test invalid numeric constraints
+        with pytest.raises(ConfigValidationError, match="token_limit must be between"):
+            config._validate_config({"token_limit": 50})  # Below minimum
+
+        with pytest.raises(ConfigValidationError, match="max_workers must be between"):
+            config._validate_config({"max_workers": 100})  # Above maximum
+
+        # Test invalid strategy
+        with pytest.raises(
+            ConfigValidationError, match="token_budget_strategy must be one of"
+        ):
+            config._validate_config({"token_budget_strategy": "invalid_strategy"})
+
+        # Test invalid boolean
+        with pytest.raises(
+            ConfigValidationError, match="include_tree must be a boolean"
+        ):
+            config._validate_config({"include_tree": "not_a_boolean"})
+
+        # Test invalid list
+        with pytest.raises(
+            ConfigValidationError, match="condense_languages must be a list"
+        ):
+            config._validate_config({"condense_languages": "not_a_list"})

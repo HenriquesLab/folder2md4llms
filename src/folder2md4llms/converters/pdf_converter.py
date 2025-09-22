@@ -41,11 +41,19 @@ class PDFConverter(BaseConverter):
 
         try:
             with open(file_path, "rb") as file:
-                reader = pypdf.PdfReader(file)
+                try:
+                    reader = pypdf.PdfReader(file)
+                except Exception as e:
+                    logger.error(f"Failed to open PDF {file_path}: {e}")
+                    return f"PDF Document: {file_path.name}\nError: Could not open PDF file - {str(e)}"
 
                 # Get document info
-                num_pages = len(reader.pages)
-                pages_to_process = min(num_pages, self.max_pages)
+                try:
+                    num_pages = len(reader.pages)
+                    pages_to_process = min(num_pages, self.max_pages)
+                except Exception as e:
+                    logger.error(f"Failed to get page count for PDF {file_path}: {e}")
+                    return f"PDF Document: {file_path.name}\nError: Could not read PDF structure - {str(e)}"
 
                 # Extract text from pages
                 text_parts = []
@@ -70,9 +78,12 @@ class PDFConverter(BaseConverter):
                             else:
                                 # Fallback for older PyPDF2
                                 page_text = page.extract_text()
-                        except Exception:
-                            # Final fallback
-                            page_text = str(page)
+                        except Exception as extraction_error:
+                            # Safe fallback - never leak binary content
+                            logger.warning(
+                                f"Failed to extract text from page {page_num + 1} in {file_path}: {extraction_error}"
+                            )
+                            page_text = f"[Error: Could not extract text from this page - {str(extraction_error)}]"
 
                         # Clean up the text
                         page_text = self._clean_pdf_text(page_text)
@@ -87,7 +98,9 @@ class PDFConverter(BaseConverter):
                         text_parts.append(f"Error extracting text: {str(e)}")
                         text_parts.append("")
 
-                return "\n".join(text_parts)
+                result = "\n".join(text_parts)
+                # Validate output to ensure no binary content leaked through
+                return self._validate_text_output(result, file_path)
 
         except Exception as e:
             logger.error(f"Error converting PDF {file_path}: {e}")
