@@ -67,13 +67,7 @@ dev = [
     "build>=1.2.2.post1",
     "twine>=6.1.0",
     "tiktoken>=0.5.0",  # For accurate token counting in tests
-    "pyinstaller>=6.0.0",  # For binary builds
-    "pyinstaller-hooks-contrib>=2024.0",  # Additional PyInstaller hooks
     "nox>=2024.4.15",  # Task runner for multi-environment testing
-]
-build = [
-    "pyinstaller>=6.0.0",
-    "pyinstaller-hooks-contrib>=2024.0",
 ]
 tiktoken = [
     "tiktoken>=0.5.0",

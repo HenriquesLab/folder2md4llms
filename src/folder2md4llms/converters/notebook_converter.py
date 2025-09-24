@@ -25,7 +25,7 @@ class NotebookConverter(BaseConverter):
         super().__init__(config)
         self.max_cells = self.config.get("notebook_max_cells", 200)
         self.include_outputs = self.config.get("notebook_include_outputs", True)
-        self.include_metadata = self.config.get("notebook_include_metadata", False)
+        self.include_metadata = False  # Metadata disabled for simplicity
 
     def can_convert(self, file_path: Path) -> bool:
         """Check if this converter can handle the given file."""

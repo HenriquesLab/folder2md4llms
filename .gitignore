@@ -27,10 +27,6 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# PyInstaller
-*.manifest
-*.spec
-!folder2md.spec
 
 # Installer logs
 pip-log.txt
@@ -164,3 +160,6 @@ __about__.py
 # Git submodules working directories (optional - submodules are tracked by git)
 # git_submodules/
 folder2md-*/
+
+.gemini/
+gha-creds-*.json

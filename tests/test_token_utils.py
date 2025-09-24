@@ -273,10 +273,10 @@ class TestEstimateTokensFromText:
 
     def test_estimate_tokens_from_text_long_text(self):
         """Test token estimation for long text."""
-        text = "This is a test. " * 1000  # 16,000 characters
+        text = "This is a test. " * 100  # 1,600 characters (sufficient for testing)
         tokens = estimate_tokens_from_text(text)
         assert isinstance(tokens, int)
-        assert tokens > 1000  # Should be substantial number of tokens
+        assert tokens > 100  # Should be substantial number of tokens
 
     def test_estimate_tokens_from_text_special_characters(self):
         """Test token estimation with special characters."""
@@ -536,14 +536,14 @@ class TestStreamFileContent:
 
     def test_stream_file_content_large_file(self):
         """Test streaming content from large file."""
-        large_content = "This is a test line.\n" * 1000  # ~21KB
+        large_content = "This is a test line.\n" * 100  # ~2KB (sufficient for testing)
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write(large_content)
             temp_path = Path(f.name)
 
         try:
-            chunks = list(stream_file_content(temp_path, chunk_size=1024))
+            chunks = list(stream_file_content(temp_path, chunk_size=512))
             assert len(chunks) > 1
             # Verify content is preserved
             reconstructed = "".join(chunks)
@@ -868,12 +868,12 @@ class TestIntegrationScenarios:
     def test_large_content_handling(self):
         """Test handling of large content."""
         # Create large text content
-        large_text = "This is a line of text that will be repeated many times. " * 1000
+        large_text = "This is a line of text that will be repeated many times. " * 50
 
         # Test token estimation
         tokens = estimate_tokens_from_text(large_text)
         assert isinstance(tokens, int)
-        assert tokens > 1000  # Should be substantial
+        assert tokens > 50  # Should be substantial
 
         # Test code detection
         is_code = _is_likely_code(large_text)

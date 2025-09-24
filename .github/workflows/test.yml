@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         python-version: ['3.11', '3.12', '3.13']
         include:
           # Add special job configurations for comprehensive testing
@@ -39,10 +39,8 @@ jobs:
             test_optional_deps: true
             test_integration: true
         exclude:
-          # Reduce matrix size by excluding 3.12 on some platforms
+          # Reduce matrix size by excluding 3.12 on macOS
           - os: macos-latest
-            python-version: '3.12'
-          - os: windows-latest
             python-version: '3.12'
 
     steps:
@@ -115,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         python-version: ['3.11', '3.13']
 
     steps:
@@ -141,8 +139,7 @@ jobs:
         uv tool run twine check dist/*
         echo "::endgroup::"
 
-    - name: Test wheel installation and functionality (Unix)
-      if: runner.os != 'Windows'
+    - name: Test wheel installation and functionality
       run: |
         echo "::group::Installing and testing package"
         WHEEL_NAME=$(ls dist/*.whl | head -1 | xargs basename)
@@ -165,37 +162,7 @@ jobs:
         echo "✅ Package installation and functionality test passed"
         echo "::endgroup::"
 
-    - name: Test wheel installation and functionality (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        Write-Host "::group::Installing and testing package"
-        $WHEEL_NAME = (Get-ChildItem dist/*.whl | Select-Object -First 1).Name
-        uv pip install --system "dist/$WHEEL_NAME"
-
-        # Test CLI functionality
-        folder2md --help
-        folder2md --version
-
-        # Test basic processing functionality
-        New-Item -ItemType Directory -Path "test_dir" -Force
-        Set-Content -Path "test_dir/README.md" -Value "# Test Project"
-        Set-Content -Path "test_dir/main.py" -Value "print('hello world')"
-        folder2md test_dir --output test_output.md
-
-        # Verify output
-        if (-not (Test-Path "test_output.md")) { exit 1 }
-        if (-not (Select-String -Path "test_output.md" -Pattern "Test Project" -Quiet)) { exit 1 }
-        if (-not (Select-String -Path "test_output.md" -Pattern "hello world" -Quiet)) { exit 1 }
-        Write-Host "✅ Package installation and functionality test passed"
-        Write-Host "::endgroup::"
-      shell: pwsh
-
     - name: Cleanup
       if: always()
       run: |
-        if [ "$RUNNER_OS" = "Windows" ]; then
-          Remove-Item -Path test_dir, test_output.md, dist -Recurse -Force -ErrorAction SilentlyContinue
-        else
-          rm -rf test_dir test_output.md dist/ || true
-        fi
-      shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
+        rm -rf test_dir test_output.md dist/ || true

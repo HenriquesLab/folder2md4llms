@@ -25,7 +25,6 @@ class Config:
         "pdf_max_pages": {"min": 1, "max": 10000},
         "xlsx_max_sheets": {"min": 1, "max": 1000},
         "notebook_max_cells": {"min": 1, "max": 10000},
-        "pptx_max_slides": {"min": 1, "max": 1000},
         "update_check_interval": {"min": 3600, "max": 2592000},  # 1 hour to 30 days
     }
 
@@ -51,23 +50,11 @@ class Config:
 
         # Document conversion settings
         self.pdf_max_pages = 50
-        self.docx_extract_images = False
         self.xlsx_max_sheets = 10
-        self.rtf_max_size = 10 * 1024 * 1024  # 10MB
         self.notebook_max_cells = 200
         self.notebook_include_outputs = True
-        self.notebook_include_metadata = False
-        self.pptx_max_slides = 100
-        self.pptx_include_notes = True
-        self.pptx_include_slide_numbers = True
-
-        # Binary file analysis settings
-        self.image_extract_metadata = True
-        self.archive_list_contents = True
-        self.executable_basic_info = True
 
         # Output settings
-        self.markdown_toc = True
         self.syntax_highlighting = True
         self.file_size_limit = 1024 * 1024  # 1MB
         self.output_file: Path | None = None
@@ -198,6 +185,8 @@ class Config:
                 "priority_analysis",
                 "progressive_condensing",
                 "update_check_enabled",
+                "notebook_include_outputs",
+                "syntax_highlighting",
             ]:
                 if not isinstance(value, bool):
                     raise ConfigValidationError(
@@ -234,19 +223,9 @@ class Config:
             "max_file_size": self.max_file_size,
             "verbose": self.verbose,
             "pdf_max_pages": self.pdf_max_pages,
-            "docx_extract_images": self.docx_extract_images,
             "xlsx_max_sheets": self.xlsx_max_sheets,
-            "rtf_max_size": self.rtf_max_size,
             "notebook_max_cells": self.notebook_max_cells,
             "notebook_include_outputs": self.notebook_include_outputs,
-            "notebook_include_metadata": self.notebook_include_metadata,
-            "pptx_max_slides": self.pptx_max_slides,
-            "pptx_include_notes": self.pptx_include_notes,
-            "pptx_include_slide_numbers": self.pptx_include_slide_numbers,
-            "image_extract_metadata": self.image_extract_metadata,
-            "archive_list_contents": self.archive_list_contents,
-            "executable_basic_info": self.executable_basic_info,
-            "markdown_toc": self.markdown_toc,
             "syntax_highlighting": self.syntax_highlighting,
             "file_size_limit": self.file_size_limit,
             "max_workers": self.max_workers,
@@ -313,23 +292,11 @@ max_file_size: 1048576  # 1MB
 
 # Document conversion settings
 pdf_max_pages: 50
-docx_extract_images: false
 xlsx_max_sheets: 10
-rtf_max_size: 10485760  # 10MB
 notebook_max_cells: 200
 notebook_include_outputs: true
-notebook_include_metadata: false
-pptx_max_slides: 100
-pptx_include_notes: true
-pptx_include_slide_numbers: true
 
-# Binary file analysis settings
-image_extract_metadata: true
-archive_list_contents: true
-executable_basic_info: true
-
-# Markdown output settings
-markdown_toc: true
+# Output settings
 syntax_highlighting: true
 file_size_limit: 1048576  # 1MB
 # Performance settings
