@@ -6,6 +6,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from ..constants import BINARY_ANALYSIS_SIZE_LIMIT, BYTES_PER_KB, BYTES_PER_MB
 from .file_utils import (
     get_language_from_extension,
     is_archive_file,
@@ -153,7 +154,7 @@ class FileStrategyDeterminer:
 
             # Unknown binary file - analyze if small enough
             file_size = metadata.get("size", 0)
-            if file_size < 1024 * 1024:  # 1MB limit for binary analysis
+            if file_size < BINARY_ANALYSIS_SIZE_LIMIT:
                 return FileProcessingStrategy(
                     action=ProcessingAction.ANALYZE_BINARY,
                     priority=5,
@@ -257,9 +258,9 @@ class FileStrategyDeterminer:
         # Other text files - priority based on size
         if file_size < 10 * 1024:  # < 10KB
             return 50
-        elif file_size < 100 * 1024:  # < 100KB
+        elif file_size < 100 * BYTES_PER_KB:  # < 100KB
             return 40
-        elif file_size < 1024 * 1024:  # < 1MB
+        elif file_size < BYTES_PER_MB:  # < 1MB
             return 30
         else:
             return 20

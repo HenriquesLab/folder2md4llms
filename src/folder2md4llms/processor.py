@@ -8,6 +8,7 @@ from typing import Any
 from rich.progress import Progress, TaskID
 
 from .analyzers.binary_analyzer import BinaryAnalyzer
+from .constants import DEFAULT_MAX_FILE_SIZE
 from .converters.converter_factory import ConverterFactory
 from .converters.smart_python_converter import SmartPythonConverter
 from .engine.smart_engine import SmartAntiTruncationEngine
@@ -161,7 +162,7 @@ class RepositoryProcessor:
 
         # Initialize streaming processor
         self.streaming_processor = StreamingFileProcessor(
-            max_file_size=getattr(config, "max_file_size", 10 * 1024 * 1024),
+            max_file_size=getattr(config, "max_file_size", DEFAULT_MAX_FILE_SIZE),
             max_workers=getattr(config, "max_workers", 4),
             token_estimation_method=getattr(
                 config, "token_estimation_method", "average"

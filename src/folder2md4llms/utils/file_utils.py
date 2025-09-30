@@ -3,6 +3,8 @@
 import logging
 from pathlib import Path
 
+from ..constants import BINARY_ANALYSIS_SIZE_LIMIT
+
 try:
     import magic
 
@@ -528,7 +530,9 @@ def get_file_category(file_path: Path) -> str:
         return "binary"
 
 
-def read_file_safely(file_path: Path, max_size: int = 1024 * 1024) -> str | None:
+def read_file_safely(
+    file_path: Path, max_size: int = BINARY_ANALYSIS_SIZE_LIMIT
+) -> str | None:
     """Read a file safely with size limit and encoding handling."""
     try:
         if file_path.stat().st_size > max_size:

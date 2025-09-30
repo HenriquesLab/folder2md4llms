@@ -5,6 +5,12 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from ..constants import (
+    BYTES_PER_MB,
+    CHUNKED_READ_THRESHOLD,
+    DEFAULT_MAX_FILE_SIZE,
+    DEFAULT_MAX_WORKERS,
+)
 from .file_utils import is_text_file
 from .token_utils import (
     estimate_tokens_from_file,
@@ -18,8 +24,8 @@ class StreamingFileProcessor:
 
     def __init__(
         self,
-        max_file_size: int = 10 * 1024 * 1024,  # 10MB
-        max_workers: int = 4,
+        max_file_size: int = DEFAULT_MAX_FILE_SIZE,
+        max_workers: int = DEFAULT_MAX_WORKERS,
         token_estimation_method: str = "average",  # noqa: S107
     ):
         """Initialize the streaming processor.
@@ -205,7 +211,7 @@ class MemoryMonitor:
 
             process = psutil.Process()
             memory_info = process.memory_info()
-            current_mb = memory_info.rss / (1024 * 1024)
+            current_mb = memory_info.rss / BYTES_PER_MB
 
             over_limit = current_mb > self.max_memory_mb
 
@@ -256,7 +262,7 @@ def optimize_file_processing_order(file_paths: list[Path]) -> list[Path]:
             file_size = file_path.stat().st_size
 
             # Large files last
-            if file_size > 1024 * 1024:  # 1MB
+            if file_size > CHUNKED_READ_THRESHOLD:
                 large_files.append(file_path)
             elif is_text_file(file_path):
                 text_files.append(file_path)

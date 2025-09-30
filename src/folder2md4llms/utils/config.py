@@ -5,6 +5,15 @@ from typing import Any
 
 import yaml
 
+from ..constants import (
+    DEFAULT_CHAR_LIMIT,
+    DEFAULT_MAX_FILE_SIZE,
+    DEFAULT_MAX_MEMORY_MB,
+    DEFAULT_MAX_WORKERS,
+    DEFAULT_TOKEN_LIMIT,
+    DEFAULT_UPDATE_CHECK_INTERVAL,
+)
+
 
 class ConfigValidationError(Exception):
     """Exception raised for configuration validation errors."""
@@ -44,7 +53,7 @@ class Config:
         self.condense_code = False
         self.code_condense_mode = "signatures_with_docstrings"
         self.condense_languages = ["js", "ts", "java", "json", "yaml"]
-        self.max_file_size = 100 * 1024 * 1024  # 100MB
+        self.max_file_size = DEFAULT_MAX_FILE_SIZE
         self.verbose = False
         self.ignore_file: Path | None = None
 
@@ -56,19 +65,21 @@ class Config:
 
         # Output settings
         self.syntax_highlighting = True
-        self.file_size_limit = 100 * 1024 * 1024  # 100MB
+        self.file_size_limit = DEFAULT_MAX_FILE_SIZE
         self.output_file: Path | None = None
 
         # Performance settings
-        self.max_workers = 4
+        self.max_workers = DEFAULT_MAX_WORKERS
         self.progress_bar = True
 
         # Streaming and token management
         self.token_estimation_method = "average"  # noqa: S105  # conservative, average, optimistic
-        self.max_memory_mb = 1024  # Memory limit in MB
-        self.token_limit = None  # Optional token limit for LLM workflows
-        self.char_limit = None  # Optional character limit for LLM workflows
-        self.default_token_limit = 100000  # Default token limit when none specified
+        self.max_memory_mb = DEFAULT_MAX_MEMORY_MB
+        self.token_limit = DEFAULT_CHAR_LIMIT  # Optional token limit for LLM workflows
+        self.char_limit = (
+            DEFAULT_CHAR_LIMIT  # Optional character limit for LLM workflows
+        )
+        self.default_token_limit = DEFAULT_TOKEN_LIMIT
         self.use_gitignore = True  # Use .gitignore files for filtering
 
         # Smart condensing settings
@@ -84,9 +95,7 @@ class Config:
 
         # Update checking settings
         self.update_check_enabled = True  # Enable automatic update checking
-        self.update_check_interval = (
-            24 * 60 * 60
-        )  # Check interval in seconds (24 hours)
+        self.update_check_interval = DEFAULT_UPDATE_CHECK_INTERVAL
 
         # Output file detection settings
         self.auto_ignore_output = True  # Automatically detect and prompt to ignore existing folder2md output files
