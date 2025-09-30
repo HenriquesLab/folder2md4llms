@@ -36,6 +36,42 @@ from .utils.tree_generator import TreeGenerator
 logger = logging.getLogger(__name__)
 
 
+def _format_file_size(size_bytes: int) -> str:
+    """Format file size in human-readable format.
+
+    Args:
+        size_bytes: Size in bytes
+
+    Returns:
+        Human-readable size string (e.g., "2.5MB")
+    """
+    size: float = float(size_bytes)
+    for unit in ["B", "KB", "MB", "GB"]:
+        if size < 1024:
+            return f"{size:.1f}{unit}"
+        size /= 1024
+    return f"{size:.1f}TB"
+
+
+def _format_size_limit_warning(rel_path: str, file_size: int, max_size: int) -> str:
+    """Format a helpful warning message for files exceeding size limit.
+
+    Args:
+        rel_path: Relative path to the file
+        file_size: Actual file size in bytes
+        max_size: Maximum allowed size in bytes
+
+    Returns:
+        Formatted warning message with instructions
+    """
+    return (
+        f"Skipping large file: {rel_path} ({_format_file_size(file_size)}) - "
+        f"exceeds limit of {_format_file_size(max_size)}. "
+        f"To process this file, increase the limit by creating a .folder2md.yml "
+        f"config file with: max_file_size: {file_size + 1024}"
+    )
+
+
 class ProcessingError(Exception):
     """Custom exception for processing errors."""
 
@@ -459,7 +495,9 @@ class RepositoryProcessor:
                     # Skip files that are too large
                     if file_size > self.config.max_file_size:
                         logger.info(
-                            f"Skipping large file: {rel_path} ({file_size} bytes)"
+                            _format_size_limit_warning(
+                                rel_path, file_size, self.config.max_file_size
+                            )
                         )
                         continue
 
@@ -666,7 +704,9 @@ class RepositoryProcessor:
                     # Skip files that are too large
                     if file_size > self.config.max_file_size:
                         logger.info(
-                            f"Skipping large file: {rel_path} ({file_size} bytes)"
+                            _format_size_limit_warning(
+                                rel_path, file_size, self.config.max_file_size
+                            )
                         )
                         continue
 

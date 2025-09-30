@@ -17,7 +17,7 @@ class TestConfig:
         assert config.include_stats is True
         assert config.convert_docs is True
         assert config.describe_binaries is True
-        assert config.max_file_size == 1024 * 1024
+        assert config.max_file_size == 100 * 1024 * 1024  # 100MB default
         assert config.verbose is False
 
     def test_load_config_from_file(self, temp_dir):

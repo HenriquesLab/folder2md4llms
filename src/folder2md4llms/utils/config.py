@@ -44,7 +44,7 @@ class Config:
         self.condense_code = False
         self.code_condense_mode = "signatures_with_docstrings"
         self.condense_languages = ["js", "ts", "java", "json", "yaml"]
-        self.max_file_size = 1024 * 1024  # 1MB
+        self.max_file_size = 100 * 1024 * 1024  # 100MB
         self.verbose = False
         self.ignore_file: Path | None = None
 
@@ -56,7 +56,7 @@ class Config:
 
         # Output settings
         self.syntax_highlighting = True
-        self.file_size_limit = 1024 * 1024  # 1MB
+        self.file_size_limit = 100 * 1024 * 1024  # 100MB
         self.output_file: Path | None = None
 
         # Performance settings
@@ -293,7 +293,7 @@ code_condense_mode: signatures_with_docstrings
 condense_languages: [js, ts, java, json, yaml]
 
 # Maximum file size to process (bytes)
-max_file_size: 1048576  # 1MB
+max_file_size: 104857600  # 100MB
 
 # Document conversion settings
 pdf_max_pages: 50
@@ -303,7 +303,7 @@ notebook_include_outputs: true
 
 # Output settings
 syntax_highlighting: true
-file_size_limit: 1048576  # 1MB
+file_size_limit: 104857600  # 100MB
 # Performance settings
 max_workers: 4
 progress_bar: true
