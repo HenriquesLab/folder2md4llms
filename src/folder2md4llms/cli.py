@@ -223,47 +223,76 @@ def main(
         if getattr(config_obj, "auto_ignore_output", True):
             existing_outputs = find_folder2md_output_files(path)
             if existing_outputs:
-                # Filter out the current output file (if specified)
+                # Determine the current output file path
                 output_file_path = Path(
                     getattr(config_obj, "output_file", None) or output or "output.md"
                 )
                 if not output_file_path.is_absolute():
                     output_file_path = path / output_file_path
 
-                # Filter existing outputs to exclude the current output file
-                existing_outputs = [
-                    f
-                    for f in existing_outputs
-                    if f.resolve() != output_file_path.resolve()
-                ]
+                # Check if we're about to overwrite an existing output file
+                # If so, we MUST ignore it to prevent reading it before overwriting
+                output_file_resolved = output_file_path.resolve()
+                files_to_ignore = []
 
-                if existing_outputs:
-                    # Format file list for display
-                    file_list = "\n  • ".join(
-                        [str(f.relative_to(path)) for f in existing_outputs]
-                    )
-                    console.print(
-                        f"\n[yellow]⚠ Found existing folder2md output file(s):[/yellow]\n  • {file_list}",
-                        style="yellow",
-                    )
-
-                    # Handle non-interactive environment
-                    should_ignore = True  # Default to yes
-                    if sys.stdin.isatty():
-                        should_ignore = click.confirm(
-                            "Add these files to ignore patterns for this run?",
-                            default=True,
-                        )
+                for f in existing_outputs:
+                    if f.resolve() == output_file_resolved:
+                        # Current output file exists and will be overwritten
+                        # Always add it to ignore patterns (don't prompt for this one)
+                        files_to_ignore.append(f)
                     else:
-                        console.print(
-                            "[yellow]Non-interactive mode: Automatically ignoring these files[/yellow]"
+                        # Other folder2md output files found
+                        files_to_ignore.append(f)
+
+                if files_to_ignore:
+                    # Separate files that will be overwritten from others
+                    files_being_overwritten = [
+                        f
+                        for f in files_to_ignore
+                        if f.resolve() == output_file_resolved
+                    ]
+                    other_output_files = [
+                        f
+                        for f in files_to_ignore
+                        if f.resolve() != output_file_resolved
+                    ]
+
+                    # Always auto-ignore the file being overwritten
+                    if files_being_overwritten:
+                        additional_ignore_patterns.extend(
+                            [str(f.relative_to(path)) for f in files_being_overwritten]
                         )
 
-                    if should_ignore:
-                        # Add files to ignore patterns for this run
-                        additional_ignore_patterns = [
-                            str(f.relative_to(path)) for f in existing_outputs
-                        ]
+                    # Prompt for other output files
+                    if other_output_files:
+                        file_list = "\n  • ".join(
+                            [str(f.relative_to(path)) for f in other_output_files]
+                        )
+                        console.print(
+                            f"\n[yellow]⚠ Found existing folder2md output file(s):[/yellow]\n  • {file_list}",
+                            style="yellow",
+                        )
+
+                        # Handle non-interactive environment
+                        should_ignore = True  # Default to yes
+                        if sys.stdin.isatty():
+                            should_ignore = click.confirm(
+                                "Add these files to ignore patterns for this run?",
+                                default=True,
+                            )
+                        else:
+                            console.print(
+                                "[yellow]Non-interactive mode: Automatically ignoring these files[/yellow]"
+                            )
+
+                        if should_ignore:
+                            # Add files to ignore patterns for this run
+                            additional_ignore_patterns.extend(
+                                [str(f.relative_to(path)) for f in other_output_files]
+                            )
+
+                    # Display summary
+                    if additional_ignore_patterns:
                         console.print(
                             f"[green]✓ Ignoring {len(additional_ignore_patterns)} existing output file(s)[/green]\n"
                         )
