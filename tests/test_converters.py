@@ -70,31 +70,41 @@ class TestBaseConverter:
         binary_content = "%PDF-1.4\n%âãÏÓ\n96 0 obj\n<</Linearized 1>>"
         result = converter._validate_text_output(binary_content, test_path)
 
-        assert "Binary content detected" in result
+        # Should contain warning header and binary removal markers
+        assert "[Warning:" in result
+        assert "binary section(s) removed" in result
+        assert "[Binary content removed]" in result
+        # Binary patterns should be removed
         assert "%PDF-" not in result
 
     def test_validate_text_output_detects_xref_tables(self):
-        """Test that PDF xref tables are detected."""
+        """Test that PDF xref tables are detected and sanitized."""
         converter = ConcreteConverter()
         test_path = Path("test.pdf")
 
         binary_content = "Some text\nxref\n96 173\n0000000016 00000 n"
         result = converter._validate_text_output(binary_content, test_path)
 
-        assert "Binary content detected" in result
+        # Should sanitize and preserve readable text
+        assert "[Warning:" in result
+        assert "Some text" in result
+        assert "xref" not in result  # Binary pattern removed
 
     def test_validate_text_output_detects_null_bytes(self):
-        """Test that null bytes are detected."""
+        """Test that null bytes are detected and sanitized."""
         converter = ConcreteConverter()
         test_path = Path("test.bin")
 
         binary_content = "Normal text\x00Binary data"
         result = converter._validate_text_output(binary_content, test_path)
 
-        assert "Binary content detected" in result
+        # Should sanitize and preserve readable text
+        assert "[Warning:" in result
+        assert "Normal text" in result
+        assert "\x00" not in result  # Null byte removed
 
     def test_validate_text_output_detects_high_nonprintable(self):
-        """Test that high percentage of non-printable characters is detected."""
+        """Test that high percentage of non-printable characters is detected and sanitized."""
         converter = ConcreteConverter()
         test_path = Path("test.bin")
 
@@ -104,7 +114,11 @@ class TestBaseConverter:
         )  # 50 good + 80 bad = 130 total, 80/130 ≈ 62% bad
         result = converter._validate_text_output(bad_text, test_path)
 
-        assert "significant non-text content" in result
+        # Should sanitize and preserve readable characters
+        assert "[Warning:" in result
+        assert "a" in result  # Readable content preserved
+        # Non-printable characters should be removed or marked
+        assert "\x01" not in result
 
     def test_get_file_info_success(self):
         """Test getting file info for existing file."""
