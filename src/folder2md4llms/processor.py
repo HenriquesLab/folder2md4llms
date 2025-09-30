@@ -55,8 +55,11 @@ class RepositoryProcessor:
     markdown_formatter: MarkdownFormatter
     ignore_suggester: IgnoreSuggester | None
 
-    def __init__(self, config: Config):
+    def __init__(
+        self, config: Config, additional_ignore_patterns: list[str] | None = None
+    ):
         self.config = config
+        self.additional_ignore_patterns = additional_ignore_patterns or []
 
         # Initialize smart engine if enabled
         self.smart_engine = None
@@ -147,21 +150,26 @@ class RepositoryProcessor:
         """Load ignore patterns from hierarchical files or use defaults."""
         # If custom ignore file is specified, use it exclusively
         if self.config.ignore_file and self.config.ignore_file.exists():
-            return IgnorePatterns.from_file(self.config.ignore_file)
+            ignore_patterns = IgnorePatterns.from_file(self.config.ignore_file)
+        else:
+            # Use hierarchical loading for better pattern management
+            ignore_patterns = IgnorePatterns.from_hierarchical_files(repo_path)
 
-        # Use hierarchical loading for better pattern management
-        ignore_patterns = IgnorePatterns.from_hierarchical_files(repo_path)
+            # If no .folder2md_ignore files found, check if gitignore integration is enabled
+            if not ignore_patterns.loaded_files and getattr(
+                self.config, "use_gitignore", True
+            ):
+                # Look for .gitignore files in the repository
+                gitignore_file = repo_path / ".gitignore"
+                if gitignore_file.exists():
+                    ignore_patterns = IgnorePatterns.from_gitignore(
+                        gitignore_file, include_defaults=True
+                    )
 
-        # If no .folder2md_ignore files found, check if gitignore integration is enabled
-        if not ignore_patterns.loaded_files and getattr(
-            self.config, "use_gitignore", True
-        ):
-            # Look for .gitignore files in the repository
-            gitignore_file = repo_path / ".gitignore"
-            if gitignore_file.exists():
-                return IgnorePatterns.from_gitignore(
-                    gitignore_file, include_defaults=True
-                )
+        # Add any additional ignore patterns passed from CLI
+        if self.additional_ignore_patterns:
+            for pattern in self.additional_ignore_patterns:
+                ignore_patterns.add_pattern(pattern)
 
         return ignore_patterns
 

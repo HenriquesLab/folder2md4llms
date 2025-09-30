@@ -88,6 +88,9 @@ class Config:
             24 * 60 * 60
         )  # Check interval in seconds (24 hours)
 
+        # Output file detection settings
+        self.auto_ignore_output = True  # Automatically detect and prompt to ignore existing folder2md output files
+
     @classmethod
     def load(
         cls, config_path: Path | None = None, repo_path: Path | None = None
@@ -187,6 +190,7 @@ class Config:
                 "update_check_enabled",
                 "notebook_include_outputs",
                 "syntax_highlighting",
+                "auto_ignore_output",
             ]:
                 if not isinstance(value, bool):
                     raise ConfigValidationError(
@@ -244,6 +248,7 @@ class Config:
             "target_model": self.target_model,
             "update_check_enabled": self.update_check_enabled,
             "update_check_interval": self.update_check_interval,
+            "auto_ignore_output": self.auto_ignore_output,
         }
 
         try:
@@ -324,6 +329,9 @@ target_model: gpt-4  # Target model for tiktoken encoding
 # Update checking settings
 update_check_enabled: true  # Enable automatic update checking
 update_check_interval: 86400  # Check interval in seconds (24 hours)
+
+# Output file detection settings
+auto_ignore_output: true  # Automatically detect and prompt to ignore existing folder2md output files
 """
 
         try:
