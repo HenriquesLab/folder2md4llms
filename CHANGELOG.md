@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.7] - 2025-01-02
+
+### Added
+- Prominent Python 3.11+ requirement notice in README installation section
+- Python version troubleshooting guide in README
+- Runtime Python version check with friendly error message in CLI
+- Migration path documentation for Python 3.8-3.10 users (use v0.2.0)
+
+### Changed
+- Moved Python version requirements to top of installation.md for better visibility
+- Enhanced installation documentation with clear version compatibility guidance
+
 ## [0.5.6] - 2025-01-02
 
 ### Fixed
