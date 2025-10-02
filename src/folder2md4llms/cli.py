@@ -7,6 +7,19 @@ import rich_click as click
 from rich.console import Console
 
 from .__version__ import __version__
+
+# Check Python version before importing anything else
+# We keep this runtime check to provide a friendly error message
+if sys.version_info < (3, 11):  # noqa: UP036
+    print(
+        "Error: folder2md4llms requires Python 3.11 or higher.\n"
+        f"You are using Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}.\n\n"
+        "Options:\n"
+        "  1. Upgrade Python: https://www.python.org/downloads/\n"
+        "  2. Use legacy version (Python 3.8+): pipx install folder2md4llms==0.2.0\n",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 from .processor import RepositoryProcessor
 from .utils.config import Config
 from .utils.file_utils import find_folder2md_output_files

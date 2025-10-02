@@ -22,7 +22,14 @@
 
 ## 🚀 Installation
 
+> **⚠️ Requirements**: Python **3.11 or higher** is required.
+>
+> **Using Python 3.8-3.10?** Install the legacy version: `pipx install folder2md4llms==0.2.0`
+
 ```bash
+# Check Python version first
+python --version  # Must be 3.11+
+
 # Using pipx (recommended)
 pipx install folder2md4llms
 
@@ -60,6 +67,11 @@ For a full list of commands and options, see the [CLI Reference](docs/api.md) or
 
 **"No matching distribution found for folder2md"**
 - Use the correct package name: `folder2md4llms` (not `folder2md`)
+
+**"Requires Python >=3.11" or incompatible Python version**
+- Check your Python version: `python --version`
+- If you have Python 3.8-3.10, use the legacy version: `pipx install folder2md4llms==0.2.0`
+- To upgrade Python, see: https://www.python.org/downloads/
 
 **"Command 'folder2md' not found"**
 - Ensure pipx is installed: `pip install pipx`

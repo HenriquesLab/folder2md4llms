@@ -6,6 +6,34 @@ This guide covers platform-specific installation instructions for folder2md4llms
 
 ---
 
+## ⚠️ Python Version Requirements
+
+**folder2md4llms requires Python 3.11 or higher.**
+
+### Check Your Python Version
+
+```bash
+python --version
+# or
+python3 --version
+```
+
+### Using Python 3.8-3.10?
+
+If you're on an older Python version, you have two options:
+
+1. **Use the legacy version** (v0.2.0 - supports Python 3.8+):
+   ```bash
+   pipx install folder2md4llms==0.2.0
+   ```
+
+2. **Upgrade to Python 3.11+** (recommended):
+   - **Ubuntu/Debian**: `sudo apt install python3.11`
+   - **macOS**: Download from [python.org](https://www.python.org/downloads/) or `brew install python@3.11`
+   - **Windows**: Download from [python.org](https://www.python.org/downloads/)
+
+---
+
 ## 🐍 Python Package Installation
 
 ### Recommended Method: pipx
