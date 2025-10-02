@@ -320,7 +320,7 @@ def should_convert_file(file_path: Path) -> bool:
     convertible_extensions = {
         ".pdf",
         ".docx",
-        ".doc",
+        # Note: .doc (legacy Word format) is not supported by python-docx
         ".xlsx",
         ".xls",
         ".pptx",

@@ -27,7 +27,7 @@ class DOCXConverter(BaseConverter):
         """Check if this converter can handle the given file."""
         return (
             DOCX_AVAILABLE
-            and file_path.suffix.lower() in {".docx", ".doc"}
+            and file_path.suffix.lower() == ".docx"
             and file_path.exists()
         )
 
@@ -77,7 +77,7 @@ class DOCXConverter(BaseConverter):
 
     def get_supported_extensions(self) -> set:
         """Get the file extensions this converter supports."""
-        return {".docx", ".doc"}
+        return {".docx"}
 
     def get_document_info(self, file_path: Path) -> dict[str, Any]:
         """Get DOCX-specific information."""

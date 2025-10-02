@@ -52,6 +52,7 @@ class IgnorePatterns:
         "*.swp",
         "*.swo",
         "*~",
+        "~$*",  # Microsoft Office temp files
         # Log files
         "*.log",
         "logs/",

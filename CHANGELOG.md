@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.6] - 2025-01-02
+
+### Fixed
+- Removed incorrect `.doc` (legacy Word format) support from DOCXConverter - only `.docx` is supported by python-docx library
+- Fixed "File is not a zip file" error when encountering `.doc` files
+- Added `~$*` pattern to ignore Microsoft Office temporary files
+
+### Changed
+- DOCXConverter now only handles `.docx` files (XML-based format)
+- Legacy `.doc` files are no longer advertised as convertible
+
 ### Added
 - Simplified and streamlined the command-line interface (CLI) for a more intuitive user experience.
 - Simplified the `Makefile` with fewer, more logical commands for easier development.
