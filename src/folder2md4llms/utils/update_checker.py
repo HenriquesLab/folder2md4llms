@@ -198,12 +198,9 @@ class UpdateChecker:
         console.print(f"   Current version: [yellow]{self.current_version}[/yellow]")
         console.print(f"   Latest version:  [green]{latest_version}[/green]")
         console.print()
-        console.print(
-            "   To upgrade, run: [bold]pip install --upgrade folder2md4llms[/bold]"
-        )
-        console.print(
-            "   Or with uv:      [bold]uv add --upgrade folder2md4llms[/bold]"
-        )
+        console.print("   To upgrade, run:")
+        console.print("   [bold]pip install --upgrade folder2md4llms[/bold]  (or pip3)")
+        console.print("   [bold]uv tool upgrade folder2md4llms[/bold]")
         console.print()
 
     async def check_for_updates(self, force: bool = False) -> str | None:
