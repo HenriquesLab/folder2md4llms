@@ -80,9 +80,17 @@ class SmartPythonConverter(BaseConverter):
             return None
 
         try:
-            # Read file content
-            with open(file_path, encoding="utf-8") as f:
-                content = f.read()
+            # Read file content with proper encoding handling
+            try:
+                with open(file_path, encoding="utf-8", errors="replace") as f:
+                    content = f.read()
+            except UnicodeDecodeError:
+                # Fallback to latin-1 which accepts all bytes
+                with open(file_path, encoding="latin-1", errors="replace") as f:
+                    content = f.read()
+
+            # Clean any surrogate characters
+            content = content.encode("utf-8", errors="replace").decode("utf-8")
 
             if not content.strip():
                 return ""

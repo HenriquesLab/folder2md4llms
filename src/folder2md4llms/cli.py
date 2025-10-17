@@ -391,7 +391,23 @@ def main(
 
         # --- Handle output ---
         output_file = Path(getattr(config_obj, "output_file", None) or "output.md")
-        output_file.write_text(result, encoding="utf-8")
+
+        # Clean result of any surrogate characters before writing or copying
+        # This prevents encoding errors when writing to file or clipboard
+        try:
+            # Test if result contains surrogates
+            result.encode("utf-8")
+            clean_result = result
+        except UnicodeEncodeError as e:
+            console.print(
+                f"[yellow]Warning: Found invalid UTF-8 characters in output at position {e.start}-{e.end}[/yellow]"
+            )
+            console.print(
+                "[yellow]Cleaning invalid characters... Some characters may be replaced with '?'[/yellow]"
+            )
+            clean_result = result.encode("utf-8", errors="replace").decode("utf-8")
+
+        output_file.write_text(clean_result, encoding="utf-8")
 
         console.print(
             f"[SUCCESS] Repository processed successfully: {output_file}", style="green"
@@ -401,7 +417,7 @@ def main(
             try:
                 import pyperclip
 
-                pyperclip.copy(result)
+                pyperclip.copy(clean_result)
                 console.print("[SUCCESS] Output copied to clipboard.", style="green")
             except ImportError:
                 console.print(
@@ -409,6 +425,20 @@ def main(
                     style="yellow",
                 )
 
+    except UnicodeEncodeError as e:
+        console.print(f"[ERROR] Unicode encoding error: {e}", style="red")
+        console.print(
+            f"[yellow]Position: {e.start}-{e.end}, Reason: {e.reason}[/yellow]"
+        )
+        console.print(
+            "[yellow]This error occurs when files contain invalid UTF-8 byte sequences.[/yellow]"
+        )
+        console.print(
+            "[yellow]Attempting to identify the problematic content...[/yellow]"
+        )
+        if verbose:
+            console.print_exception()
+        sys.exit(1)
     except Exception as e:
         console.print(f"[ERROR] An unexpected error occurred: {e}", style="red")
         if verbose:

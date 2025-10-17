@@ -30,8 +30,17 @@ class PythonCodeAnalyzer:
             Condensed Python code content or None if analysis failed
         """
         try:
-            with open(file_path, encoding="utf-8") as f:
-                content = f.read()
+            # Try UTF-8 first with error handling for surrogates
+            try:
+                with open(file_path, encoding="utf-8", errors="replace") as f:
+                    content = f.read()
+            except UnicodeDecodeError:
+                # Fallback to latin-1 which accepts all bytes
+                with open(file_path, encoding="latin-1", errors="replace") as f:
+                    content = f.read()
+
+            # Clean any surrogate characters
+            content = content.encode("utf-8", errors="replace").decode("utf-8")
 
             return self.analyze_code(content, str(file_path))
         except (OSError, UnicodeDecodeError) as e:

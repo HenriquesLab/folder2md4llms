@@ -636,8 +636,24 @@ class RepositoryProcessor:
 
                     # Read file content
                     try:
-                        with open(file_path, encoding="utf-8") as f:
-                            content = f.read()
+                        # Read with surrogateescape to preserve problematic bytes, then clean them
+                        try:
+                            with open(
+                                file_path, encoding="utf-8", errors="surrogateescape"
+                            ) as f:
+                                content = f.read()
+                                # Immediately clean surrogates
+                                content = content.encode(
+                                    "utf-8", errors="replace"
+                                ).decode("utf-8")
+                        except UnicodeDecodeError:
+                            # Fallback to latin-1 which accepts all bytes
+                            with open(file_path, encoding="latin-1") as f:
+                                content = f.read()
+                                # Clean to ensure valid UTF-8
+                                content = content.encode(
+                                    "utf-8", errors="replace"
+                                ).decode("utf-8")
                     except (OSError, UnicodeDecodeError):
                         continue
 

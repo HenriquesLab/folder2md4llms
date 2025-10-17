@@ -84,6 +84,52 @@ class MarkdownFormatter:
         processing_stats: dict | None = None,
     ) -> str:
         """Format the complete folder as markdown."""
+        # Clean all input strings of surrogates before processing
+        # This prevents encoding errors during markdown generation
+        if tree_structure:
+            try:
+                tree_structure.encode("utf-8")
+            except UnicodeEncodeError:
+                tree_structure = tree_structure.encode(
+                    "utf-8", errors="replace"
+                ).decode("utf-8")
+
+        if file_contents:
+            cleaned_contents = {}
+            for path, content in file_contents.items():
+                try:
+                    content.encode("utf-8")
+                    cleaned_contents[path] = content
+                except UnicodeEncodeError:
+                    cleaned_contents[path] = content.encode(
+                        "utf-8", errors="replace"
+                    ).decode("utf-8")
+            file_contents = cleaned_contents
+
+        if binary_descriptions:
+            cleaned_descriptions = {}
+            for path, desc in binary_descriptions.items():
+                try:
+                    desc.encode("utf-8")
+                    cleaned_descriptions[path] = desc
+                except UnicodeEncodeError:
+                    cleaned_descriptions[path] = desc.encode(
+                        "utf-8", errors="replace"
+                    ).decode("utf-8")
+            binary_descriptions = cleaned_descriptions
+
+        if converted_docs:
+            cleaned_docs = {}
+            for path, doc in converted_docs.items():
+                try:
+                    doc.encode("utf-8")
+                    cleaned_docs[path] = doc
+                except UnicodeEncodeError:
+                    cleaned_docs[path] = doc.encode("utf-8", errors="replace").decode(
+                        "utf-8"
+                    )
+            converted_docs = cleaned_docs
+
         sections = []
 
         # Add preamble if enabled
@@ -148,8 +194,37 @@ class MarkdownFormatter:
                 sections.append(self._format_binary_description(file_path, description))
                 sections.append("")
 
+        # Clean each section of surrogates before joining
+        # This prevents encoding errors during string concatenation
+        cleaned_sections = []
+        for section in sections:
+            if isinstance(section, str):
+                try:
+                    # Try to encode/decode to detect surrogates
+                    section.encode("utf-8")
+                    cleaned_sections.append(section)
+                except UnicodeEncodeError:
+                    # Clean any surrogate characters if encoding fails
+                    cleaned_section = section.encode(
+                        "utf-8", errors="surrogateescape"
+                    ).decode("utf-8", errors="replace")
+                    cleaned_sections.append(cleaned_section)
+            else:
+                cleaned_sections.append(section)
+
         # Apply token/character limits if specified
-        output = "\n".join(sections)
+        try:
+            output = "\n".join(cleaned_sections)
+        except UnicodeEncodeError:
+            # Last resort: force clean all sections
+            cleaned_sections = [
+                s.encode("utf-8", errors="replace").decode("utf-8")
+                if isinstance(s, str)
+                else str(s)
+                for s in cleaned_sections
+            ]
+            output = "\n".join(cleaned_sections)
+
         output, truncation_info = self._apply_limits(output)
 
         # Update preamble with truncation info if needed
@@ -158,10 +233,20 @@ class MarkdownFormatter:
                 output, truncation_info, processing_stats
             )
 
+        # Final safety: Clean any surrogate characters that might have slipped through
+        # This prevents encoding errors when writing to file or clipboard
+        output = output.encode("utf-8", errors="replace").decode("utf-8")
+
         return output
 
     def _apply_limits(self, content: str) -> tuple[str, dict | None]:
         """Apply token or character limits to the content."""
+        # Clean surrogates from content first
+        try:
+            content.encode("utf-8")
+        except UnicodeEncodeError:
+            content = content.encode("utf-8", errors="replace").decode("utf-8")
+
         if not self.token_limit and not self.char_limit:
             return content, None
 

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.9] - 2025-01-17
+
+### Fixed
+- Fixed Unicode encoding error when using `--clipboard` flag with files containing invalid UTF-8 byte sequences
+- Added comprehensive surrogate character handling throughout the processing pipeline
+- Improved error handling for files with mixed or corrupted encodings
+- Added `errors="surrogateescape"` and `errors="replace"` strategies for robust file reading
+- Enhanced document converters (PDF, DOCX, PPTX, RTF) to handle encoding issues gracefully
+
+### Changed
+- File reading now uses surrogate-aware encoding strategies with immediate cleaning
+- Markdown formatter cleans all input content of surrogates before processing
+- Added multiple layers of surrogate detection and cleaning for robustness
+- Improved error messages for Unicode-related issues
+
+## [0.5.8] - 2025-01-16
+
+### Fixed
+- Corrected upgrade instructions in update notification message
+- Updated documentation to reflect accurate package manager commands
+
 ## [0.5.7] - 2025-01-02
 
 ### Added

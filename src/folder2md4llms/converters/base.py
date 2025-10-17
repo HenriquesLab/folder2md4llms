@@ -68,6 +68,14 @@ class BaseConverter(ABC):
         if not text:
             return text
 
+        # Clean surrogate characters first - these can appear from improper decoding
+        # and cause encoding errors later
+        try:
+            text.encode("utf-8")
+        except UnicodeEncodeError:
+            # Contains surrogates, clean them
+            text = text.encode("utf-8", errors="replace").decode("utf-8")
+
         # First, split on null bytes and other strong binary markers to preserve text around them
         # Split on null bytes first
         text = text.replace("\x00", "\n[Binary content removed]\n")

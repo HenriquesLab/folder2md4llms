@@ -543,8 +543,12 @@ def read_file_safely(
 
         for encoding in encodings:
             try:
-                with open(file_path, encoding=encoding) as f:
-                    return f.read()
+                with open(file_path, encoding=encoding, errors="replace") as f:
+                    content = f.read()
+                    # Remove any surrogate characters that might have slipped through
+                    # This prevents issues when copying to clipboard or writing to files
+                    content = content.encode("utf-8", errors="replace").decode("utf-8")
+                    return content
             except UnicodeDecodeError:
                 continue
             except (OSError, PermissionError):
