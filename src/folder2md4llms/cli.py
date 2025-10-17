@@ -165,6 +165,11 @@ def _generate_ignore_template(target_path: Path, force: bool = False) -> None:
     is_flag=True,
     help="Disable the automatic check for new versions.",
 )
+@click.option(
+    "--no-suggestions",
+    is_flag=True,
+    help="Disable automatic file analysis and ignore pattern suggestions.",
+)
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging.")
 @click.version_option(version=__version__, prog_name="folder2md4llms")
 def main(
@@ -177,6 +182,7 @@ def main(
     init_ignore: bool,
     force: bool,
     disable_update_check: bool,
+    no_suggestions: bool,
     verbose: bool,
 ) -> None:
     """
@@ -329,6 +335,8 @@ def main(
             config_obj.verbose = verbose
         if condense:
             config_obj.condense_code = True
+        if no_suggestions:
+            config_obj.enable_ignore_suggestions = False
 
         if limit:
             config_obj.smart_condensing = True

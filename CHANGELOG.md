@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.10] - 2025-01-17
+
+### Added
+- **Interactive File Analysis and Ignore Suggestions**: Automatically analyzes files during processing and provides interactive suggestions for files that should be ignored
+  - Detects binary data files (.cif, .h5, .hdf5, .npy, .mat, etc.) regardless of size
+  - Identifies media files (images, videos, audio) that don't add LLM value
+  - Flags build artifacts (compiled code, minified JS/CSS, etc.)
+  - Detects large files exceeding configurable threshold (default: 10MB)
+  - Interactive prompts allow users to add suggested patterns to `.folder2md_ignore`
+  - Category-by-category selection with file size summaries
+  - Skips prompts in non-interactive environments (CI/CD)
+- CLI option `--no-suggestions` to disable file analysis and suggestions
+- Configuration options:
+  - `enable_ignore_suggestions`: Enable/disable the feature (default: true)
+  - `interactive_suggestions`: Use interactive prompts vs display-only (default: true)
+  - `large_file_threshold`: Size threshold for flagging large files (default: 10MB)
+
+### Changed
+- Ignore pattern suggestions now run automatically by default (previously only with `--verbose`)
+- Enhanced `IgnoreSuggester` with smart detection for multiple file categories
+- Improved suggestion output with emojis and organized categories
+
 ## [0.5.9] - 2025-01-17
 
 ### Fixed

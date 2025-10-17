@@ -223,11 +223,14 @@ class RepositoryProcessor:
         if self.ignore_patterns is not None:
             self.tree_generator = TreeGenerator(self.ignore_patterns)
 
-        # Initialize ignore suggester with loaded patterns
+        # Initialize ignore suggester with loaded patterns (always enabled)
         if self.ignore_patterns is not None:
             self.ignore_suggester = IgnoreSuggester(
                 min_file_size=getattr(self.config, "suggestion_min_file_size", 100_000),
                 min_dir_size=getattr(self.config, "suggestion_min_dir_size", 1_000_000),
+                large_file_threshold=getattr(
+                    self.config, "large_file_threshold", 10_485_760
+                ),
                 ignore_patterns=self.ignore_patterns,
             )
 
@@ -307,12 +310,23 @@ class RepositoryProcessor:
                 processing_stats=processing_stats,
             )
 
-            # Display ignore suggestions if enabled
-            if self.config.verbose and self.ignore_suggester:
-                output_file = Path(
-                    getattr(self.config, "output_file", None) or "output.md"
-                )
-                self.ignore_suggester.display_suggestions(output_file)
+            # Display or apply ignore suggestions if enabled
+            if self.ignore_suggester and getattr(
+                self.config, "enable_ignore_suggestions", True
+            ):
+                ignore_file = repo_path / ".folder2md_ignore"
+
+                # Use interactive prompts if enabled and not disabled by config
+                if getattr(self.config, "interactive_suggestions", True):
+                    self.ignore_suggester.prompt_and_apply_suggestions(
+                        ignore_file, repo_path
+                    )
+                elif self.config.verbose:
+                    # Fall back to display-only in verbose mode
+                    output_file = Path(
+                        getattr(self.config, "output_file", None) or "output.md"
+                    )
+                    self.ignore_suggester.display_suggestions(output_file)
 
             return output
 

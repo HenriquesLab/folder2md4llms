@@ -123,8 +123,8 @@ class TestIgnoreSuggester:
         suggestions = suggester.get_suggestions()
 
         assert len(suggestions) == 2
-        assert ("Cache Files", ["cache.txt", "temp.log"]) in suggestions
-        assert ("Large Hidden Files", [".large_file"]) in suggestions
+        assert ("💾 Cache Files", ["cache.txt", "temp.log"]) in suggestions
+        assert ("🔒 Large Hidden Files", [".large_file"]) in suggestions
 
     def test_display_suggestions(self, tmp_path, capsys):
         """Test displaying suggestions."""
@@ -153,3 +153,85 @@ class TestIgnoreSuggester:
         # Should not print anything when no suggestions
         captured = capsys.readouterr()
         assert "Ignore Suggestions" not in captured.out
+
+    def test_is_binary_data_file(self):
+        """Test binary data file detection."""
+        suggester = IgnoreSuggester()
+
+        # Test scientific data formats
+        assert suggester._is_binary_data_file("structure.cif", ".cif")
+        assert suggester._is_binary_data_file("data.h5", ".h5")
+        assert suggester._is_binary_data_file("matrix.mat", ".mat")
+        assert suggester._is_binary_data_file("array.npy", ".npy")
+        assert suggester._is_binary_data_file("dataset.parquet", ".parquet")
+
+        # Test non-binary data files
+        assert not suggester._is_binary_data_file("code.py", ".py")
+        assert not suggester._is_binary_data_file("config.json", ".json")
+
+    def test_is_media_file(self):
+        """Test media file detection."""
+        suggester = IgnoreSuggester()
+
+        # Test images
+        assert suggester._is_media_file(".png")
+        assert suggester._is_media_file(".jpg")
+        assert suggester._is_media_file(".gif")
+
+        # Test videos
+        assert suggester._is_media_file(".mp4")
+        assert suggester._is_media_file(".avi")
+
+        # Test audio
+        assert suggester._is_media_file(".mp3")
+        assert suggester._is_media_file(".wav")
+
+        # Test non-media files
+        assert not suggester._is_media_file(".py")
+        assert not suggester._is_media_file(".txt")
+
+    def test_is_build_artifact(self):
+        """Test build artifact detection."""
+        suggester = IgnoreSuggester()
+
+        # Test compiled files
+        assert suggester._is_build_artifact("module.pyc", ".pyc")
+        assert suggester._is_build_artifact("library.so", ".so")
+        assert suggester._is_build_artifact("program.exe", ".exe")
+
+        # Test minified files
+        assert suggester._is_build_artifact("app.min.js", ".js")
+        assert suggester._is_build_artifact("style.min.css", ".css")
+
+        # Test non-build artifacts
+        assert not suggester._is_build_artifact("source.py", ".py")
+        assert not suggester._is_build_artifact("config.json", ".json")
+
+    def test_large_file_threshold(self, tmp_path):
+        """Test large file threshold detection."""
+        suggester = IgnoreSuggester(large_file_threshold=1_000_000)  # 1MB
+
+        # Create a file larger than threshold
+        large_file = tmp_path / "large.txt"
+        large_file.write_text("x" * 1_500_000)  # 1.5MB
+
+        suggester.analyze_path(large_file, tmp_path)
+
+        suggestions = suggester.get_suggestions()
+        assert len(suggestions) > 0
+        assert any("Large Files" in category for category, _ in suggestions)
+
+    def test_binary_data_file_suggestion(self, tmp_path):
+        """Test that binary data files are suggested regardless of size."""
+        suggester = IgnoreSuggester()
+
+        # Create a small .cif file
+        cif_file = tmp_path / "structure.cif"
+        cif_file.write_text("small content")
+
+        suggester.analyze_path(cif_file, tmp_path)
+
+        suggestions = suggester.get_suggestions()
+        assert len(suggestions) > 0
+        # Should suggest *.cif pattern
+        assert any("Binary Data Files" in category for category, _ in suggestions)

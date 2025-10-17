@@ -100,6 +100,23 @@ class Config:
         # Output file detection settings
         self.auto_ignore_output = True  # Automatically detect and prompt to ignore existing folder2md output files
 
+        # Ignore suggestion settings
+        self.enable_ignore_suggestions = (
+            True  # Enable automatic file analysis and ignore suggestions
+        )
+        self.interactive_suggestions = (
+            True  # Use interactive prompts to apply suggestions
+        )
+        self.large_file_threshold = (
+            10_485_760  # 10MB - threshold for flagging large files
+        )
+        self.suggestion_min_file_size = (
+            100_000  # 100KB - minimum size for general suggestions
+        )
+        self.suggestion_min_dir_size = (
+            1_000_000  # 1MB - minimum directory size for suggestions
+        )
+
     @classmethod
     def load(
         cls, config_path: Path | None = None, repo_path: Path | None = None
