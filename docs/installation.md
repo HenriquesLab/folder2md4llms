@@ -1,307 +1,95 @@
-# Complete Installation Guide
+# Installation Guide
 
-This guide covers platform-specific installation instructions for folder2md4llms.
+> **Quick Install**: `pipx install folder2md4llms`
 
-> **👋 Quick Install?** For most users, `pipx install folder2md4llms` is all you need. This guide is for users who need platform-specific setup or encounter installation issues.
-
----
-
-## ⚠️ Python Version Requirements
-
-**folder2md4llms requires Python 3.11 or higher.**
-
-### Check Your Python Version
-
-```bash
-python --version
-# or
-python3 --version
-```
-
-### Using Python 3.8-3.10?
-
-If you're on an older Python version, you have two options:
-
-1. **Use the legacy version** (v0.2.0 - supports Python 3.8+):
-   ```bash
-   pipx install folder2md4llms==0.2.0
-   ```
-
-2. **Upgrade to Python 3.11+** (recommended):
-   - **Ubuntu/Debian**: `sudo apt install python3.11`
-   - **macOS**: Download from [python.org](https://www.python.org/downloads/) or `brew install python@3.11`
-   - **Windows**: Download from [python.org](https://www.python.org/downloads/)
+Requires Python 3.11+. Check your version: `python --version`
 
 ---
 
 ## 🐍 Python Package Installation
 
-### Recommended Method: pipx
-
-pipx is the recommended way to install Python command-line tools as it creates isolated environments for each tool:
+### Using pipx (Recommended)
 
 ```bash
-# Install pipx if you don't have it
-pip install pipx
-
 # Install folder2md4llms
 pipx install folder2md4llms
 
-# Verify installation
+# Verify
 folder2md --help
 ```
 
-### Alternative: pip with --user
+### Using pip
 
 ```bash
-# Install to user directory
-pip install --user folder2md4llms
-
-# Verify installation
-folder2md --help
-```
-
-### Alternative: System-wide pip (not recommended)
-
-```bash
-# Install system-wide (may require sudo on Linux/macOS)
 pip install folder2md4llms
-
-# Verify installation
 folder2md --help
 ```
 
 ---
 
-## 🖥️ Platform-Specific Setup
+## 🖥️ Platform-Specific Notes
 
 ### Linux
 
-#### Ubuntu/Debian
-
 ```bash
-# Update package list
-sudo apt update
-
-# Install Python and pipx
+# Ubuntu/Debian
 sudo apt install python3-pip pipx
-
-# Install folder2md4llms
 pipx install folder2md4llms
 
-# Verify installation
-folder2md --help
-```
-
-#### Red Hat/CentOS/Fedora
-
-```bash
-# Install Python and pip
+# Fedora/RHEL
 sudo dnf install python3-pip
-
-# Install pipx
-python3 -m pip install --user pipx
-
-# Add pipx to PATH (add to ~/.bashrc for persistence)
-export PATH="$HOME/.local/bin:$PATH"
-
-# Install folder2md4llms
+pip3 install pipx
 pipx install folder2md4llms
-
-# Verify installation
-folder2md --help
-```
-
-#### Arch Linux
-
-```bash
-# Install Python and pipx
-sudo pacman -S python-pip python-pipx
-
-# Install folder2md4llms
-pipx install folder2md4llms
-
-# Verify installation
-folder2md --help
 ```
 
 ### macOS
 
 ```bash
-# Install pipx
 brew install pipx
-
-# Install folder2md4llms
-pipx install folder2md4llms
-
-# Verify installation
-folder2md --help
-```
-
-**Alternative (using system Python):**
-```bash
-# Install pipx using pip
-pip3 install pipx
-
-# Add pipx to PATH (add to ~/.zshrc or ~/.bash_profile)
-export PATH="$HOME/.local/bin:$PATH"
-
-# Install folder2md4llms
 pipx install folder2md4llms
 ```
 
 ### Windows
 
-#### Windows WSL2 (Recommended)
-
 ```bash
-# Install WSL2 (PowerShell as Administrator)
-wsl --install -d Ubuntu-22.04
-
-# In Ubuntu WSL:
-sudo apt update
-sudo apt install python3-pip pipx
-
-# Install folder2md4llms
+pip install pipx
 pipx install folder2md4llms
-
-# Verify installation
-folder2md --help
 ```
 
 ---
 
 ## 🚨 Troubleshooting
 
-### Command not found after installation
+### Command not found
 
-**Issue**: `folder2md: command not found`
-
-**Solutions**:
-1. **Check if pipx bin directory is in PATH**:
-   ```bash
-   # Linux/macOS
-   echo $PATH | grep -o $HOME/.local/bin
-
-   # Windows
-   echo $env:PATH | Select-String "$env:USERPROFILE\.local\bin"
-   ```
-
-2. **Add pipx bin directory to PATH**:
-   ```bash
-   # Linux/macOS (add to ~/.bashrc or ~/.zshrc)
-   export PATH="$HOME/.local/bin:$PATH"
-
-   # Windows (add to user environment variables)
-   # Add %USERPROFILE%\.local\bin to your PATH
-   ```
-
-3. **Use full path temporarily**:
-   ```bash
-   # Linux/macOS
-   ~/.local/bin/folder2md --help
-
-   # Windows
-   %USERPROFILE%\.local\bin\folder2md.exe --help
-   ```
-
-### pipx installation fails
-
-**Issue**: `pipx install` command fails
-
-**Solutions**:
-1. **Update pipx**:
-   ```bash
-   pip install --upgrade pipx
-   ```
-
-2. **Reinstall pipx**:
-   ```bash
-   pip uninstall pipx
-   pip install pipx
-   ```
-
-3. **Use pip instead**:
-   ```bash
-   pip install --user folder2md4llms
-   ```
-
-### Permission denied on Linux/macOS
-
-**Issue**: Permission errors during installation
-
-**Solutions**:
-1. **Use --user flag**:
-   ```bash
-   pip install --user folder2md4llms
-   ```
-
-2. **Fix permissions**:
-   ```bash
-   # Make sure ~/.local/bin exists and is writable
-   mkdir -p ~/.local/bin
-   chmod 755 ~/.local/bin
-   ```
-
-### Python version compatibility
-
-**Issue**: Incompatible Python version
-
-**Requirements**: Python 3.11 or higher
-
-**Solutions**:
-1. **Check Python version**:
-   ```bash
-   python --version
-   python3 --version
-   ```
-
-2. **Install compatible Python**:
-   ```bash
-   # Ubuntu/Debian
-   sudo apt install python3.11
-
-   # macOS: Download from python.org or use system package manager
-
-   # Windows: Download from python.org
-   ```
-
----
-
-## 🔗 Alternative Installation Methods
-
-### From Source (Development)
-
+Add pipx to your PATH:
 ```bash
-# Clone repository
-git clone https://github.com/henriqueslab/folder2md4llms.git
-cd folder2md4llms
+# Linux/macOS
+export PATH="$HOME/.local/bin:$PATH"
 
-# Install in development mode
-pip install -e .
-
-# Verify installation
-folder2md --help
+# Or use module directly
+python -m folder2md4llms .
 ```
 
+### Installation fails
 
----
+```bash
+# Try pip instead
+pip install folder2md4llms
 
-## 🆘 Getting Help
+# Or update pipx
+pip install --upgrade pipx
+```
 
-If you're still having issues:
+## Development Installation
 
-1. **Check our troubleshooting guide**: See main [README.md](../README.md#-troubleshooting)
-2. **Search existing issues**: [GitHub Issues](https://github.com/henriqueslab/folder2md4llms/issues)
-3. **Ask for help**: [GitHub Discussions](https://github.com/henriqueslab/folder2md4llms/discussions)
-4. **Report a bug**: [New Issue](https://github.com/henriqueslab/folder2md4llms/issues/new)
+```bash
+git clone https://github.com/henriqueslab/folder2md4llms.git
+cd folder2md4llms
+pip install -e ".[dev]"
+```
 
-When reporting issues, please include:
-- Your operating system and version
-- Python version (`python --version`)
-- Installation method attempted
-- Complete error message
+## Getting Help
 
----
-
-*This installation guide is designed to get folder2md4llms running on any system. For most users, `pipx install folder2md4llms` is the simplest and most reliable method.*
+- [GitHub Issues](https://github.com/henriqueslab/folder2md4llms/issues)
+- [GitHub Discussions](https://github.com/henriqueslab/folder2md4llms/discussions)

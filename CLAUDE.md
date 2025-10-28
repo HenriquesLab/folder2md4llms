@@ -82,27 +82,18 @@ make build
 
 ### High Priority
 1. **Test Coverage**: Increase coverage from 67% to >80%
-   - Focus on converters and analyzers with lower coverage
-   - Add integration tests for smart engine
-
 2. **Error Handling**: Improve error messages and recovery
-   - Better handling of corrupted files
-   - Clearer user messages for common issues
-
 3. **Performance**: Optimize for large repositories
-   - Implement incremental processing
-   - Add caching for repeated runs
 
 ### Medium Priority
 - Add support for more file formats
 - Implement custom token counting models
 - Add progress bars for long operations
-- Create better ignore pattern suggestions
 
-### Low Priority
-- Add telemetry (opt-in)
-- Create GUI version
-- Add cloud storage support
+### Documentation
+- Keep docs simple and focused
+- Avoid unnecessary complexity in installation guides
+- Focus on common use cases, not edge cases
 
 ## 🔧 Configuration
 
@@ -168,12 +159,12 @@ make build
 5. **LLM-Friendly**: Optimized for AI consumption
 
 ## 🔄 Recent Changes
-- Removed binary distribution in favor of Python package only
-- Added Gemini AI workflows for automated code review and triage
+- Simplified documentation across all channels
+- Removed legacy version support references
+- Streamlined installation instructions (Python package only)
+- Reduced troubleshooting complexity
 - Enhanced document converters with binary content validation
-- Improved error handling in PDF, DOCX, PPTX, and RTF converters
-- Streamlined CLI with simplified help text
-- Added comprehensive installation documentation
+- Improved error handling in converters
 
 ## 📊 Project Stats
 - Supports 15+ document formats

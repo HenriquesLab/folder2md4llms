@@ -22,25 +22,17 @@
 
 ## 🚀 Installation
 
-> **⚠️ Requirements**: Python **3.11 or higher** is required.
->
-> **Using Python 3.8-3.10?** Install the legacy version: `pipx install folder2md4llms==0.2.0`
+Requires Python 3.11+
 
 ```bash
-# Check Python version first
-python --version  # Must be 3.11+
-
 # Using pipx (recommended)
 pipx install folder2md4llms
 
 # Or using pip
 pip install folder2md4llms
-
-# Verify installation
-folder2md --help
 ```
 
-> **Note:** Package name is `folder2md4llms`, command is `folder2md`
+> Package name is `folder2md4llms`, command is `folder2md`
 
 
 ### Basic Usage
@@ -63,43 +55,14 @@ For a full list of commands and options, see the [CLI Reference](docs/api.md) or
 
 ## 🚨 Troubleshooting
 
-### Common Issues
-
-**"No matching distribution found for folder2md"**
-- Use the correct package name: `folder2md4llms` (not `folder2md`)
-
-**"Requires Python >=3.11" or incompatible Python version**
-- Check your Python version: `python --version`
-- If you have Python 3.8-3.10, use the legacy version: `pipx install folder2md4llms==0.2.0`
-- To upgrade Python, see: https://www.python.org/downloads/
-
-**"Command 'folder2md' not found"**
+**Command not found?**
 - Ensure pipx is installed: `pip install pipx`
-- Try: `python -m folder2md4llms .`
+- Or use: `python -m folder2md4llms .`
 
-### Platform-Specific Issues
-
-#### Windows: Use WSL2 (Recommended)
-
-For Windows users, we recommend using WSL2 (Windows Subsystem for Linux) for the best experience:
-
-```bash
-# Install WSL2 (run in PowerShell as Administrator)
-wsl --install -d Ubuntu-22.04
-
-# Then follow the Linux installation instructions in WSL2
-```
-
-This provides better compatibility and performance compared to native Windows installation.
-
-
-### Getting Help
-
-- **Command help**: `folder2md --help`
-- **Version check**: `folder2md --version`
-- **Alternative**: `python -m folder2md4llms --help` (works without installation)
-- **Report issues**: [GitHub Issues](https://github.com/henriqueslab/folder2md4llms/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/henriqueslab/folder2md4llms/discussions)
+**Need Help?**
+- Run `folder2md --help` for command reference
+- Check [GitHub Issues](https://github.com/henriqueslab/folder2md4llms/issues)
+- Join [GitHub Discussions](https://github.com/henriqueslab/folder2md4llms/discussions)
 
 ## 🔧 Configuration
 
