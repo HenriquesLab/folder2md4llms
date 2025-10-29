@@ -36,6 +36,40 @@ jobs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Package version: $VERSION"
 
+    - name: Validate release requirements
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        echo "Validating release for version $VERSION..."
+
+        # Check CHANGELOG entry exists
+        if ! grep -q "## \[$VERSION\]" CHANGELOG.md; then
+          echo "❌ ERROR: No CHANGELOG entry found for version $VERSION"
+          echo "Please add an entry to CHANGELOG.md with format:"
+          echo "## [$VERSION] - $(date +%Y-%m-%d)"
+          exit 1
+        fi
+        echo "✅ CHANGELOG entry found"
+
+        # Check CHANGELOG has proper date format
+        if ! grep -E "## \[$VERSION\] - [0-9]{4}-[0-9]{2}-[0-9]{2}" CHANGELOG.md; then
+          echo "⚠️  WARNING: CHANGELOG entry may be missing date"
+          echo "Expected format: ## [$VERSION] - YYYY-MM-DD"
+        else
+          echo "✅ CHANGELOG date format verified"
+        fi
+
+        # Check tag doesn't already exist (only when triggered by tag push)
+        if [ "${{ github.ref_type }}" == "tag" ]; then
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "❌ ERROR: Tag v$VERSION already exists"
+            echo "Did you forget to bump the version?"
+            exit 1
+          fi
+          echo "✅ Version tag is new"
+        fi
+
+        echo "✅ All release validation checks passed"
+
     - name: Run tests
       run: uv run pytest -x --tb=short
 

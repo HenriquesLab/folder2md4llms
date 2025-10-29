@@ -60,16 +60,16 @@ pip install -e ".[dev]"
 ### Common Tasks
 ```bash
 # Run tests with coverage
-make test
+just test
 
 # Format code and fix lint issues
-make fix
+just fix
 
 # Run all static analysis (format, lint, types)
-make check
+just check
 
 # Build package
-make build
+just build
 ```
 
 ### Testing
@@ -120,6 +120,49 @@ make build
 2. Update CHANGELOG.md
 3. Create PR to main
 4. Tag release triggers PyPI publication
+5. Update Homebrew formula (see below)
+
+### Homebrew Formula Updates
+
+folder2md4llms is distributed via PyPI and Homebrew. After the PyPI release is live, update the Homebrew formula.
+
+#### Homebrew Formula Location
+
+The Homebrew formula is maintained in a separate repository located at `../homebrew-formulas`:
+- **Repository**: `../homebrew-formulas/`
+- **Formula file**: `Formula/folder2md4llms.rb`
+- **Automation**: Managed via justfile commands
+
+#### Commands
+
+After the PyPI release is live and verified at https://pypi.org/project/folder2md4llms/:
+
+```bash
+cd ../homebrew-formulas
+
+# Option 1: Full automated release workflow (recommended)
+# This will update, test, commit, and push in one command
+just release folder2md4llms
+
+# Option 2: Manual step-by-step workflow
+just update folder2md4llms           # Updates to latest PyPI version
+just test folder2md4llms             # Tests the formula installation
+just commit folder2md4llms VERSION   # Commits with standardized message
+git push                             # Push to remote
+
+# Utility commands
+just list                            # List all formulas with current versions
+just check-updates                   # Check for available PyPI updates
+just sha256 folder2md4llms VERSION   # Get SHA256 for a specific version
+```
+
+#### Workflow Notes
+
+- **Always verify PyPI first**: The formula update pulls package info from PyPI, so the release must be live
+- **Automatic metadata**: The `just update` command automatically fetches the version, download URL, and SHA256 checksum from PyPI
+- **Full automation**: The `just release` command runs the complete workflow: update → test → commit → push
+- **Standardized commits**: Formula updates use consistent commit message format
+- **Testing**: The `just test` command uninstalls and reinstalls the formula to verify it works correctly
 
 ## 🔐 Security Considerations
 - Sanitize file paths to prevent traversal
