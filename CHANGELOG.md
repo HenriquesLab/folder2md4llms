@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.12] - 2025-10-29
+
+### Added
+- **Installation Method Detection**: New `install_detector.py` utility that detects how folder2md4llms was installed (Homebrew, pipx, uv, pip, dev) and provides context-aware upgrade commands
+- **Homebrew Update Checker**: New `homebrew_checker.py` utility that checks for Homebrew updates via `brew outdated` or GitHub formula
+- **Encoding Utilities**: New `encoding.py` module with centralized file reading, encoding fallback, and Unicode surrogate character handling
+- **Community Health Files**: Added comprehensive community files to improve GitHub community health score from 50% to 100%
+  - CONTRIBUTING.md with complete contribution guidelines
+  - CODE_OF_CONDUCT.md (Contributor Covenant v2.1)
+  - Issue templates (bug report, feature request)
+
+### Developer Experience
+- New utilities prepare for enhanced version checking and user-friendly upgrade instructions
+- Comprehensive test coverage: 94% for homebrew_checker, 79% for install_detector
+
 ## [0.5.11] - 2025-10-29
 
 ### Added
