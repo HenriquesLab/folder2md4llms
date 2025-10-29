@@ -29,13 +29,13 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ### Pull Requests
 
-1. **Fork the repository** and create your branch from \`main\`
+1. **Fork the repository** and create your branch from `main`
 2. **Make your changes** following our coding standards (see below)
 3. **Add tests** if you're adding functionality
 4. **Update documentation** if needed
-5. **Ensure tests pass** - run \`pytest tests/\`
-6. **Format your code** - run \`ruff format .\`
-7. **Lint your code** - run \`ruff check .\`
+5. **Ensure tests pass** - run `pytest tests/`
+6. **Format your code** - run `ruff format .`
+7. **Lint your code** - run `ruff check .`
 8. **Write a clear commit message** following [Conventional Commits](https://www.conventionalcommits.org/)
 9. **Submit the pull request**
 
@@ -96,7 +96,7 @@ mypy src/folder2md4llms/
 - Follow [PEP 8](https://pep8.org/) style guide
 - Use type hints for function parameters and return values
 - Write docstrings for public functions and classes (Google style)
-- Keep lines under 100 characters
+- Keep lines under 88 characters (Ruff/Black default)
 - Use meaningful variable and function names
 
 ## Git Commit Messages
@@ -112,13 +112,13 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 \`\`\`
 
 **Types:**
-- \`feat\`: New feature
-- \`fix\`: Bug fix
-- \`docs\`: Documentation changes
-- \`style\`: Code style changes (formatting, etc.)
-- \`refactor\`: Code refactoring
-- \`test\`: Adding or updating tests
-- \`chore\`: Maintenance tasks
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
 
 ## License
 
