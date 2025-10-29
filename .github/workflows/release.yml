@@ -58,8 +58,8 @@ jobs:
           echo "✅ CHANGELOG date format verified"
         fi
 
-        # Check tag doesn't already exist (only when triggered by tag push)
-        if [ "${{ github.ref_type }}" == "tag" ]; then
+        # Check tag doesn't already exist (only when NOT triggered by tag push)
+        if [ "${{ github.ref_type }}" != "tag" ]; then
           if git rev-parse "v$VERSION" >/dev/null 2>&1; then
             echo "❌ ERROR: Tag v$VERSION already exists"
             echo "Did you forget to bump the version?"
