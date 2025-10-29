@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.11] - 2025-10-29
+
+### Added
+- **Changelog Validation in Release Workflow**: Automated verification that CHANGELOG.md is updated before releases
+  - Verifies CHANGELOG entry exists for the release version
+  - Validates date format (YYYY-MM-DD)
+  - Checks for duplicate tags
+  - Fails release early if validation fails (before tests/build/publish)
+  - Inspired by TaskRepo's proven pattern
+
+### Changed
+- **Migrated from Makefile to justfile** for improved developer experience
+  - All 12 development commands converted to justfile recipes
+  - Python-based implementations for complex logic (check-release, version)
+  - Cleaner syntax: `just test -v` vs `make test ARGS="-v"`
+  - Better argument passing with variadic parameters
+  - Built-in help with `just --list`
+  - No .PHONY declarations needed
+  - Cross-platform consistency
+- Updated all documentation (README.md, CLAUDE.md) to use `just` commands
+- Removed Makefile after comprehensive dependency audit
+
+### Developer Experience
+- Contributors should now use `just` instead of `make`
+- Installation: `brew install just` (macOS) or `cargo install just`
+- Migration is straightforward: `make test` → `just test`, `make setup` → `just setup`
+
 ## [0.5.10] - 2025-01-17
 
 ### Added
