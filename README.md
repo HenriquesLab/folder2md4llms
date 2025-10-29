@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Downloads](https://img.shields.io/pypi/dm/folder2md4llms.svg)](https://pypi.org/project/folder2md4llms/)
 
-`folder2md4llms` is a configurable tool that converts a repository's contents into a single, LLM-friendly Markdown file. It supports various file formats and provides options for content condensing and filtering.
+`folder2md4llms` is a configurable tool that converts any folder structure and its contents into a single, LLM-friendly Markdown file. It supports various file formats and provides options for content condensing and filtering.
 
 ## ✨ Key Features
 
@@ -80,10 +80,10 @@ git clone https://github.com/henriqueslab/folder2md4llms.git
 cd folder2md4llms
 
 # Set up the development environment
-make setup
+just setup
 
 # See all available commands
-make help
+just --list
 ```
 
 ## 🤝 Contributing
