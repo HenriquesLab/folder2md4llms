@@ -12,9 +12,9 @@ import subprocess  # nosec B404
 from urllib.request import Request, urlopen
 
 # Homebrew formula information
-HOMEBREW_TAP = "HenriquesLab/homebrew-folder2md4llms"
+HOMEBREW_TAP = "henriqueslab/formulas"
 FORMULA_NAME = "folder2md4llms"
-FORMULA_URL = "https://raw.githubusercontent.com/HenriquesLab/homebrew-folder2md4llms/main/Formula/folder2md4llms.rb"
+FORMULA_URL = "https://raw.githubusercontent.com/HenriquesLab/homebrew-formulas/main/Formula/folder2md4llms.rb"
 
 
 def check_brew_outdated(

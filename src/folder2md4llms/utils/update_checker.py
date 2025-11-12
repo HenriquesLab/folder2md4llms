@@ -12,6 +12,11 @@ import httpx
 from rich.console import Console
 
 from ..__version__ import __version__
+from .install_detector import (
+    detect_install_method,
+    get_friendly_install_name,
+    get_upgrade_command,
+)
 
 # Constants
 DEFAULT_CHECK_INTERVAL = 24 * 60 * 60  # 24 hours in seconds
@@ -193,14 +198,19 @@ class UpdateChecker:
         Args:
             latest_version: The latest available version
         """
+        # Detect installation method and get appropriate upgrade command
+        install_method = detect_install_method()
+        upgrade_cmd = get_upgrade_command(install_method)
+        install_name = get_friendly_install_name(install_method)
+
         console.print()
         console.print("📦 [bold cyan]Update Available![/bold cyan]")
         console.print(f"   Current version: [yellow]{self.current_version}[/yellow]")
         console.print(f"   Latest version:  [green]{latest_version}[/green]")
+        console.print(f"   Installed via:   [blue]{install_name}[/blue]")
         console.print()
         console.print("   To upgrade, run:")
-        console.print("   [bold]pip install --upgrade folder2md4llms[/bold]  (or pip3)")
-        console.print("   [bold]uv tool upgrade folder2md4llms[/bold]")
+        console.print(f"   [bold]{upgrade_cmd}[/bold]")
         console.print()
 
     async def check_for_updates(self, force: bool = False) -> str | None:
