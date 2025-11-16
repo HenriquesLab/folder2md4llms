@@ -126,6 +126,7 @@ dmypy.json
 *.md
 !CHANGELOG.md
 !README.md
+!AUDIT_REPORT.md
 !docs/*.md
 
 # Default output files
