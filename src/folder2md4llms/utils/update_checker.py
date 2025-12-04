@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 import threading
 from collections.abc import Coroutine
 from datetime import datetime, timedelta
@@ -70,7 +71,18 @@ class UpdateChecker:
             pass
 
     def _should_check_for_updates(self) -> bool:
-        """Determine if we should check for updates based on cache."""
+        """Determine if we should check for updates based on cache and environment."""
+        # Check environment variables for opt-out
+        if os.getenv("FOLDER2MD4LLMS_NO_UPDATE_CHECK", "").lower() in (
+            "1",
+            "true",
+            "yes",
+        ):
+            return False
+
+        if os.getenv("NO_UPDATE_NOTIFIER", ""):
+            return False
+
         cache_data = self._load_cache()
         last_check = cache_data.get("last_check")
 
@@ -236,18 +248,94 @@ class UpdateChecker:
 
         latest_version = await self._fetch_latest_version()
 
+        # Determine if update is available
+        update_available = False
+        if latest_version and self._is_newer_version(latest_version):
+            update_available = True
+
         # Update cache
         cache_data = {
             "last_check": datetime.now().isoformat(),
             "latest_version": latest_version,
             "current_version": self.current_version,
+            "update_available": update_available,
         }
         self._save_cache(cache_data)
 
-        if latest_version and self._is_newer_version(latest_version):
+        if update_available:
             return latest_version
 
         return None
+
+    def check_for_updates_async(self, force: bool = False) -> None:
+        """Check for updates in a background thread (non-blocking).
+
+        This method starts an async update check in the background without blocking
+        the main thread. Results are cached for later display.
+
+        Args:
+            force: Force check even if within check interval
+        """
+        if not force and not self._should_check_for_updates():
+            return
+
+        def _check():
+            """Internal function to run async check in thread."""
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    loop.run_until_complete(self.check_for_updates(force))
+                finally:
+                    loop.close()
+            except Exception:  # nosec B110
+                # Silently fail to avoid disrupting main application
+                pass
+
+        # Run check in background thread (daemon, non-blocking)
+        thread = threading.Thread(target=_check, daemon=True)
+        thread.start()
+        # Don't join() - let it run in background
+
+    def get_update_notification(self) -> str | None:
+        """Get update notification message from cache.
+
+        Returns:
+            Notification message if update available, None otherwise
+        """
+        cache_data = self._load_cache()
+        if not cache_data or not cache_data.get("update_available"):
+            return None
+
+        latest_version = cache_data.get("latest_version")
+        if not latest_version:
+            return None
+
+        # Detect installation method
+        install_method = detect_install_method()
+        upgrade_cmd = get_upgrade_command(install_method)
+        install_name = get_friendly_install_name(install_method)
+
+        # Build notification message
+        notification = [
+            "",
+            "─" * 60,
+            f"📦 Update available: folder2md4llms v{self.current_version} → v{latest_version}",
+            "",
+            f"   Installed via: {install_name}",
+            f"   To upgrade, run: {upgrade_cmd}",
+            "",
+            f"   Release notes: https://github.com/henriqueslab/folder2md4llms/releases/tag/v{latest_version}",
+            "─" * 60,
+        ]
+
+        return "\n".join(notification)
+
+    def show_update_notification(self) -> None:
+        """Display update notification from cache if available."""
+        notification = self.get_update_notification()
+        if notification:
+            console.print(notification)
 
     def _run_async_in_thread(self, coro: Coroutine[Any, Any, str | None]) -> str | None:
         """Run an async coroutine in a separate thread with its own event loop.
@@ -328,13 +416,32 @@ class UpdateChecker:
             return None
 
 
+# Global instance for singleton pattern
+_update_checker: UpdateChecker | None = None
+
+
+def get_update_checker(check_interval: int = DEFAULT_CHECK_INTERVAL) -> UpdateChecker:
+    """Get the global update checker instance (singleton).
+
+    Args:
+        check_interval: Seconds between update checks
+
+    Returns:
+        UpdateChecker instance
+    """
+    global _update_checker
+    if _update_checker is None:
+        _update_checker = UpdateChecker(check_interval)
+    return _update_checker
+
+
 def check_for_updates(
     enabled: bool = True,
     force: bool = False,
     show_notification: bool = True,
     check_interval: int = DEFAULT_CHECK_INTERVAL,
 ) -> str | None:
-    """Convenience function to check for updates.
+    """Convenience function to check for updates (synchronous, blocking).
 
     Args:
         enabled: Whether update checking is enabled
@@ -348,5 +455,33 @@ def check_for_updates(
     if not enabled:
         return None
 
-    checker = UpdateChecker(check_interval)
+    checker = get_update_checker(check_interval)
     return checker.check_for_updates_sync(force, show_notification)
+
+
+def check_for_updates_async_background(
+    enabled: bool = True,
+    force: bool = False,
+    check_interval: int = DEFAULT_CHECK_INTERVAL,
+) -> None:
+    """Start async update check in background (non-blocking).
+
+    This is the recommended way to check for updates without blocking the CLI.
+    Results are cached and can be displayed later with show_update_notification().
+
+    Args:
+        enabled: Whether update checking is enabled
+        force: Force check even if within check interval
+        check_interval: Seconds between update checks
+    """
+    if not enabled:
+        return
+
+    checker = get_update_checker(check_interval)
+    checker.check_for_updates_async(force)
+
+
+def show_update_notification() -> None:
+    """Display cached update notification if available."""
+    checker = get_update_checker()
+    checker.show_update_notification()

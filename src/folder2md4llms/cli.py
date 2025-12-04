@@ -24,7 +24,10 @@ from .processor import RepositoryProcessor
 from .utils.config import Config
 from .utils.file_utils import find_folder2md_output_files
 from .utils.logging_config import setup_logging
-from .utils.update_checker import check_for_updates
+from .utils.update_checker import (
+    check_for_updates_async_background,
+    show_update_notification,
+)
 
 # Configure rich-click for better help formatting
 click.rich_click.USE_RICH_MARKUP = True
@@ -316,13 +319,13 @@ def main(
                             f"[green]✓ Ignoring {len(additional_ignore_patterns)} existing output file(s)[/green]\n"
                         )
 
+        # Start async update check in background (non-blocking)
         if not disable_update_check and getattr(
             config_obj, "update_check_enabled", True
         ):
-            check_for_updates(
+            check_for_updates_async_background(
                 enabled=True,
                 force=False,
-                show_notification=True,
                 check_interval=getattr(
                     config_obj, "update_check_interval", 24 * 60 * 60
                 ),
@@ -432,6 +435,10 @@ def main(
                     "[WARNING] 'pyperclip' is not installed. Cannot copy to clipboard.",
                     style="yellow",
                 )
+
+        # Show any cached update notifications
+        if not disable_update_check:
+            show_update_notification()
 
     except UnicodeEncodeError as e:
         console.print(f"[ERROR] Unicode encoding error: {e}", style="red")
