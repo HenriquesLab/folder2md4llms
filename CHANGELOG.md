@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.13] - 2025-12-05
+
+### Enhanced
+- **Update Checker Improvements**: Significantly enhanced update checking system for better user experience
+  - **Async Background Checking**: Update checks now run in background threads without blocking CLI startup (truly non-blocking, no thread.join())
+  - **Environment Opt-out**: Added `FOLDER2MD4LLMS_NO_UPDATE_CHECK` and standard `NO_UPDATE_NOTIFIER` environment variables for CI/CD and user control
+  - **Richer Cache Structure**: Cache now stores `update_available` boolean for immediate notification display without re-checking PyPI
+  - **Singleton Pattern**: Global update checker instance prevents redundant checks and improves efficiency
+  - **Smart Notifications**: Displays cached update notifications at end of CLI execution without adding latency
+  - **Install Detection Integration**: Update checker now uses install detector to provide context-aware upgrade commands
+
+### Changed
+- **CLI Startup Performance**: Update checks are now completely non-blocking, providing zero latency at startup
+- **Cache Structure**: Update check cache now includes `update_available` field for faster notification display
+
 ## [0.5.12] - 2025-10-29
 
 ### Added
