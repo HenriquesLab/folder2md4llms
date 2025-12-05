@@ -347,19 +347,24 @@ class TestConvenienceFunction:
 
     def test_check_for_updates_enabled(self):
         """Test convenience function when enabled."""
+        # Reset the singleton before the test
+        import folder2md4llms.utils.update_checker as uc_module
+
+        uc_module._update_checker = None
+
         with patch(
-            "folder2md4llms.utils.update_checker.UpdateChecker"
-        ) as mock_checker_class:
+            "folder2md4llms.utils.update_checker.get_update_checker"
+        ) as mock_get_checker:
             mock_checker = Mock()
             mock_checker.check_for_updates_sync.return_value = "1.0.0"
-            mock_checker_class.return_value = mock_checker
+            mock_get_checker.return_value = mock_checker
 
             result = check_for_updates(
                 enabled=True, force=True, show_notification=False, check_interval=3600
             )
 
             assert result == "1.0.0"
-            mock_checker_class.assert_called_once_with(3600)
+            mock_get_checker.assert_called_once_with(3600)
             mock_checker.check_for_updates_sync.assert_called_once_with(True, False)
 
 
