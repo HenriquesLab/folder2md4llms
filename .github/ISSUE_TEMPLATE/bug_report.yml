@@ -97,6 +97,17 @@ body:
       placeholder: Paste error messages here
 
   - type: textarea
+    id: configuration
+    attributes:
+      label: Configuration Files
+      description: If relevant, paste contents of configuration files (.folder2md_ignore, custom ignore patterns, etc.)
+      render: text
+      placeholder: |
+        # Contents of .folder2md_ignore (if applicable)
+
+        # Any custom configuration or command-line options used
+
+  - type: textarea
     id: additional
     attributes:
       label: Additional Context

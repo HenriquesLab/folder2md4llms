@@ -55,6 +55,18 @@ body:
     validations:
       required: true
 
+  - type: checkboxes
+    id: related_areas
+    attributes:
+      label: Related Areas
+      description: Which areas does this feature request relate to? (Select all that apply)
+      options:
+        - label: File format support (adding new file types, improving existing parsers)
+        - label: AST parsing and analysis (code structure understanding, syntax handling)
+        - label: Token counting and condensing (compression, optimization, token limits)
+        - label: CLI and configuration (command-line options, config files, ignore patterns)
+        - label: Documentation (README, guides, examples, API docs)
+
   - type: textarea
     id: additional
     attributes:

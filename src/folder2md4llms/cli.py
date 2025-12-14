@@ -20,14 +20,15 @@ if sys.version_info < (3, 11):  # noqa: UP036
         file=sys.stderr,
     )
     sys.exit(1)
+from henriqueslab_updater import (
+    check_for_updates_async_background,
+    show_update_notification,
+)
+
 from .processor import RepositoryProcessor
 from .utils.config import Config
 from .utils.file_utils import find_folder2md_output_files
 from .utils.logging_config import setup_logging
-from .utils.update_checker import (
-    check_for_updates_async_background,
-    show_update_notification,
-)
 
 # Configure rich-click for better help formatting
 click.rich_click.USE_RICH_MARKUP = True
@@ -323,12 +324,17 @@ def main(
         if not disable_update_check and getattr(
             config_obj, "update_check_enabled", True
         ):
+            # Convert check_interval from seconds to hours if configured
+            check_interval_seconds = getattr(
+                config_obj, "update_check_interval", 24 * 60 * 60
+            )
+            check_interval_hours = check_interval_seconds / 3600
             check_for_updates_async_background(
+                package_name="folder2md4llms",
+                current_version=__version__,
                 enabled=True,
                 force=False,
-                check_interval=getattr(
-                    config_obj, "update_check_interval", 24 * 60 * 60
-                ),
+                check_interval_hours=check_interval_hours,
             )
 
         # --- Override config with CLI options ---

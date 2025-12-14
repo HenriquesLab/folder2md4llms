@@ -49,21 +49,21 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ### Installation
 
-\`\`\`bash
+```bash
 # Clone your fork
 git clone https://github.com/YOUR-USERNAME/folder2md4llms.git
 cd folder2md4llms
 
 # Install dependencies with uv
-uv sync --extra dev
+uv sync --all-extras
 
 # Or with pip
 pip install -e ".[dev]"
-\`\`\`
+```
 
 ### Running Tests
 
-\`\`\`bash
+```bash
 # Run all tests
 pytest tests/
 
@@ -72,13 +72,13 @@ pytest tests/ --cov=src/folder2md4llms --cov-report=html
 
 # Run specific test file
 pytest tests/test_cli.py
-\`\`\`
+```
 
 ### Code Quality
 
 We use several tools to maintain code quality:
 
-\`\`\`bash
+```bash
 # Format code
 ruff format .
 
@@ -87,7 +87,27 @@ ruff check .
 
 # Type checking
 mypy src/folder2md4llms/
-\`\`\`
+```
+
+### Justfile Commands
+
+We provide a `justfile` for common development tasks. If you have [just](https://github.com/casey/just) installed, you can use these commands:
+
+```bash
+# Run all tests with coverage
+just test
+
+# Format and lint code (auto-fix issues)
+just fix
+
+# Check code quality without making changes
+just check
+
+# Build distribution packages
+just build
+```
+
+These commands combine multiple tools and provide a convenient development workflow.
 
 ## Coding Standards
 
@@ -103,13 +123,13 @@ mypy src/folder2md4llms/
 
 Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 
-\`\`\`
+```
 <type>(<scope>): <description>
 
 [optional body]
 
 [optional footer]
-\`\`\`
+```
 
 **Types:**
 - `feat`: New feature

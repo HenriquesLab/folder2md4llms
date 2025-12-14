@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.14] - 2025-12-14
+
+### Changed
+- **Update Checker Modernization**: Migrated to `henriqueslab-updater` package for centralized update checking
+  - Removed internal update checker, install detector, and Homebrew checker modules
+  - Now uses `henriqueslab-updater>=1.0.0` for all update checking functionality
+  - Maintains same user experience with improved code maintainability
+  - Reduces code duplication across HenriquesLab packages
+
+### Dependencies
+- Added `henriqueslab-updater>=1.0.0` dependency
+
 ## [0.5.13] - 2025-12-05
 
 ### Enhanced
