@@ -177,6 +177,21 @@ def _generate_ignore_template(target_path: Path, force: bool = False) -> None:
     help="Disable automatic file analysis and ignore pattern suggestions.",
 )
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging.")
+@click.option(
+    "--changelog",
+    "changelog_version",
+    type=str,
+    default=None,
+    is_flag=False,
+    flag_value="current",
+    help="Show changelog for current or specific version. Use --changelog=VERSION or --changelog for current version.",
+)
+@click.option(
+    "--changelog-recent",
+    type=int,
+    metavar="N",
+    help="Show last N changelog versions (use with --changelog).",
+)
 @click.version_option(version=__version__, prog_name="folder2md4llms")
 def main(
     path: Path,
@@ -190,6 +205,8 @@ def main(
     disable_update_check: bool,
     no_suggestions: bool,
     verbose: bool,
+    changelog_version: str | None,
+    changelog_recent: int | None,
 ) -> None:
     """
     Convert a folder's structure and file contents into a single Markdown file,
@@ -203,6 +220,9 @@ def main(
       [green]folder2md . --limit 80000t[/green]         # Set token limit with smart condensing
       [green]folder2md . --clipboard[/green]            # Copy result to clipboard
       [green]folder2md --init-ignore[/green]            # Generate ignore template
+      [green]folder2md --changelog[/green]              # Show current version changelog
+      [green]folder2md --changelog=0.5.0[/green]        # Show specific version
+      [green]folder2md --changelog-recent 3[/green]     # Show last 3 versions
 
     [bold blue]Advanced Features:[/bold blue]
       • Smart code condensing for large repositories
@@ -210,6 +230,108 @@ def main(
       • Multiple document format support (PDF, DOCX, etc.)
       • Automatic token/character counting
     """
+    # Handle changelog command
+    if changelog_version is not None or changelog_recent is not None:
+        from .utils.changelog_parser import (
+            VERSION_HEADER_PATTERN,
+            detect_breaking_changes,
+            extract_highlights,
+            fetch_changelog,
+            format_summary,
+            parse_version_entry,
+        )
+
+        try:
+            console.print("📋 Fetching changelog...", style="blue")
+            content = fetch_changelog()
+
+            if changelog_recent:
+                # Show last N versions
+                matches = list(VERSION_HEADER_PATTERN.finditer(content))
+                versions = [m.group(1) for m in matches]
+                if not versions:
+                    console.print("❌ No versions found in changelog", style="red")
+                    sys.exit(1)
+
+                versions_to_show = versions[:changelog_recent]
+                entries = []
+                for version in versions_to_show:
+                    entry = parse_version_entry(content, version)
+                    if entry:
+                        entries.append(entry)
+
+                if not entries:
+                    console.print(
+                        f"No entries found for last {changelog_recent} versions",
+                        style="yellow",
+                    )
+                    sys.exit(0)
+
+                console.print(
+                    f"\n📋 Last {len(entries)} version(s):\n", style="bold cyan"
+                )
+                summary = format_summary(
+                    entries, show_breaking=True, highlights_per_version=3
+                )
+                console.print(summary)
+
+            else:
+                # Show specific version or current
+                version_to_show: str = (
+                    __version__
+                    if changelog_version == "current"
+                    else (changelog_version or __version__)
+                )
+                entry = parse_version_entry(content, version_to_show)
+
+                if not entry:
+                    console.print(
+                        f"❌ Version {version_to_show} not found in changelog",
+                        style="red",
+                    )
+                    sys.exit(1)
+
+                # Display version header
+                if entry.date:
+                    console.print(
+                        f"\n📦 Version {entry.version} ({entry.date})",
+                        style="bold cyan",
+                    )
+                else:
+                    console.print(f"\n📦 Version {entry.version}", style="bold cyan")
+
+                # Check for breaking changes
+                breaking = detect_breaking_changes(entry)
+                if breaking:
+                    console.print("\n⚠️  BREAKING CHANGES:", style="bold red")
+                    for change in breaking:
+                        console.print(f"  • {change}", style="yellow")
+                    console.print()
+
+                # Show highlights
+                highlights = extract_highlights(entry, limit=10)
+                if highlights:
+                    console.print("Highlights:", style="bold")
+                    for emoji, description in highlights:
+                        console.print(f"  {emoji} {description}")
+                else:
+                    console.print("No changes listed", style="dim")
+
+                console.print(
+                    f"\nFull release: https://github.com/henriqueslab/folder2md4llms/releases/tag/v{entry.version}",
+                    style="blue",
+                )
+
+            return  # Exit after showing changelog
+
+        except Exception as e:
+            console.print(f"❌ Error fetching changelog: {e}", style="red")
+            console.print(
+                "   View online: https://github.com/henriqueslab/folder2md4llms/blob/main/CHANGELOG.md",
+                style="blue",
+            )
+            sys.exit(1)
+
     try:
         # Validate path argument
         try:
