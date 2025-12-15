@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.15] - 2025-12-15
+
+### Fixed
+
+- **Stale Update Notification Cache**: Updated to `henriqueslab-updater>=1.1.3` to fix stale update notifications
+  - Cache now invalidates when current version changes
+  - Prevents showing "update available" after already upgrading
+
 ## [0.5.14] - 2025-12-14
 
 ### Changed
