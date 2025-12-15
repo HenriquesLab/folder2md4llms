@@ -21,6 +21,8 @@ if sys.version_info < (3, 11):  # noqa: UP036
     )
     sys.exit(1)
 from henriqueslab_updater import (
+    ChangelogPlugin,
+    RichNotifier,
     check_for_updates_async_background,
     show_update_notification,
 )
@@ -335,6 +337,13 @@ def main(
                 enabled=True,
                 force=False,
                 check_interval_hours=check_interval_hours,
+                notifier=RichNotifier(color_scheme="green"),
+                plugins=[
+                    ChangelogPlugin(
+                        changelog_url="https://raw.githubusercontent.com/henriqueslab/folder2md4llms/main/CHANGELOG.md",
+                        highlights_per_version=3,
+                    ),
+                ],
             )
 
         # --- Override config with CLI options ---
