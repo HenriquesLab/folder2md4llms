@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.16] - 2025-12-17
+
+### Changed
+- **Homebrew Formula Optimization**: Updated Homebrew formula to build rpds-py from source with proper header padding
+  - Added Rust as a build dependency for clean compilation
+  - Set LDFLAGS with `-headerpad_max_install_names` for Mach-O header space
+  - Eliminates "Failed to fix install linkage" warnings during installation
+  - Upgraded to Python 3.13 in Homebrew formula
+
 ## [0.5.15] - 2025-12-15
 
 ### Fixed
