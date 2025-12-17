@@ -49,6 +49,12 @@ folder2md /path/to/repo --clipboard
 
 # Generate a .folder2md_ignore file
 folder2md --init-ignore
+
+# Upgrade to the latest version
+folder2md --upgrade
+
+# Check for available updates
+folder2md --upgrade-check
 ```
 
 For a full list of commands and options, see the [CLI Reference](docs/api.md) or run `folder2md --help`.

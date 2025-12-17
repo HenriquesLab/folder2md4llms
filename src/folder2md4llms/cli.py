@@ -23,7 +23,9 @@ if sys.version_info < (3, 11):  # noqa: UP036
 from henriqueslab_updater import (
     ChangelogPlugin,
     RichNotifier,
+    UpgradeNotifier,
     check_for_updates_async_background,
+    handle_upgrade_workflow,
     show_update_notification,
 )
 
@@ -192,6 +194,23 @@ def _generate_ignore_template(target_path: Path, force: bool = False) -> None:
     metavar="N",
     help="Show last N changelog versions (use with --changelog).",
 )
+@click.option(
+    "--upgrade",
+    is_flag=True,
+    help="Upgrade folder2md4llms to the latest version.",
+)
+@click.option(
+    "--upgrade-check",
+    is_flag=True,
+    help="Check for available updates without upgrading.",
+)
+@click.option(
+    "-y",
+    "--yes",
+    "upgrade_yes",
+    is_flag=True,
+    help="Skip confirmation prompt when upgrading (use with --upgrade).",
+)
 @click.version_option(version=__version__, prog_name="folder2md4llms")
 def main(
     path: Path,
@@ -207,6 +226,9 @@ def main(
     verbose: bool,
     changelog_version: str | None,
     changelog_recent: int | None,
+    upgrade: bool,
+    upgrade_check: bool,
+    upgrade_yes: bool,
 ) -> None:
     """
     Convert a folder's structure and file contents into a single Markdown file,
@@ -223,6 +245,9 @@ def main(
       [green]folder2md --changelog[/green]              # Show current version changelog
       [green]folder2md --changelog=0.5.0[/green]        # Show specific version
       [green]folder2md --changelog-recent 3[/green]     # Show last 3 versions
+      [green]folder2md --upgrade[/green]                # Upgrade to latest version
+      [green]folder2md --upgrade-check[/green]          # Check for updates
+      [green]folder2md --upgrade --yes[/green]          # Upgrade without confirmation
 
     [bold blue]Advanced Features:[/bold blue]
       • Smart code condensing for large repositories
@@ -230,6 +255,24 @@ def main(
       • Multiple document format support (PDF, DOCX, etc.)
       • Automatic token/character counting
     """
+    # Handle upgrade command
+    if upgrade or upgrade_check:
+        from .utils.rich_upgrade_notifier import RichUpgradeNotifier
+
+        success, error = handle_upgrade_workflow(
+            package_name="folder2md4llms",
+            current_version=__version__,
+            check_only=upgrade_check,
+            skip_confirmation=upgrade_yes,
+            notifier=RichUpgradeNotifier(console),
+            github_org="henriqueslab",
+            github_repo="folder2md4llms",
+        )
+
+        if not success and error:
+            sys.exit(1)
+        return
+
     # Handle changelog command
     if changelog_version is not None or changelog_recent is not None:
         from .utils.changelog_parser import (

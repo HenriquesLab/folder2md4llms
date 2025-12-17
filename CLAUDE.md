@@ -202,6 +202,10 @@ just sha256 folder2md4llms VERSION   # Get SHA256 for a specific version
 5. **LLM-Friendly**: Optimized for AI consumption
 
 ## 🔄 Recent Changes
+- **Added upgrade workflow**: `--upgrade` and `--upgrade-check` commands using centralized henriqueslab-updater library
+  - Automatic installation method detection (homebrew, pipx, uv, pip)
+  - Rich-formatted upgrade notifications
+  - GitHub release notes integration
 - Simplified documentation across all channels
 - Removed legacy version support references
 - Streamlined installation instructions (Python package only)
