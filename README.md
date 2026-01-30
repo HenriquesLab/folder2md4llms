@@ -24,6 +24,24 @@
 
 Requires Python 3.11+
 
+### macOS (Homebrew) - Recommended for Mac users
+
+```bash
+brew install henriqueslab/formulas/folder2md4llms
+```
+
+**Updating:**
+```bash
+brew update
+brew upgrade folder2md4llms
+```
+
+Benefits: Simple one-command installation, automatic dependency management (Python 3.13, libmagic), easy updates
+
+**Note:** Package name is `folder2md4llms`, but the command is `folder2md`.
+
+### All Platforms (pipx)
+
 ```bash
 # Using pipx (recommended)
 pipx install folder2md4llms
