@@ -41,39 +41,63 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ## Updating the Homebrew Formula
 
-When releasing a new version of folder2md4llms, update the Homebrew formula:
+When releasing a new version, the Homebrew formula must be updated in the [`homebrew-formulas` repository](https://github.com/HenriquesLab/homebrew-formulas).
 
-### 1. Get Package Information from PyPI
+### Automated Workflow (Recommended)
 
 ```bash
-VERSION=0.5.17  # Replace with new version
+cd ../homebrew-formulas
+just release folder2md4llms  # Full workflow: update → test → commit → push
+```
+
+This automatically:
+- Fetches the latest version from PyPI
+- Downloads and calculates SHA256 checksum
+- Updates the formula file
+- Tests the installation
+- Commits with standardized message
+- Pushes to remote
+
+### Manual Workflow (Alternative)
+
+If `just` is not available, you can update the formula manually:
+
+#### 1. Get Package Information from PyPI
+
+```bash
+VERSION=X.Y.Z  # Replace with new version
 curl "https://pypi.org/pypi/folder2md4llms/$VERSION/json" | \
   jq -r '.urls[] | select(.packagetype=="sdist") | "URL: \(.url)\nSHA256: \(.digests.sha256)"'
 ```
 
-### 2. Update the Formula
+#### 2. Update the Formula
 
-Edit `homebrew-formulas/Formula/folder2md4llms.rb`:
+Navigate to the homebrew-formulas repository and edit the formula:
+
+```bash
+cd ../homebrew-formulas  # Use relative path from folder2md4llms directory
+```
+
+Edit `Formula/folder2md4llms.rb`:
 - Update the `url` line with the new URL
 - Update the `sha256` line with the new hash
 
-### 3. Test Locally
+#### 3. Test Locally
 
 ```bash
-cd ~/GitHub/homebrew-formulas
 brew uninstall folder2md4llms 2>/dev/null || true
 brew install --build-from-source ./Formula/folder2md4llms.rb
 brew test folder2md4llms
 folder2md --version  # Verify correct version
 ```
 
-### 4. Audit the Formula
+#### 4. Audit the Formula
 
 ```bash
 brew audit --strict --online folder2md4llms
 ```
 
-### 5. Commit and Push
+#### 5. Commit and Push
 
 ```bash
 git add Formula/folder2md4llms.rb
@@ -81,13 +105,15 @@ git commit -m "folder2md4llms: update to version $VERSION"
 git push
 ```
 
-### 6. Verify Installation
+#### 6. Verify Installation
 
 ```bash
 brew uninstall folder2md4llms
 brew install henriqueslab/formulas/folder2md4llms
 folder2md --version
 ```
+
+**Note:** The automated workflow using `just` is preferred for consistency and efficiency. See the [homebrew-formulas repository](https://github.com/HenriquesLab/homebrew-formulas) for additional utility commands like `just list`, `just check-updates`, and `just sha256`
 
 ---
 
