@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.17] - 2026-02-02
+
+### Documentation
+
+- **Homebrew Formula Workflow Alignment**: Aligned CONTRIBUTING.md with CLAUDE.md automation strategy (#37)
+  - Prioritized automated `just release folder2md4llms` workflow as recommended method
+  - Fixed hardcoded version placeholder (`VERSION=0.5.17` → `VERSION=X.Y.Z`)
+  - Updated path references to use relative paths (`../homebrew-formulas`)
+  - Added automation context with `just` utility commands reference
+  - Consistent with rxiv-maker ecosystem patterns
+
 ## [0.5.16] - 2025-12-17
 
 ### Changed
