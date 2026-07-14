@@ -116,7 +116,8 @@ Contributions are welcome! Please feel free to submit a Pull Request. For more i
 
 ## 📖 Documentation
 
-- **[CLI Reference](docs/api.md)** - Complete command-line reference
+- **[Documentation site](https://folder2md4llms.henriqueslab.org)** - Installation, usage, configuration, and CLI reference
+- **[CLI Reference](docs/api.md)** - Command-line reference (in-repo)
 - **[Contributing Guidelines](CONTRIBUTING.md)** - How to contribute to the project
 - **[Changelog](CHANGELOG.md)** - Version history and changes
 
