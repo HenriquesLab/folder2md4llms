@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.18] - 2026-07-14
+
+### Documentation
+
+- README now links to the documentation site and labels the in-repo CLI reference as such.
+- Rewrote the external documentation site to match the real CLI and configuration, removing fabricated flags, options, and config keys.
+
 ## [0.5.17] - 2026-02-02
 
 ### Documentation
